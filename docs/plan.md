@@ -1,0 +1,78 @@
+# План проекта «Библиотека»
+
+Учебный проект курса OTUS «AI Agents»: веб-приложение библиотеки (книги, читатели, выдача)
+и AI-ориентированная среда разработки с coding-агентом Claude Code вокруг него.
+
+Правило работы: каждый шаг обсуждается (зачем, как связан с ДЗ) и выполняется только после подтверждения.
+
+## Стек
+
+| Роль | Выбор |
+|---|---|
+| Язык | TypeScript (strict) |
+| Backend | Express 5, валидация zod |
+| Frontend | React + Vite |
+| Хранилище | JSON-файл за интерфейсом репозитория (позже SQLite) |
+| Менеджер пакетов | npm |
+| Unit / API тесты | Vitest + supertest |
+| E2E | Playwright Test; проверка UI агентом — Playwright MCP |
+| Линтер / форматтер | ESLint (typescript-eslint) + Prettier |
+| Агент | Claude Code |
+
+## Структура
+
+```text
+src/domain/   чистые бизнес-правила (без Express, I/O, React)
+src/server/   Express: routes, валидация, хранилище
+src/client/   React UI
+tests/unit/   Vitest
+tests/e2e/    Playwright
+docs/         plan.md, memory.md, about.md
+.claude/      rules, skills, hooks, settings.json
+```
+
+## MVP (объём ДЗ)
+
+- Книги: название, автор, ISBN, количество экземпляров.
+- Читатели: имя, контакт.
+- Выдача и возврат книги.
+- Правила: нельзя выдать книгу без свободных экземпляров; лимит книг на читателя;
+  срок выдачи и статус «просрочена».
+
+## Запреты для агента
+
+Принцип: важное дублируем жёстким уровнем; стиль и соглашения — мягким.
+
+| Уровень | Где | Сила | Что запрещаем |
+|---|---|---|---|
+| 1. AGENTS.md, «Правила работы» | корень | мягкий | коммиты в `main` (только ветки `feat/*`); новые npm-зависимости без согласования; изменение формата данных без миграции; отключение тестов и линтера (`eslint-disable`, `.skip`) |
+| 2. Rules с `paths:` | `.claude/rules/*.md` | мягкий, точечный | `src/domain/`: импорт Express, `fs`, React; `tests/e2e/`: `waitForTimeout`, CSS-селекторы вместо локаторов по роли |
+| 3. Permissions `deny` / `ask` | `.claude/settings.json` | жёсткий | deny: `Read(.env*)`, `Bash(cat .env*)`, `Bash(rm -rf:*)`, `Bash(git push --force:*)`, `Bash(npm publish:*)`; ask: `git push` |
+| 4. Hook `PreToolUse` | `.claude/hooks/` | жёсткий, с логикой | запись в `.env*`, `.git/`, `package-lock.json`, в т.ч. через Bash (`echo > .env`, `sed -i`) |
+
+Ограничение: deny-правила и hook для Bash — эвристика по шаблонам, а не песочница; это фиксируется в `docs/about.md`.
+
+## Шаги ДЗ
+
+- [x] Шаг 0. Выбор проекта, агента и стека; место проекта `~/projects/library`
+- [x] Шаг 0.1. `git init`, `.gitignore`, репозиторий на GitHub (Termogaz/otus-agents-library, public)
+- [ ] Шаг 0.2. Каркас приложения: package.json, TypeScript, Express, React/Vite, Vitest, ESLint, Prettier
+- [ ] Шаг 0.3. MVP-домен с unit-тестами (TDD)
+- [ ] Шаг 1. `AGENTS.md` (≤200 строк, 4 раздела) + `CLAUDE.md` → `@AGENTS.md`
+- [ ] Шаг 2. Rules с `paths:` (domain, e2e) + проверка «в своей папке / в соседней»
+- [ ] Шаг 2. Skills: `write-tests` (вызывает агент), `review-step` (вызываю вручную)
+- [ ] Шаг 3. Permissions allow / ask / deny; режим по умолчанию; `settings.local.json` в `.gitignore`
+- [ ] Шаг 4. Hooks: линтер/форматтер после правки; блокировка защищённых файлов
+- [ ] Шаг 4. Память: `docs/memory.md`; проверка продолжения во второй сессии
+- [ ] Шаг 5. Playwright MCP: сценарий, скриншот, консоль; e2e-тест до зелёного
+- [ ] Отчёт: `docs/about.md` (стек, правило и его проверка, навыки, 4 скриншота)
+- [ ] Отчёт: README — «Как агент работает в проекте»; режим по умолчанию одной строкой
+- [ ] Push на GitHub, ссылка на сдачу
+
+## Roadmap (следующие модули)
+
+- Хранилище: SQLite + миграции вместо JSON.
+- Правила: бронирование и очередь, продление, пени, блокировка должников.
+- Роли: библиотекарь / читатель, авторизация.
+- Интеграции: карточка книги по ISBN (Open Library), поиск, рекомендации через LLM.
+- Эксплуатация: фоновое напоминание о просрочке, деплой, логи.
