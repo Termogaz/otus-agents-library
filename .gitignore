@@ -25,6 +25,9 @@ data/*.json
 .claude/settings.local.json
 CLAUDE.local.md
 
+# Личные заметки и выгрузки бесед (не публикуем)
+.local/
+
 # Логи, ОС, IDE
 *.log
 npm-debug.log*
