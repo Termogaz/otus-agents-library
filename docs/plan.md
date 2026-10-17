@@ -80,6 +80,8 @@ docs/         plan.md, memory.md, about.md
   - [x] 0.3b. Интерфейс репозитория + JSON-файл (`src/server/repository.ts`, `json-file-repository.ts`)
   - [x] 0.3c. API на zod + supertest; отказ домена → `409` с кодом (`src/server/app.ts`, `tests/unit/api.test.ts`)
 - [ ] Шаг 5. Playwright MCP: сценарий, скриншот, консоль; e2e «выдать книгу → вернуть» до зелёного
+  - [x] 5a. UI выдачи и возврата (`src/client/`), e2e `tests/e2e/loans.spec.ts` зелёный; `.mcp.json` с `@playwright/mcp@0.0.83`
+  - [ ] 5b. В новой сессии: одобрить MCP-сервер `playwright`, пройти сценарий агентом, скриншот и консоль
 - [ ] Отчёт: `docs/about.md` (стек, правило и его проверка, навыки, 4 скриншота)
 - [ ] Отчёт: README — «Как агент работает в проекте»; режим по умолчанию одной строкой
 - [ ] Сделать репозиторий public (`gh repo edit --visibility public`), push, ссылка на сдачу
