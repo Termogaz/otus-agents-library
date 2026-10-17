@@ -64,13 +64,16 @@ docs/         plan.md, memory.md, about.md
 - [x] Переход: дальше работаем в сессии, запущенной из проекта (`cd ~/projects/library && claude`)
 - [x] Шаг 2. Rules с `paths:` (domain, e2e): `.claude/rules/domain.md`, `.claude/rules/e2e.md`
 - [ ] Шаг 2. Проверка rule «в своей папке / в соседней» (`src/domain/` vs `src/server/`) — в новой сессии
-- [ ] Шаг 2. Skills: `write-tests` (вызывает агент), `review-step` (вызываю вручную)
+- [x] Шаг 2. Skills: `write-tests` (вызывает агент), `review-step` (вызываю вручную; read-only через subagent `reviewer`)
+- [x] Шаг 2. Проверка skill `/review-step` на ветке `feat/skills`: замечания ревью исправлены
+- [ ] Шаг 2. Проверка skill `write-tests` — автовызов в шаге 0.3
 - [ ] Шаг 3. Permissions allow / ask / deny; режим по умолчанию; `settings.local.json` в `.gitignore`
 - [ ] Шаг 4. Hooks: линтер/форматтер после правки; блокировка защищённых файлов
-- [ ] Шаг 4. Память: `docs/memory.md`
+- [x] Шаг 4. Память: `docs/memory.md` заведён досрочно (по ревью шага 2), записи — с шага 0
+- [ ] Шаг 3/4. Read-only агента `reviewer` закрыть permissions или hook (сейчас держится на промпте)
 - [ ] Шаг 0.3. MVP-домен через TDD — уже внутри настроенной среды; заодно демонстрации:
-      rule для `src/domain/` vs `src/server/`, вызов `write-tests`, срабатывание линтер-hook,
-      продолжение во второй сессии по памяти
+      rule для `src/domain/` vs `src/server/`, автовызов `write-tests` (закрывает проверку skills шага 2),
+      срабатывание линтер-hook, продолжение во второй сессии по памяти
 - [ ] Шаг 5. Playwright MCP: сценарий, скриншот, консоль; e2e «выдать книгу → вернуть» до зелёного
 - [ ] Отчёт: `docs/about.md` (стек, правило и его проверка, навыки, 4 скриншота)
 - [ ] Отчёт: README — «Как агент работает в проекте»; режим по умолчанию одной строкой
