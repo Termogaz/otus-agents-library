@@ -73,7 +73,7 @@ docs/         plan.md, memory.md, about.md
 - [x] Шаг 4. Память: `docs/memory.md` заведён досрочно (по ревью шага 2), записи — с шага 0
 - [x] Шаг 4. Read-only агента `reviewer`: hook `reviewer-readonly` во frontmatter агента (белый список команд)
 - [x] Шаг 4. Проверка hook'а `reviewer` в новой сессии: `touch` — отказ, `git status` — проходит
-- [ ] Шаг 0.3. MVP-домен через TDD — уже внутри настроенной среды; заодно демонстрации:
+- [x] Шаг 0.3. MVP-домен через TDD — уже внутри настроенной среды; заодно демонстрации:
       rule для `src/domain/` vs `src/server/`, автовызов `write-tests` (закрывает проверку skills шага 2),
       срабатывание линтер-hook, продолжение во второй сессии по памяти
   - [x] 0.3a. Домен: `checkoutBook`, `returnBook`, `isOverdue`; лимит 3, срок 14 дней (`src/domain/loans.ts`)
