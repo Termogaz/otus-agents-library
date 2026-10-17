@@ -63,7 +63,7 @@ docs/         plan.md, memory.md, about.md
 - [x] Шаг 1. `AGENTS.md` (≤200 строк, 4 раздела) + `CLAUDE.md` → `@AGENTS.md`
 - [x] Переход: дальше работаем в сессии, запущенной из проекта (`cd ~/projects/library && claude`)
 - [x] Шаг 2. Rules с `paths:` (domain, e2e): `.claude/rules/domain.md`, `.claude/rules/e2e.md`
-- [ ] Шаг 2. Проверка rule «в своей папке / в соседней» (`src/domain/` vs `src/server/`) — в новой сессии
+- [x] Шаг 2. Проверка rule «в своей папке / в соседней» (`src/domain/` vs `src/server/`) — в сессии 0.3b/0.3c
 - [x] Шаг 2. Skills: `write-tests` (вызывает агент), `review-step` (вызываю вручную; read-only через subagent `reviewer`)
 - [x] Шаг 2. Проверка skill `/review-step` на ветке `feat/skills`: замечания ревью исправлены
 - [x] Шаг 2. Проверка skill `write-tests` — автовызов в шаге 0.3 (агент вызвал его сам в 0.3a)
@@ -78,7 +78,7 @@ docs/         plan.md, memory.md, about.md
       срабатывание линтер-hook, продолжение во второй сессии по памяти
   - [x] 0.3a. Домен: `checkoutBook`, `returnBook`, `isOverdue`; лимит 3, срок 14 дней (`src/domain/loans.ts`)
   - [x] 0.3b. Интерфейс репозитория + JSON-файл (`src/server/repository.ts`, `json-file-repository.ts`)
-  - [ ] 0.3c. API на zod + supertest; отказ домена → `409` с кодом
+  - [x] 0.3c. API на zod + supertest; отказ домена → `409` с кодом (`src/server/app.ts`, `tests/unit/api.test.ts`)
 - [ ] Шаг 5. Playwright MCP: сценарий, скриншот, консоль; e2e «выдать книгу → вернуть» до зелёного
 - [ ] Отчёт: `docs/about.md` (стек, правило и его проверка, навыки, 4 скриншота)
 - [ ] Отчёт: README — «Как агент работает в проекте»; режим по умолчанию одной строкой
