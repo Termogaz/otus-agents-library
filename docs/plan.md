@@ -61,8 +61,9 @@ docs/         plan.md, memory.md, about.md
 - [x] Шаг 0.1. `git init`, `.gitignore`, репозиторий на GitHub (Termogaz/otus-agents-library; временно private, сделать public перед сдачей)
 - [x] Шаг 0.2. Каркас приложения: package.json, TypeScript, Express, React/Vite, Vitest, ESLint, Prettier
 - [x] Шаг 1. `AGENTS.md` (≤200 строк, 4 раздела) + `CLAUDE.md` → `@AGENTS.md`
-- [ ] Переход: дальше работаем в сессии, запущенной из проекта (`cd ~/projects/library && claude`)
-- [ ] Шаг 2. Rules с `paths:` (domain, e2e) + проверка «в своей папке / в соседней»
+- [x] Переход: дальше работаем в сессии, запущенной из проекта (`cd ~/projects/library && claude`)
+- [x] Шаг 2. Rules с `paths:` (domain, e2e): `.claude/rules/domain.md`, `.claude/rules/e2e.md`
+- [ ] Шаг 2. Проверка rule «в своей папке / в соседней» (`src/domain/` vs `src/server/`) — в новой сессии
 - [ ] Шаг 2. Skills: `write-tests` (вызывает агент), `review-step` (вызываю вручную)
 - [ ] Шаг 3. Permissions allow / ask / deny; режим по умолчанию; `settings.local.json` в `.gitignore`
 - [ ] Шаг 4. Hooks: линтер/форматтер после правки; блокировка защищённых файлов
