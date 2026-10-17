@@ -3,6 +3,24 @@
 Журнал сессий и шагов: что сделано, какие решения приняты, что дальше, на чём споткнулись.
 Новые записи — сверху. Формат записи: **Сделано / Решение / Дальше / Ловушки**.
 
+## 2026-10-18 — Шаг 3: permissions (ветка `feat/permissions`)
+
+**Сделано.** В `.claude/settings.json` — `permissions`: allow для проверок (`npm run check`,
+`test`, `lint`, `typecheck`, `format`, `npx vitest run`, e2e) и read-only git; ask для `git push`,
+`gh pr create/merge`, `npm install`; deny для `.env*` (Read, Edit, `cat`), `Edit(package-lock.json)`,
+`rm -rf`, `git push --force`/`-f`, `git push origin main`, `npm publish`. Режим по умолчанию — `acceptEdits`.
+Проверено в сессии: `cat .env`, `Read(.env)`, `git push --force` блокируются.
+
+**Решение.** `acceptEdits`: правки файлов откатываются через git и проходят `/review-step`, а Bash
+остаётся под allow / ask / deny. Read-only для `reviewer` permissions не решить — правила общие для
+сессии и subagent'ов; переносим на шаг 4 (hook во frontmatter агента).
+
+**Дальше.** Шаг 4 — hooks: линтер/форматтер после правки, блокировка защищённых файлов, read-only `reviewer`.
+
+**Ловушки.** Bash-правила — префиксы строки команды, не песочница: `git push origin HEAD:main`,
+`less .env` или `rm -r -f` их обходят. Это закрывает (частично) hook на шаге 4 и фиксируется в
+`docs/about.md`. Правила для файлов — `Edit(...)` покрывает и Write; пути `./` — от корня проекта.
+
 ## 2026-10-17 — Шаг 2: rules и skills (ветка `feat/skills`)
 
 **Сделано.** Rules с `paths:` для `src/domain/` и `tests/e2e/`. Skills `write-tests`
