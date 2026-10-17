@@ -16,5 +16,5 @@
     "noEmit": true,
     "types": ["node"]
   },
-  "include": ["src", "tests", "*.ts"]
+  "include": ["src", "tests", "*.ts", ".claude/hooks"]
 }
