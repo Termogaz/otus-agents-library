@@ -77,7 +77,7 @@ docs/         plan.md, memory.md, about.md
       rule для `src/domain/` vs `src/server/`, автовызов `write-tests` (закрывает проверку skills шага 2),
       срабатывание линтер-hook, продолжение во второй сессии по памяти
   - [x] 0.3a. Домен: `checkoutBook`, `returnBook`, `isOverdue`; лимит 3, срок 14 дней (`src/domain/loans.ts`)
-  - [ ] 0.3b. Интерфейс репозитория + JSON-файл (`src/server/`) — в новой сессии
+  - [x] 0.3b. Интерфейс репозитория + JSON-файл (`src/server/repository.ts`, `json-file-repository.ts`)
   - [ ] 0.3c. API на zod + supertest; отказ домена → `409` с кодом
 - [ ] Шаг 5. Playwright MCP: сценарий, скриншот, консоль; e2e «выдать книгу → вернуть» до зелёного
 - [ ] Отчёт: `docs/about.md` (стек, правило и его проверка, навыки, 4 скриншота)
