@@ -65,6 +65,8 @@ tests/unit/   Vitest; tests/e2e/ — Playwright
 - Коммиты — Conventional Commits: `feat: ...`, `fix: ...`, `test: ...`, `docs: ...`, `chore: ...`.
   Тип — по-английски, описание и тело коммита — на русском: `docs: добавить rules для domain и e2e`.
   Заголовок и описание Pull Request — тоже на русском.
+- Без атрибуции агента: никаких `Co-Authored-By: Claude ...` в коммитах и
+  «Generated with Claude Code» в Pull Request.
 - Бизнес-правила — через TDD: сначала падающий тест, затем минимальный код, затем рефакторинг.
 - Задача готова, только когда `npm run check` зелёный, а для изменений UI — и `npm run test:e2e`.
 - Крупную задачу делить на шаги, проверяемые по отдельности; отмечать прогресс в `docs/plan.md`.
