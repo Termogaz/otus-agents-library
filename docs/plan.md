@@ -7,17 +7,17 @@
 
 ## Стек
 
-| Роль | Выбор |
-|---|---|
-| Язык | TypeScript (strict) |
-| Backend | Express 5, валидация zod |
-| Frontend | React + Vite |
-| Хранилище | JSON-файл за интерфейсом репозитория (позже SQLite) |
-| Менеджер пакетов | npm |
-| Unit / API тесты | Vitest + supertest |
-| E2E | Playwright Test; проверка UI агентом — Playwright MCP |
-| Линтер / форматтер | ESLint (typescript-eslint) + Prettier |
-| Агент | Claude Code |
+| Роль               | Выбор                                                 |
+| ------------------ | ----------------------------------------------------- |
+| Язык               | TypeScript (strict)                                   |
+| Backend            | Express 5, валидация zod                              |
+| Frontend           | React + Vite                                          |
+| Хранилище          | JSON-файл за интерфейсом репозитория (позже SQLite)   |
+| Менеджер пакетов   | npm                                                   |
+| Unit / API тесты   | Vitest + supertest                                    |
+| E2E                | Playwright Test; проверка UI агентом — Playwright MCP |
+| Линтер / форматтер | ESLint (typescript-eslint) + Prettier                 |
+| Агент              | Claude Code                                           |
 
 ## Структура
 
@@ -43,12 +43,12 @@ docs/         plan.md, memory.md, about.md
 
 Принцип: важное дублируем жёстким уровнем; стиль и соглашения — мягким.
 
-| Уровень | Где | Сила | Что запрещаем |
-|---|---|---|---|
-| 1. AGENTS.md, «Правила работы» | корень | мягкий | коммиты в `main` (только ветки `feat/*`); новые npm-зависимости без согласования; изменение формата данных без миграции; отключение тестов и линтера (`eslint-disable`, `.skip`) |
-| 2. Rules с `paths:` | `.claude/rules/*.md` | мягкий, точечный | `src/domain/`: импорт Express, `fs`, React; `tests/e2e/`: `waitForTimeout`, CSS-селекторы вместо локаторов по роли |
-| 3. Permissions `deny` / `ask` | `.claude/settings.json` | жёсткий | deny: `Read(.env*)`, `Bash(cat .env*)`, `Bash(rm -rf:*)`, `Bash(git push --force:*)`, `Bash(npm publish:*)`; ask: `git push` |
-| 4. Hook `PreToolUse` | `.claude/hooks/` | жёсткий, с логикой | запись в `.env*`, `.git/`, `package-lock.json`, в т.ч. через Bash (`echo > .env`, `sed -i`) |
+| Уровень                        | Где                     | Сила               | Что запрещаем                                                                                                                                                                    |
+| ------------------------------ | ----------------------- | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1. AGENTS.md, «Правила работы» | корень                  | мягкий             | коммиты в `main` (только ветки `feat/*`); новые npm-зависимости без согласования; изменение формата данных без миграции; отключение тестов и линтера (`eslint-disable`, `.skip`) |
+| 2. Rules с `paths:`            | `.claude/rules/*.md`    | мягкий, точечный   | `src/domain/`: импорт Express, `fs`, React; `tests/e2e/`: `waitForTimeout`, CSS-селекторы вместо локаторов по роли                                                               |
+| 3. Permissions `deny` / `ask`  | `.claude/settings.json` | жёсткий            | deny: `Read(.env*)`, `Bash(cat .env*)`, `Bash(rm -rf:*)`, `Bash(git push --force:*)`, `Bash(npm publish:*)`; ask: `git push`                                                     |
+| 4. Hook `PreToolUse`           | `.claude/hooks/`        | жёсткий, с логикой | запись в `.env*`, `.git/`, `package-lock.json`, в т.ч. через Bash (`echo > .env`, `sed -i`)                                                                                      |
 
 Ограничение: deny-правила и hook для Bash — эвристика по шаблонам, а не песочница; это фиксируется в `docs/about.md`.
 
@@ -56,7 +56,7 @@ docs/         plan.md, memory.md, about.md
 
 - [x] Шаг 0. Выбор проекта, агента и стека; место проекта `~/projects/library`
 - [x] Шаг 0.1. `git init`, `.gitignore`, репозиторий на GitHub (Termogaz/otus-agents-library, public)
-- [ ] Шаг 0.2. Каркас приложения: package.json, TypeScript, Express, React/Vite, Vitest, ESLint, Prettier
+- [x] Шаг 0.2. Каркас приложения: package.json, TypeScript, Express, React/Vite, Vitest, ESLint, Prettier
 - [ ] Шаг 0.3. MVP-домен с unit-тестами (TDD)
 - [ ] Шаг 1. `AGENTS.md` (≤200 строк, 4 раздела) + `CLAUDE.md` → `@AGENTS.md`
 - [ ] Шаг 2. Rules с `paths:` (domain, e2e) + проверка «в своей папке / в соседней»
