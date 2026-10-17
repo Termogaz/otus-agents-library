@@ -64,7 +64,8 @@ docs/         plan.md, memory.md, about.md
 - [x] Переход: дальше работаем в сессии, запущенной из проекта (`cd ~/projects/library && claude`)
 - [x] Шаг 2. Rules с `paths:` (domain, e2e): `.claude/rules/domain.md`, `.claude/rules/e2e.md`
 - [ ] Шаг 2. Проверка rule «в своей папке / в соседней» (`src/domain/` vs `src/server/`) — в новой сессии
-- [ ] Шаг 2. Skills: `write-tests` (вызывает агент), `review-step` (вызываю вручную)
+- [x] Шаг 2. Skills: `write-tests` (вызывает агент), `review-step` (вызываю вручную; read-only через subagent `reviewer`)
+- [ ] Шаг 2. Проверка skills: `/review-step` на ветке; `write-tests` — автовызов в шаге 0.3
 - [ ] Шаг 3. Permissions allow / ask / deny; режим по умолчанию; `settings.local.json` в `.gitignore`
 - [ ] Шаг 4. Hooks: линтер/форматтер после правки; блокировка защищённых файлов
 - [ ] Шаг 4. Память: `docs/memory.md`
