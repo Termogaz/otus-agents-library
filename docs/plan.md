@@ -72,7 +72,7 @@ docs/         plan.md, memory.md, about.md
 - [x] Шаг 4. Hooks: `format-and-lint` (PostToolUse) после правки; `protect-files` (PreToolUse) — запись в `.env*`, `.git/`, `package-lock.json`, в т.ч. через Bash; логика покрыта тестами
 - [x] Шаг 4. Память: `docs/memory.md` заведён досрочно (по ревью шага 2), записи — с шага 0
 - [x] Шаг 4. Read-only агента `reviewer`: hook `reviewer-readonly` во frontmatter агента (белый список команд)
-- [ ] Шаг 4. Проверка hook'а `reviewer` в новой сессии: `touch` — отказ, `git status` — проходит
+- [x] Шаг 4. Проверка hook'а `reviewer` в новой сессии: `touch` — отказ, `git status` — проходит
 - [ ] Шаг 0.3. MVP-домен через TDD — уже внутри настроенной среды; заодно демонстрации:
       rule для `src/domain/` vs `src/server/`, автовызов `write-tests` (закрывает проверку skills шага 2),
       срабатывание линтер-hook, продолжение во второй сессии по памяти
