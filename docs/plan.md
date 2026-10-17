@@ -58,7 +58,7 @@ docs/         plan.md, memory.md, about.md
 демонстрацией правил, навыков, hooks и памяти.
 
 - [x] Шаг 0. Выбор проекта, агента и стека; место проекта `~/projects/library`
-- [x] Шаг 0.1. `git init`, `.gitignore`, репозиторий на GitHub (Termogaz/otus-agents-library, public)
+- [x] Шаг 0.1. `git init`, `.gitignore`, репозиторий на GitHub (Termogaz/otus-agents-library; временно private, сделать public перед сдачей)
 - [x] Шаг 0.2. Каркас приложения: package.json, TypeScript, Express, React/Vite, Vitest, ESLint, Prettier
 - [x] Шаг 1. `AGENTS.md` (≤200 строк, 4 раздела) + `CLAUDE.md` → `@AGENTS.md`
 - [ ] Переход: дальше работаем в сессии, запущенной из проекта (`cd ~/projects/library && claude`)
@@ -73,7 +73,7 @@ docs/         plan.md, memory.md, about.md
 - [ ] Шаг 5. Playwright MCP: сценарий, скриншот, консоль; e2e «выдать книгу → вернуть» до зелёного
 - [ ] Отчёт: `docs/about.md` (стек, правило и его проверка, навыки, 4 скриншота)
 - [ ] Отчёт: README — «Как агент работает в проекте»; режим по умолчанию одной строкой
-- [ ] Push на GitHub, ссылка на сдачу
+- [ ] Сделать репозиторий public (`gh repo edit --visibility public`), push, ссылка на сдачу
 
 ## Roadmap (следующие модули)
 
