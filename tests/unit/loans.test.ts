@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { checkoutBook, isOverdue, returnBook } from '../../src/domain/loans.js';
+import { availableCopies, checkoutBook, isOverdue, returnBook } from '../../src/domain/loans.js';
 import type { Book, Loan, Reader } from '../../src/domain/types.js';
 
 const now = new Date('2026-10-17T10:00:00Z');
@@ -176,5 +176,28 @@ describe('isOverdue', () => {
     const returned = loan({ dueAt: new Date(now.getTime() - day), returnedAt: now });
 
     expect(isOverdue(returned, now)).toBe(false);
+  });
+});
+
+describe('availableCopies', () => {
+  it('counts all copies as free when there are no loans', () => {
+    expect(availableCopies(book, [])).toBe(2);
+  });
+
+  it('subtracts active loans of the book', () => {
+    expect(availableCopies(book, [loan()])).toBe(1);
+  });
+
+  it('ignores returned loans and loans of other books', () => {
+    const returned = loan({ id: 'l1', returnedAt: now });
+    const otherBook = loan({ id: 'l2', bookId: 'b2' });
+
+    expect(availableCopies(book, [returned, otherBook])).toBe(2);
+  });
+
+  it('returns zero instead of negative when copies were written off', () => {
+    const active = [loan({ id: 'l1' }), loan({ id: 'l2' })];
+
+    expect(availableCopies({ ...book, copies: 1 }, active)).toBe(0);
   });
 });

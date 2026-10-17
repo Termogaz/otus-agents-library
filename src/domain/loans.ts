@@ -25,7 +25,7 @@ export function checkoutBook({
   const active = loans.filter((l) => l.returnedAt === null);
 
   // Нехватка экземпляров проверяется раньше лимита: это свойство книги, а не читателя
-  if (active.filter((l) => l.bookId === book.id).length >= book.copies) {
+  if (availableCopies(book, active) === 0) {
     return { ok: false, code: 'NO_FREE_COPIES' };
   }
   if (active.filter((l) => l.readerId === reader.id).length >= policy.loanLimit) {
@@ -43,6 +43,13 @@ export function checkoutBook({
       returnedAt: null,
     },
   };
+}
+
+// Свободные экземпляры книги: всего минус невозвращённые выдачи. Если экземпляры списали
+// и выдач больше, чем экземпляров, свободных 0, а не минус
+export function availableCopies(book: Book, loans: readonly Loan[]): number {
+  const issued = loans.filter((l) => l.bookId === book.id && l.returnedAt === null).length;
+  return Math.max(book.copies - issued, 0);
 }
 
 export function returnBook({ loan, now }: { loan: Loan; now: Date }): LoanResult {

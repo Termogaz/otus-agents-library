@@ -3,6 +3,29 @@
 Журнал сессий и шагов: что сделано, какие решения приняты, что дальше, на чём споткнулись.
 Новые записи — сверху. Формат записи: **Сделано / Решение / Дальше / Ловушки**.
 
+## 2026-10-18 — Шаг 0.3c: API (ветка `feat/domain`)
+
+**Сделано.** `createApp({ repo, now?, newId? })`. Маршруты: `GET/POST /api/books` (`available` в
+списке), `GET/POST /api/readers`, `GET /api/loans` (`overdue`, фильтры `bookId`/`readerId`),
+`POST /api/loans`, `POST /api/loans/:id/return`. В домен по TDD добавлено правило
+`availableCopies`, на нём теперь проверка в `checkoutBook`. 19 API-тестов в `tests/unit/api.test.ts`
+(18 сначала красные) и 4 доменных. `npm run check` зелёный, всего 123 теста.
+`index.ts` хранит данные в `data/library.json`, путь можно сменить через `LIBRARY_DATA_FILE`.
+
+**Решение.** Ответы на отказ: `400 VALIDATION_ERROR` (zod, `details` — ошибки полей),
+`400 INVALID_JSON`, `404 BOOK_NOT_FOUND / READER_NOT_FOUND / LOAN_NOT_FOUND`, `409` с кодом домена,
+`500 INTERNAL_ERROR`. Выдача и возврат идут через очередь в `createApp`: прочитать → проверить →
+сохранить без перемешивания запросов. Тест на одновременную выдачу последнего экземпляра проверен
+от обратного: без очереди он падает (`[201, 201]`). В `checkoutBook` передаются все выдачи: если
+склеить выдачи книги и выдачи читателя, общая выдача посчитается дважды.
+
+**Дальше.** PR `feat/domain` (0.3a–c). Затем шаг 5 — UI выдачи и возврата, Playwright MCP, e2e.
+
+**Ловушки.** Проверка rule пройдена: при правках в `src/server/` и `tests/` rule `domain.md` не
+загружался, а при `Read` файла `src/domain/loans.ts` загрузился. Линтер-hook дважды поймал ошибку
+сразу после правки: неиспользуемый импорт до тестов и `prefer-const` при временном выключении
+очереди. `GET /api/books` читает все выдачи, для MVP это нормально.
+
 ## 2026-10-18 — Шаг 0.3b: репозиторий и JSON-файл (ветка `feat/domain`)
 
 **Сделано.** `src/server/repository.ts` содержит интерфейс `LibraryRepository` (list/get/save для
