@@ -3,6 +3,47 @@
 Журнал сессий и шагов: что сделано, какие решения приняты, что дальше, на чём споткнулись.
 Новые записи — сверху. Формат записи: **Сделано / Решение / Дальше / Ловушки**.
 
+## 2026-10-18 — Шаг 4: проверка hook'а `reviewer` в новой сессии (ветка `feat/hooks`)
+
+**Сделано.** Агент `reviewer` вызван напрямую. `git status --short` прошёл. `touch hook-probe.txt`
+заблокирован hook'ом `reviewer-readonly` («команды нет в белом списке»), файл не создан. Ловушка
+прошлой записи подтверждена: hook из frontmatter агента начинает работать только в новой сессии.
+
+**Решение.** Белый список не расширяем без согласования. Поддержку `git -C <путь>` пока не добавляем.
+
+**Дальше.** PR `feat/hooks`, затем шаг 0.3.
+
+**Ловушки.** Белый список сверяет начало строки команды. Поэтому `git -C /home/.../library status --short`
+получает отказ, хотя только читает. Агенты склонны писать абсолютные пути, и reviewer будет получать
+лишние отказы. Защиту это не ослабляет. Если мешает, разрешить `git -C <путь> <разрешённая подкоманда>`
+с тестом.
+
+## 2026-10-18 — Шаг 4: hooks (ветка `feat/hooks`)
+
+**Сделано.** Три hook'а на TypeScript в `.claude/hooks/`, общий разбор shell — `lib/shell.ts`.
+`protect-files` (PreToolUse `Edit|Write|Bash`) блокирует запись в `.env*`, `.git/`, `package-lock.json`,
+включая `>`, `sed -i`, `tee`, `rm`, `mv`, `cp`. `format-and-lint` (PostToolUse `Edit|Write`) запускает
+Prettier и ESLint, ошибки ESLint возвращает агенту кодом 2. `reviewer-readonly` подключён во frontmatter
+`reviewer.md` и пропускает только белый список (`git status/diff/log/show`, просмотр веток, `npm run check`,
+e2e, `ls/cat/head/tail/wc`). Логика — чистые функции, тесты в `tests/unit/` по TDD.
+Проверено в сессии: `echo > .env` и `sed -i package-lock.json` заблокированы hook'ом; неотформатированный
+`.ts` переформатирован, ошибка `no-unused-vars` пришла агенту.
+
+**Решение.** Hooks на TS запускаются через `node_modules/.bin/tsx`: Node в WSL собран без поддержки
+TypeScript (`ERR_NO_TYPESCRIPT`), а `tsx` уже есть в devDependencies. `tsconfig.json` расширен
+(`include` += `.claude/hooks`), правила не ослаблены. Вход hook'а проверяется zod. При ошибке разбора
+PreToolUse-hook'и отказывают (fail closed).
+
+**Дальше.** Проверить hook `reviewer` в новой сессии, затем PR `feat/hooks`. После — шаг 0.3.
+
+**Ловушки.** Hook во frontmatter `reviewer` в той же сессии, где его добавили, не сработал: `touch`
+прошёл, хотя скрипт вручную отказывает (код 2). Вероятно, определения агентов читаются при старте
+сессии — проверять в новой. Первая версия `protect-files` ложно сработала на тело heredoc (текст
+`echo > .env` внутри `python3 - <<'EOF'`) — тела heredoc теперь вырезаются, есть тесты.
+Без `npm ci` hooks не запустятся: ошибка запуска (не код 2) не блокирует вызов, защита молча пропадёт.
+Bash-разбор — эвристика: `$VAR`, `$(...)`, `python -c` не раскрываются. Порядок: сначала `deny`
+из permissions, потом hook — Write в `.env*` режет уже permissions.
+
 ## 2026-10-18 — Шаг 3: permissions (ветка `feat/permissions`)
 
 **Сделано.** В `.claude/settings.json` — `permissions`: allow для проверок (`npm run check`,
