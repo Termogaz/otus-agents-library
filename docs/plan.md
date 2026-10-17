@@ -79,7 +79,9 @@ docs/         plan.md, memory.md, about.md
   - [x] 0.3a. Домен: `checkoutBook`, `returnBook`, `isOverdue`; лимит 3, срок 14 дней (`src/domain/loans.ts`)
   - [x] 0.3b. Интерфейс репозитория + JSON-файл (`src/server/repository.ts`, `json-file-repository.ts`)
   - [x] 0.3c. API на zod + supertest; отказ домена → `409` с кодом (`src/server/app.ts`, `tests/unit/api.test.ts`)
-- [ ] Шаг 5. Playwright MCP: сценарий, скриншот, консоль; e2e «выдать книгу → вернуть» до зелёного
+- [x] Шаг 5. Playwright MCP: сценарий, скриншот, консоль; e2e «выдать книгу → вернуть» до зелёного
+  - [x] 5a. UI выдачи и возврата (`src/client/`), e2e `tests/e2e/loans.spec.ts` зелёный; `.mcp.json` с `@playwright/mcp@0.0.83`
+  - [x] 5b. Агент прошёл сценарий через MCP: скриншоты `docs/screenshots/mcp-loan-*.png`; по консоли убран 404 `favicon.ico`
 - [ ] Отчёт: `docs/about.md` (стек, правило и его проверка, навыки, 4 скриншота)
 - [ ] Отчёт: README — «Как агент работает в проекте»; режим по умолчанию одной строкой
 - [ ] Сделать репозиторий public (`gh repo edit --visibility public`), push, ссылка на сдачу
@@ -87,6 +89,7 @@ docs/         plan.md, memory.md, about.md
 ## Roadmap (следующие модули)
 
 - Хранилище: SQLite + миграции вместо JSON.
+- Тесты: отдельный файл данных для e2e (путь через переменную окружения сервера), чтобы e2e не засорял `data/library.json` dev-сервера.
 - Правила: бронирование и очередь, продление, пени, блокировка должников.
 - Роли: библиотекарь / читатель, авторизация.
 - Интеграции: карточка книги по ISBN (Open Library), поиск, рекомендации через LLM.
