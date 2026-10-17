@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import express, { type ErrorRequestHandler } from 'express';
 import { z } from 'zod';
 import { availableCopies, checkoutBook, isOverdue, returnBook } from '../domain/index.js';
-import type { LibraryRepository } from './repository.js';
+import { StorageError, type LibraryRepository } from './repository.js';
 
 export type AppDeps = {
   repo: LibraryRepository;
@@ -33,6 +33,7 @@ const bookInput = z.object({
 const readerInput = z.object({ name: text, contact: text });
 const loanInput = z.object({ bookId: text, readerId: text });
 const loanQuery = z.object({ bookId: text.optional(), readerId: text.optional() });
+const idParams = z.object({ id: text });
 
 function parse<T>(schema: z.ZodType<T>, value: unknown): T {
   const result = schema.safeParse(value);
@@ -106,8 +107,9 @@ export function createApp({ repo, now = () => new Date(), newId = randomUUID }: 
   });
 
   app.post('/api/loans/:id/return', async (req, res) => {
+    const { id } = parse(idParams, req.params);
     const loan = await serial(async () => {
-      const existing = await repo.getLoan(req.params.id);
+      const existing = await repo.getLoan(id);
       if (!existing) throw new ApiError(404, 'LOAN_NOT_FOUND');
 
       const result = returnBook({ loan: existing, now: now() });
@@ -132,7 +134,9 @@ export function createApp({ repo, now = () => new Date(), newId = randomUUID }: 
       }
     }
     console.error(error);
-    res.status(500).json({ code: 'INTERNAL_ERROR' });
+    // Сбой хранилища — вина сервера, поэтому 500, но с кодом: по нему видно, что чинить файл данных
+    const code = error instanceof StorageError ? error.code : 'INTERNAL_ERROR';
+    res.status(500).json({ code });
   };
   app.use(handleError);
 

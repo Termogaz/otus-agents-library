@@ -1,4 +1,4 @@
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import request from 'supertest';
@@ -206,6 +206,13 @@ describe('POST /api/loans/:id/return', () => {
     expect(res.body.code).toBe('LOAN_NOT_FOUND');
   });
 
+  it('rejects blank loan id', async () => {
+    const res = await request(app).post('/api/loans/%20/return');
+
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe('VALIDATION_ERROR');
+  });
+
   it('rejects second return of the same loan', async () => {
     const loan = await checkout(await createBook(), await createReader());
     await request(app).post(`/api/loans/${loan.body.id}/return`);
@@ -214,6 +221,19 @@ describe('POST /api/loans/:id/return', () => {
 
     expect(res.status).toBe(409);
     expect(res.body.code).toBe('LOAN_ALREADY_RETURNED');
+  });
+});
+
+describe('storage failure', () => {
+  it('responds 500 with the storage error code when the data file is corrupted', async () => {
+    const file = join(dir, 'corrupted.json');
+    await writeFile(file, '{ not json');
+    const broken = createApp({ repo: new JsonFileRepository(file) });
+
+    const res = await request(broken).get('/api/books');
+
+    expect(res.status).toBe(500);
+    expect(res.body.code).toBe('INVALID_STORAGE_FILE');
   });
 });
 
