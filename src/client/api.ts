@@ -36,6 +36,7 @@ const messages: Record<string, string> = {
   BOOK_NOT_FOUND: 'Книга не найдена',
   READER_NOT_FOUND: 'Читатель не найден',
   LOAN_NOT_FOUND: 'Выдача не найдена',
+  INTERNAL_ERROR: 'Внутренняя ошибка сервера',
 };
 
 export function errorMessage(error: unknown): string {
@@ -49,12 +50,13 @@ async function call<T>(method: 'GET' | 'POST', path: string, body?: unknown): Pr
     headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
-  const data: unknown = await res.json();
   if (!res.ok) {
+    // Тело ошибки может быть не JSON (например, 502 от прокси Vite) — это всё равно ошибка сервера
+    const data: unknown = await res.json().catch(() => null);
     const code = (data as { code?: unknown } | null)?.code;
     throw new ApiError(typeof code === 'string' ? code : 'INTERNAL_ERROR');
   }
-  return data as T;
+  return (await res.json()) as T;
 }
 
 export const api = {
@@ -65,5 +67,6 @@ export const api = {
   listLoans: () => call<LoanView[]>('GET', '/api/loans'),
   checkout: (bookId: string, readerId: string) =>
     call<unknown>('POST', '/api/loans', { bookId, readerId }),
-  returnLoan: (loanId: string) => call<unknown>('POST', `/api/loans/${loanId}/return`),
+  returnLoan: (loanId: string) =>
+    call<unknown>('POST', `/api/loans/${encodeURIComponent(loanId)}/return`),
 };
