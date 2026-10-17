@@ -67,10 +67,11 @@ docs/         plan.md, memory.md, about.md
 - [x] Шаг 2. Skills: `write-tests` (вызывает агент), `review-step` (вызываю вручную; read-only через subagent `reviewer`)
 - [x] Шаг 2. Проверка skill `/review-step` на ветке `feat/skills`: замечания ревью исправлены
 - [ ] Шаг 2. Проверка skill `write-tests` — автовызов в шаге 0.3
-- [ ] Шаг 3. Permissions allow / ask / deny; режим по умолчанию; `settings.local.json` в `.gitignore`
+- [x] Шаг 3. Permissions allow / ask / deny; режим по умолчанию `acceptEdits`; `settings.local.json` в `.gitignore`
+- [x] Шаг 3. Проверка: `cat .env`, `Read(.env)`, `git push --force` — denied; `git push` — запрос подтверждения
 - [ ] Шаг 4. Hooks: линтер/форматтер после правки; блокировка защищённых файлов
 - [x] Шаг 4. Память: `docs/memory.md` заведён досрочно (по ревью шага 2), записи — с шага 0
-- [ ] Шаг 3/4. Read-only агента `reviewer` закрыть permissions или hook (сейчас держится на промпте)
+- [ ] Шаг 4. Read-only агента `reviewer`: hook `PreToolUse` во frontmatter агента (permissions нельзя ограничить одним subagent'ом)
 - [ ] Шаг 0.3. MVP-домен через TDD — уже внутри настроенной среды; заодно демонстрации:
       rule для `src/domain/` vs `src/server/`, автовызов `write-tests` (закрывает проверку skills шага 2),
       срабатывание линтер-hook, продолжение во второй сессии по памяти
