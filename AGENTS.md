@@ -55,6 +55,7 @@ tests/unit/   Vitest; tests/e2e/ — Playwright
 - Тесты: `tests/unit/<модуль>.test.ts`; имена тестов на английском, описывают поведение:
   `it('rejects loan when reader reached the limit')`.
 - Тексты интерфейса — на русском.
+- Комментарии в коде — на русском.
 
 ## Правила работы
 
@@ -62,6 +63,10 @@ tests/unit/   Vitest; tests/e2e/ — Playwright
 
 - Работа — в ветках `feat/<кратко>` или `fix/<кратко>`; в `main` только через Pull Request.
 - Коммиты — Conventional Commits: `feat: ...`, `fix: ...`, `test: ...`, `docs: ...`, `chore: ...`.
+  Тип — по-английски, описание и тело коммита — на русском: `docs: добавить rules для domain и e2e`.
+  Заголовок и описание Pull Request — тоже на русском.
+- Без атрибуции агента: никаких `Co-Authored-By: Claude ...` в коммитах и
+  «Generated with Claude Code» в Pull Request.
 - Бизнес-правила — через TDD: сначала падающий тест, затем минимальный код, затем рефакторинг.
 - Задача готова, только когда `npm run check` зелёный, а для изменений UI — и `npm run test:e2e`.
 - Крупную задачу делить на шаги, проверяемые по отдельности; отмечать прогресс в `docs/plan.md`.
@@ -83,5 +88,9 @@ tests/unit/   Vitest; tests/e2e/ — Playwright
 
 - npm через локальный HTTP-прокси может падать с `ECONNRESET`. Решение — запускать npm
   с отключёнными переменными прокси: `env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY npm ci`.
+- `npm run test:e2e` с переменными прокси падает с `Timed out waiting 60000ms from config.webServer`:
+  запускать так же через `env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY`.
+- Chromium для Playwright в WSL: один раз `npx playwright install chromium` и
+  `sudo npx playwright install-deps chromium` (иначе `libnspr4.so: cannot open shared object file`).
 - Проект лежит в файловой системе WSL (`~/projects/library`), не на `/mnt/c`: там npm и
   hooks работают в разы быстрее.
