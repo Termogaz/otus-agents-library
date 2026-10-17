@@ -83,5 +83,9 @@ tests/unit/   Vitest; tests/e2e/ — Playwright
 
 - npm через локальный HTTP-прокси может падать с `ECONNRESET`. Решение — запускать npm
   с отключёнными переменными прокси: `env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY npm ci`.
+- `npm run test:e2e` с переменными прокси падает с `Timed out waiting 60000ms from config.webServer`:
+  запускать так же через `env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY`.
+- Chromium для Playwright в WSL: один раз `npx playwright install chromium` и
+  `sudo npx playwright install-deps chromium` (иначе `libnspr4.so: cannot open shared object file`).
 - Проект лежит в файловой системе WSL (`~/projects/library`), не на `/mnt/c`: там npm и
   hooks работают в разы быстрее.
