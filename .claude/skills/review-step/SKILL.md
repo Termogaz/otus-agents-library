@@ -5,7 +5,7 @@ disable-model-invocation: true
 argument-hint: '[база для сравнения, по умолчанию main]'
 context: fork
 agent: reviewer
-allowed-tools: Read, Grep, Glob, Bash(git diff:*), Bash(git log:*), Bash(git status:*), Bash(npm run check), Bash(env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY npm run test:e2e)
+allowed-tools: Read, Grep, Glob, Bash(git diff:*), Bash(git log:*), Bash(git status:*), Bash(git show:*), Bash(git branch:*), Bash(npm run check), Bash(env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY npm run test:e2e)
 ---
 
 # Ревью шага
@@ -38,8 +38,10 @@ git diff <база>...HEAD
 7. **E2E** (если менялись `tests/e2e/`): нет `waitForTimeout`, CSS/XPath-селекторов; локаторы по роли.
 8. **Именование и язык.** Файлы `kebab-case.ts`, компоненты `PascalCase.tsx`; тексты UI и комментарии — на русском.
 9. **Защищённое.** Не тронуты `.env*`, `package-lock.json` вручную; новые зависимости — только если согласованы.
-10. **Коммиты.** Conventional Commits, описание на русском, без `Co-Authored-By` и атрибуции агента.
+10. **Коммиты и ветка.** Ветка `feat/<кратко>` или `fix/<кратко>`; Conventional Commits, описание на русском,
+    без `Co-Authored-By` и атрибуции агента.
 11. **План.** Шаг отмечен в `docs/plan.md`.
+12. **Память.** В `docs/memory.md` есть запись по шагу: сделано / решение / дальше / ловушки.
 
 ## 3. Запустить проверки
 
