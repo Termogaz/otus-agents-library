@@ -58,7 +58,7 @@ docs/         plan.md, memory.md, about.md
 демонстрацией правил, навыков, hooks и памяти.
 
 - [x] Шаг 0. Выбор проекта, агента и стека; место проекта `~/projects/library`
-- [x] Шаг 0.1. `git init`, `.gitignore`, репозиторий на GitHub (Termogaz/otus-agents-library; временно private, сделать public перед сдачей)
+- [x] Шаг 0.1. `git init`, `.gitignore`, репозиторий на GitHub (Termogaz/otus-agents-library; public с 2026-10-18)
 - [x] Шаг 0.2. Каркас приложения: package.json, TypeScript, Express, React/Vite, Vitest, ESLint, Prettier
 - [x] Шаг 1. `AGENTS.md` (≤200 строк, 4 раздела) + `CLAUDE.md` → `@AGENTS.md`
 - [x] Переход: дальше работаем в сессии, запущенной из проекта (`cd ~/projects/library && claude`)
@@ -87,7 +87,7 @@ docs/         plan.md, memory.md, about.md
 - [x] Сверка с текстом ДЗ (subagent `reviewer`): README — обоснование режима, права, запуск тестов; навыки в `about.md` по одной строке; `git add`/`git commit` в allow
 - [x] Скриншоты по ДЗ (снимает человек): `env-blocked.png`, `lint-hook-1.png` + `lint-hook-2.png`, `memory-continue.png`, `e2e-green.png` в `docs/screenshots/`
 - [x] Повторная сверка с ДЗ: `git branch` в allow сужен до просмотра; подпись про `.env` уточнена; скриншот `env-write-blocked.png`
-- [ ] Сделать репозиторий public (`gh repo edit --visibility public`), push, ссылка на сдачу
+- [x] Сделать репозиторий public (`gh repo edit --visibility public`), push, ссылка на сдачу: https://github.com/Termogaz/otus-agents-library
 
 ## Roadmap (следующие модули)
 
