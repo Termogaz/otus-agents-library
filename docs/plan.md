@@ -82,8 +82,10 @@ docs/         plan.md, memory.md, about.md
 - [x] Шаг 5. Playwright MCP: сценарий, скриншот, консоль; e2e «выдать книгу → вернуть» до зелёного
   - [x] 5a. UI выдачи и возврата (`src/client/`), e2e `tests/e2e/loans.spec.ts` зелёный; `.mcp.json` с `@playwright/mcp@0.0.83`
   - [x] 5b. Агент прошёл сценарий через MCP: скриншоты `docs/screenshots/mcp-loan-*.png`; по консоли убран 404 `favicon.ico`
-- [x] Отчёт: `docs/about.md` (стек, правило и его проверка, навыки, 4 скриншота); скриншоты 3–4 (просрочка, лимит) сняты через MCP
+- [x] Отчёт: `docs/about.md` (стек, правило и его проверка, навыки, 4 обязательных скриншота); снимки UI через MCP — подраздел шага 5
 - [x] Отчёт: README — «Как агент работает в проекте»; режим по умолчанию одной строкой
+- [x] Сверка с текстом ДЗ (subagent `reviewer`): README — обоснование режима, права, запуск тестов; навыки в `about.md` по одной строке; `git add`/`git commit` в allow
+- [x] Скриншоты по ДЗ (снимает человек): `env-blocked.png`, `lint-hook-1.png` + `lint-hook-2.png`, `memory-continue.png`, `e2e-green.png` в `docs/screenshots/`
 - [ ] Сделать репозиторий public (`gh repo edit --visibility public`), push, ссылка на сдачу
 
 ## Roadmap (следующие модули)
