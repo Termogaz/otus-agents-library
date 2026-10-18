@@ -29,16 +29,16 @@ Claude Code. Код приложения писал агент внутри эт
 
 Принцип: важное дублируем жёстким уровнем, стиль и соглашения задаём мягким.
 
-| Уровень          | Файл                                        | Сила    | Что делает                                                                                                                              |
-| ---------------- | ------------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| Инструкции       | `AGENTS.md`, `CLAUDE.md` → `@AGENTS.md`     | мягкий  | стек, команды, слои, стиль, процесс (ветки, Conventional Commits, TDD, `npm run check`), запреты                                        |
-| Rules с `paths:` | `.claude/rules/domain.md`, `e2e.md`         | мягкий  | грузятся только при работе с `src/domain/` и `tests/e2e/`: нет I/O и `new Date()` в домене; в e2e нет `waitForTimeout` и CSS-селекторов |
-| Skills           | `.claude/skills/write-tests`, `review-step` | мягкий  | TDD для домена и API (агент вызывает сам); ревью шага перед PR (только вручную)                                                         |
-| Subagent         | `.claude/agents/reviewer.md`                | —       | read-only ревьюер, в нём работает `/review-step` (`context: fork`)                                                                      |
-| Permissions      | `.claude/settings.json`                     | жёсткий | allow — проверки и read-only git; ask — `git push`, `gh pr`, `npm install`; deny — `.env*`, `rm -rf`, `git push --force`, `npm publish` |
-| Hooks            | `.claude/hooks/*.ts`                        | жёсткий | `protect-files` (PreToolUse), `format-and-lint` (PostToolUse), `reviewer-readonly` (во frontmatter агента)                              |
-| MCP              | `.mcp.json`                                 | —       | `@playwright/mcp@0.0.83`: агент сам проходит сценарий в браузере                                                                        |
-| Память           | `docs/memory.md`, `docs/plan.md`            | —       | запись после каждого шага: Сделано / Решение / Дальше / Ловушки                                                                         |
+| Уровень          | Файл                                        | Сила    | Что делает                                                                                                                                                                                       |
+| ---------------- | ------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Инструкции       | `AGENTS.md`, `CLAUDE.md` → `@AGENTS.md`     | мягкий  | стек, команды, слои, стиль, процесс (ветки, Conventional Commits, TDD, `npm run check`), запреты                                                                                                 |
+| Rules с `paths:` | `.claude/rules/domain.md`, `e2e.md`         | мягкий  | грузятся только при работе с `src/domain/` и `tests/e2e/`: нет I/O и `new Date()` в домене; в e2e нет `waitForTimeout` и CSS-селекторов                                                          |
+| Skills           | `.claude/skills/write-tests`, `review-step` | мягкий  | TDD для домена и API (агент вызывает сам); ревью шага перед PR (только вручную)                                                                                                                  |
+| Subagent         | `.claude/agents/reviewer.md`                | —       | read-only ревьюер, в нём работает `/review-step` (`context: fork`)                                                                                                                               |
+| Permissions      | `.claude/settings.json`                     | жёсткий | allow — проверки и read-only git; ask — `git push`, `gh pr`, `npm install`; deny — `.env*`, правка `package-lock.json`, `rm -rf`, `git push --force`/`-f`, `git push origin main`, `npm publish` |
+| Hooks            | `.claude/hooks/*.ts`                        | жёсткий | `protect-files` (PreToolUse), `format-and-lint` (PostToolUse), `reviewer-readonly` (во frontmatter агента)                                                                                       |
+| MCP              | `.mcp.json`                                 | —       | `@playwright/mcp@0.0.83`: агент сам проходит сценарий в браузере                                                                                                                                 |
+| Память           | `docs/memory.md`, `docs/plan.md`            | —       | запись после каждого шага: Сделано / Решение / Дальше / Ловушки                                                                                                                                  |
 
 ### Инструкции: `AGENTS.md`
 
@@ -78,7 +78,8 @@ React, `fs`, `path`, вызов `new Date()` и отказ строкой. Он 
 - **`format-and-lint`** (PostToolUse, `Edit|Write`) — Prettier и ESLint после каждой правки.
   Ошибки ESLint возвращаются агенту, и он чинит их сразу.
 - **`reviewer-readonly`** — подключён во frontmatter `reviewer`, пропускает только белый
-  список команд (`git status/diff/log/show`, `npm run check`, e2e, просмотр файлов).
+  список команд (`git status/diff/log/show`, просмотр веток `git branch`, `npm run check`,
+  e2e, просмотр файлов `ls/cat/head/tail/wc`).
 
 Логика hooks — чистые функции на TypeScript, покрыта тестами в `tests/unit/`.
 
@@ -123,13 +124,19 @@ React, `fs`, `path`, вызов `new Date()` и отказ строкой. Он 
 
 ## Ограничения
 
-- Deny-правила и hook для Bash сверяют шаблоны в тексте команды, это не песочница.
-  `less .env`, `rm -r -f`, `git push origin HEAD:main`, а также `$VAR`, `$(...)` и
-  `python -c` их обходят. Защита рассчитана на случайную ошибку агента, а не на злой умысел.
+- Deny-правила для Bash — префиксы строки команды, это не песочница. Их обходят `less .env`
+  (вместо `cat .env`), `rm -r -f` (вместо `rm -rf`), `git push origin HEAD:main` (вместо
+  `git push origin main`).
+- Hook `protect-files` разбирает команду на слова: `rm -r -f .git` он поймает при любых флагах.
+  Но `$VAR`, `$(...)` и `python -c` он не раскрывает, поэтому запись через них проходит.
+  Чтение `.env*` через Bash hook не проверяет, только запись. Защита рассчитана на случайную
+  ошибку агента, а не на злой умысел.
 - Hooks запускаются через `node_modules/.bin/tsx`. Без `npm ci` hook не стартует, и защита
   молча пропадает: ошибка запуска не блокирует вызов.
 - Hook во frontmatter агента и rule начинают работать только в новой сессии.
-- Белый список `reviewer-readonly` сверяет начало команды, поэтому `git -C <путь> status`
-  получает лишний отказ.
+- Белый список `reviewer-readonly` строгий и даёт лишние отказы. `git -C <путь> status`
+  отклоняется: вторым словом стоит `-C`, а не разрешённая подкоманда. `grep` и `git grep` не
+  разрешены. Любой `|`, даже внутри шаблона, считается цепочкой. Расширение списка
+  (`grep`, `git grep`) отложено в отдельную ветку.
 - E2E пишет в тот же `data/library.json`, что и dev-сервер. Отдельный файл данных для e2e
   стоит в roadmap.
