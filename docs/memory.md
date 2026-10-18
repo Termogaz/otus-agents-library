@@ -17,7 +17,11 @@ allow / ask / deny, «Как запустить тесты»), `about.md` (на�
 **Решение.** Обязательные скриншоты терминала снимает человек: агент не видит своё окно. Ссылки
 на них в `about.md` уже стоят, файлы — `docs/screenshots/{env-blocked,lint-hook,memory-continue,e2e-green}.png`.
 
-**Дальше.** Снять 4 скриншота, `/review-step`, PR `fix/report`. Затем repo public и сдача.
+Скриншоты сняты владельцем: `env-blocked.png` (отказ `Read` и `cat .env` по deny), `lint-hook-1.png`
+и `lint-hook-2.png` (ошибка `no-unused-vars` от hook'а и исправление), `e2e-green.png` (`2 passed`),
+`memory-continue.png` (новая сессия назвала следующий шаг по плану и памяти).
+
+**Дальше.** `/review-step`, PR `fix/report`. Затем repo public и сдача.
 
 **Ловушки.** Задание перечисляет конкретные скриншоты, а не «любые 4». Сверять отчёт с
 текстом задания дословно, а не с пересказом в плане.

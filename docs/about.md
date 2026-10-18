@@ -108,7 +108,9 @@ deny или hook'ом `protect-files`.
 **2. Срабатывание линтера.** После правки с неиспользуемым импортом hook `format-and-lint`
 возвращает агенту ошибку ESLint, и агент её исправляет.
 
-![Срабатывание линтера](screenshots/lint-hook.png)
+![Hook возвращает ошибку ESLint no-unused-vars](screenshots/lint-hook-1.png)
+
+![Агент убирает импорт, повторная проверка проходит](screenshots/lint-hook-2.png)
 
 **3. Продолжение работы по памяти.** В новой сессии агент по `docs/plan.md` и `docs/memory.md`
 называет следующий шаг, а не начинает с нуля.
