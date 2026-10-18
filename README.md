@@ -54,13 +54,15 @@ permissions из `.claude/settings.json`.
 **Ограничения агента.** Мягкие правила (`AGENTS.md`, rules) дублируются жёсткими там, где
 ошибка дорого стоит:
 
-- permissions: нельзя читать `.env*`, делать `rm -rf`, `git push --force`, `npm publish`;
-  `git push` и `npm install` требуют подтверждения;
+- permissions: нельзя читать `.env*`, править `package-lock.json`, делать `rm -rf`,
+  `git push --force`, `git push origin main`, `npm publish`; `git push` и `npm install`
+  требуют подтверждения;
 - hook `protect-files` блокирует запись в `.env*`, `.git/` и `package-lock.json`, в том числе
   через Bash;
 - hook `reviewer-readonly` не даёт ревьюеру менять файлы.
 
-Эти проверки сверяют шаблоны команд, это не песочница. Что они ловят и как их можно обойти —
+Эти проверки сверяют шаблоны команд, это не песочница. Hooks работают только после `npm ci`:
+без него они не запускаются, и защита молча пропадает. Что они ловят и как их можно обойти —
 в разделе «Ограничения» [`docs/about.md`](docs/about.md#ограничения).
 
 ## Структура
@@ -72,4 +74,5 @@ src/client/   React UI
 tests/unit/   Vitest; tests/e2e/ — Playwright
 docs/         about.md (отчёт), plan.md (план), memory.md (журнал), screenshots/
 .claude/      rules, skills, agents, hooks, settings.json
+.mcp.json     Playwright MCP для проверки UI агентом
 ```
