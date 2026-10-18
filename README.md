@@ -56,7 +56,7 @@ npm run dev        # API на :3000, UI на http://localhost:5173
 
 - allow (без вопросов): `npm run check`, `npm test`, `npm run lint`, `npm run typecheck`,
   `npm run format`, `npx vitest run`, e2e, read-only git (`status`, `diff`, `log`, `show`,
-  `branch`), `git add`, `git commit`;
+  просмотр веток `git branch` без удаления и переименования), `git add`, `git commit`;
 - ask (подтверждает человек): `git push`, `gh pr create`, `gh pr merge`, `npm install`;
 - deny: чтение и правка `.env*`, правка `package-lock.json`, `rm -rf`, `git push --force`,
   `git push origin main`, `npm publish`;

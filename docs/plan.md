@@ -86,6 +86,7 @@ docs/         plan.md, memory.md, about.md
 - [x] Отчёт: README — «Как агент работает в проекте»; режим по умолчанию одной строкой
 - [x] Сверка с текстом ДЗ (subagent `reviewer`): README — обоснование режима, права, запуск тестов; навыки в `about.md` по одной строке; `git add`/`git commit` в allow
 - [x] Скриншоты по ДЗ (снимает человек): `env-blocked.png`, `lint-hook-1.png` + `lint-hook-2.png`, `memory-continue.png`, `e2e-green.png` в `docs/screenshots/`
+- [x] Повторная сверка с ДЗ: `git branch` в allow сужен до просмотра; подпись про `.env` уточнена; скриншот `env-write-blocked.png`
 - [ ] Сделать репозиторий public (`gh repo edit --visibility public`), push, ссылка на сдачу
 
 ## Roadmap (следующие модули)
