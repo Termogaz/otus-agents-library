@@ -27,8 +27,7 @@ npm run dev        # API на :3000, UI на http://localhost:5173
 
 ## Как агент работает в проекте
 
-Режим по умолчанию — `acceptEdits`: агент правит файлы без вопросов, а команды проходят через
-permissions из `.claude/settings.json`.
+Режим по умолчанию — `acceptEdits`: правки файлов видны в git и откатываются, их сразу проверяют hooks, а риск несут команды — они остаются под allow / ask / deny.
 
 **Контекст.** При старте сессии агент читает `CLAUDE.md`, а через него `AGENTS.md` (правила
 для любого агента) и `docs/plan.md` (план и прогресс). Журнал `docs/memory.md` хранит, что
@@ -51,12 +50,15 @@ permissions из `.claude/settings.json`.
    `reviewer`, замечания исправляются в той же ветке.
 8. Push и PR — только с подтверждения человека, merge делает человек.
 
-**Ограничения агента.** Мягкие правила (`AGENTS.md`, rules) дублируются жёсткими там, где
-ошибка дорого стоит:
+**Права и ограничения агента.** Мягкие правила (`AGENTS.md`, rules) дублируются жёсткими там,
+где ошибка дорого стоит. Права заданы в `.claude/settings.json`:
 
-- permissions: нельзя читать `.env*`, править `package-lock.json`, делать `rm -rf`,
-  `git push --force`, `git push origin main`, `npm publish`; `git push` и `npm install`
-  требуют подтверждения;
+- allow (без вопросов): `npm run check`, `npm test`, `npm run lint`, `npm run typecheck`,
+  `npm run format`, `npx vitest run`, e2e, read-only git (`status`, `diff`, `log`, `show`,
+  `branch`), `git add`, `git commit`;
+- ask (подтверждает человек): `git push`, `gh pr create`, `gh pr merge`, `npm install`;
+- deny: чтение и правка `.env*`, правка `package-lock.json`, `rm -rf`, `git push --force`,
+  `git push origin main`, `npm publish`;
 - hook `protect-files` блокирует запись в `.env*`, `.git/` и `package-lock.json`, в том числе
   через Bash;
 - hook `reviewer-readonly` не даёт ревьюеру менять файлы.
@@ -64,6 +66,18 @@ permissions из `.claude/settings.json`.
 Эти проверки сверяют шаблоны команд, это не песочница. Hooks работают только после `npm ci`:
 без него они не запускаются, и защита молча пропадает. Что они ловят и как их можно обойти —
 в разделе «Ограничения» [`docs/about.md`](docs/about.md#ограничения).
+
+**Как запустить тесты.**
+
+```bash
+npm test                                                     # все unit и API тесты
+npx vitest run tests/unit/loans.test.ts -t "<имя теста>"     # один тест
+npm run test:e2e                                             # e2e, сам поднимает npm run dev
+npm run check                                                # типы, линтер, форматирование, unit
+```
+
+Если npm ходит через локальный HTTP-прокси, e2e падает по таймауту `webServer`. Тогда запускать
+так: `env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY npm run test:e2e`.
 
 ## Структура
 
