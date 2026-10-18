@@ -83,7 +83,7 @@ docs/         plan.md, memory.md, about.md
   - [x] 5a. UI выдачи и возврата (`src/client/`), e2e `tests/e2e/loans.spec.ts` зелёный; `.mcp.json` с `@playwright/mcp@0.0.83`
   - [x] 5b. Агент прошёл сценарий через MCP: скриншоты `docs/screenshots/mcp-loan-*.png`; по консоли убран 404 `favicon.ico`
 - [x] Отчёт: `docs/about.md` (стек, правило и его проверка, навыки, 4 скриншота); скриншоты 3–4 (просрочка, лимит) сняты через MCP
-- [ ] Отчёт: README — «Как агент работает в проекте»; режим по умолчанию одной строкой
+- [x] Отчёт: README — «Как агент работает в проекте»; режим по умолчанию одной строкой
 - [ ] Сделать репозиторий public (`gh repo edit --visibility public`), push, ссылка на сдачу
 
 ## Roadmap (следующие модули)
