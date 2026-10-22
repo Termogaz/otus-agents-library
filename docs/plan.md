@@ -89,6 +89,18 @@ docs/         plan.md, memory.md, about.md
 - [x] Повторная сверка с ДЗ: `git branch` в allow сужен до просмотра; подпись про `.env` уточнена; скриншот `env-write-blocked.png`
 - [x] Сделать репозиторий public (`gh repo edit --visibility public`), push, ссылка на сдачу: https://github.com/Termogaz/otus-agents-library
 
+## Модуль 2: агентно-ориентированный пайплайн
+
+ДЗ-1 заморожено тегом `hw1-submitted`; ДЗ-2 ведём в этом же репозитории, ветка `feat/module-2`.
+
+- [x] Шаг 0. Тег `hw1-submitted` на GitHub, ветка `feat/module-2`
+- [ ] Шаг 1. GSD: установка, разбор кодовой базы, единый источник плана, architecture, security-checklist
+- [ ] Шаг 2. Память: claude-mem (или аналог), проверка между сессиями
+- [ ] Шаг 3. Быстрые команды и auto hooks (`SessionStart`, `PreCompact`)
+- [ ] Шаг 4. Управление контекстом: автосжатие и чек-пойнты, скриншоты usage до и после
+- [ ] Шаг 5. Discovery в GSD для следующей вехи (продление и пени)
+- [ ] Шаг 6. README «Модуль 2», PR, `npm run check`
+
 ## Roadmap (следующие модули)
 
 - Хранилище: SQLite + миграции вместо JSON.
