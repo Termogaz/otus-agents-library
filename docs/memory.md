@@ -3,6 +3,26 @@
 Журнал сессий и шагов: что сделано, какие решения приняты, что дальше, на чём споткнулись.
 Новые записи — сверху. Формат записи: **Сделано / Решение / Дальше / Ловушки**.
 
+## 2026-10-22 — Модуль 2, шаг 1б: инициализация GSD-проекта (ветка `feat/module-2`)
+
+**Сделано.** `/gsd-map-codebase` (4 агента, `.planning/codebase/`, 7 файлов), `/gsd-new-project`:
+`PROJECT.md`, `config.json`, исследование `.planning/research/` (4 агента + синтез),
+`REQUIREMENTS.md` (23 требования v1), `ROADMAP.md` (веха v1.0 ДЗ-2, 5 фаз), `STATE.md`.
+Текст задания — `docs/homework-2.md`. `validate.health` — healthy.
+
+**Решение.** Веха GSD = шаги ДЗ-2 (процесс), Discovery — «продление и пени» (фаза 4).
+`commit_docs: false` и `git.create_tag: false`: `.planning/` коммитим вручную по-русски,
+тег `hw2-submitted` — вручную. `.claude/CLAUDE.md` от GSD не генерируем. `.planning/` — в
+`.prettierignore`. Режим interactive, coarse, sequential, профиль моделей adaptive.
+
+**Дальше.** `/gsd-onboard` (запишет `.planning/onboarding/SUMMARY.md`), затем фаза 1:
+`/gsd-discuss-phase 1`. Первым делом — снимки `/context` и `/usage` «до».
+
+**Ловушки.** Claude Code не даёт субагенту записать файл с именем `SUMMARY.md` — синтезатор
+вернул текст, файл сохранил оркестратор. GSD поставил 18 hooks и широкие allow
+(`git commit *`, `pkill *`) в `settings.local.json` — вне git. Монитор контекста GSD молчит
+без `statusLine`. Документы, которые пишут скрипты GSD, не проходят Prettier.
+
 ## 2026-10-22 — Модуль 2, шаг 1а: установка GSD Core (ветка `feat/module-2`)
 
 **Сделано.** «gsd-core» из ДЗ — это `@opengsd/gsd-core` (преемник архивного
