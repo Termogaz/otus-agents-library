@@ -75,6 +75,9 @@
 | `.planning/` в git, вне Prettier | План — часть сдачи; файлы пишут скрипты GSD | — Pending |
 | Discovery — тема «продление и пени» | Задел под следующие ДЗ, уже был в roadmap ДЗ-1 | — Pending |
 | Файлы самого GSD Core — вне git (переустановка `npx @opengsd/gsd-core@1.18.0`) | Сторонний код, не результат работы | ✓ Good |
+| `commit_docs: false` — `.planning/` коммитим вручную, сообщения на русском | Автокоммиты GSD на английском противоречат `AGENTS.md` | — Pending |
+| `git.create_tag: false` — тег `hw2-submitted` ставим вручную | Как `hw1-submitted`, без тегов GSD вида `v1.0` | — Pending |
+| Не генерировать `.claude/CLAUDE.md` от GSD | Второй файл инструкций дублирует `AGENTS.md`; ссылку на GSD добавим в фазе 1 по согласию | — Pending |
 
 ## Evolution
 
