@@ -3,6 +3,29 @@
 Журнал сессий и шагов: что сделано, какие решения приняты, что дальше, на чём споткнулись.
 Новые записи — сверху. Формат записи: **Сделано / Решение / Дальше / Ловушки**.
 
+## 2026-10-22 — Модуль 2, шаг 1а: установка GSD Core (ветка `feat/module-2`)
+
+**Сделано.** «gsd-core» из ДЗ — это `@opengsd/gsd-core` (преемник архивного
+`get-shit-done-cc`; пакет `gsd-core` без scope — заглушка). Пакету нужен Node ≥ 24: поставлены
+nvm 0.40.8 и Node 24.22.1 (default), из `~/.npmrc` убран `prefix` (копия `~/.npmrc.bak`).
+Установлено `npx @opengsd/gsd-core@1.18.0 --claude --local`: 72 команды `/gsd-*`, 35 агентов,
+движок `.claude/gsd-core/`, 18 hooks — в `.claude/settings.local.json` (наш `settings.json`
+не тронут). `npm run check` зелёный на Node 24.
+
+**Решение.** Файлы установки GSD (836 шт., ~17 МБ) — в `.gitignore`, `eslint.config.js`
+и `.prettierignore` точными шаблонами `gsd-*`; восстанавливаются той же командой. В git идут
+только артефакты `.planning/`. Наши `.claude/hooks/*.ts` по-прежнему линтятся.
+
+**Дальше.** Перезапуск Claude Code (Node 24 в PATH, команды `/gsd-*`), затем `/gsd-onboard`
+→ `/gsd-map-codebase`; в `.planning/config.json`: `git.branching_strategy: none`,
+`git.create_tag: false`, `response_language: ru`. Замерить задержку hooks GSD.
+
+**Ловушки.** Сессия Claude Code, запущенная до установки nvm, видит Node 22 — GSD работает
+только в новой сессии. nvm не активируется при `prefix` в `~/.npmrc`. Установщик nvm
+без прокси зависает на `git fetch`; с прокси — проходит. `pkill -f <шаблон>` убивает
+собственную команду, если шаблон есть в её строке. `jq` в системе нет — JSON читать через `node -e`.
+Учебник GSD советует `--dangerously-skip-permissions` — не используем.
+
 ## 2026-10-22 — Модуль 2, шаг 0: заморозка ДЗ-1 (ветка `feat/module-2`)
 
 **Сделано.** Аннотированный тег `hw1-submitted` на `8274725` (состояние на сдачу ДЗ-1)

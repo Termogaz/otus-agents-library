@@ -95,6 +95,9 @@ docs/         plan.md, memory.md, about.md
 
 - [x] Шаг 0. Тег `hw1-submitted` на GitHub, ветка `feat/module-2`
 - [ ] Шаг 1. GSD: установка, разбор кодовой базы, единый источник плана, architecture, security-checklist
+  - [x] 1а. Node 24 (nvm); `@opengsd/gsd-core@1.18.0 --claude --local`; файлы GSD вне git и линтера
+  - [ ] 1б. `/gsd-onboard` → `/gsd-map-codebase`, настройки `.planning/config.json`
+  - [ ] 1в. Единый источник плана, architecture, security-checklist
 - [ ] Шаг 2. Память: claude-mem (или аналог), проверка между сессиями
 - [ ] Шаг 3. Быстрые команды и auto hooks (`SessionStart`, `PreCompact`)
 - [ ] Шаг 4. Управление контекстом: автосжатие и чек-пойнты, скриншоты usage до и после

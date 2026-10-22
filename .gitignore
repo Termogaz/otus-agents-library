@@ -29,6 +29,19 @@ data/*.tmp
 .claude/settings.local.json
 CLAUDE.local.md
 
+# GSD Core: файлы локальной установки (восстанавливаются:
+# npx @opengsd/gsd-core@1.18.0 --claude --local; hooks GSD — в settings.local.json)
+.claude/.gsd-profile
+.claude/gsd-*
+.claude/agents/gsd-*
+.claude/commands/gsd-*
+.claude/hooks/gsd-*
+.claude/hooks/lib/*.js
+.claude/hooks/lib/gsd-*
+.claude/hooks/managed-hooks-registry.cjs
+.claude/hooks/package.json
+.claude/scripts/
+
 # Личные заметки и выгрузки бесед (не публикуем)
 .local/
 

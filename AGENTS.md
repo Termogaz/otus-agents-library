@@ -92,5 +92,8 @@ tests/unit/   Vitest; tests/e2e/ — Playwright
   запускать так же через `env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY`.
 - Chromium для Playwright в WSL: один раз `npx playwright install chromium` и
   `sudo npx playwright install-deps chromium` (иначе `libnspr4.so: cannot open shared object file`).
+- GSD Core требует Node ≥ 24 (через nvm). Сессия Claude Code, запущенная до установки
+  nvm, видит системный Node 22 — для `/gsd-*` нужна новая сессия. Файлы GSD не в git:
+  восстановить — `npx @opengsd/gsd-core@1.18.0 --claude --local`.
 - Проект лежит в файловой системе WSL (`~/projects/library`), не на `/mnt/c`: там npm и
   hooks работают в разы быстрее.

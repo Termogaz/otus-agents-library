@@ -4,3 +4,14 @@ playwright-report/
 test-results/
 package-lock.json
 data/
+# Сторонний код локальной установки GSD Core (в .gitignore)
+.claude/.gsd-profile
+.claude/gsd-*
+.claude/agents/gsd-*
+.claude/commands/gsd-*
+.claude/hooks/gsd-*
+.claude/hooks/lib/*.js
+.claude/hooks/lib/gsd-*
+.claude/hooks/managed-hooks-registry.cjs
+.claude/hooks/package.json
+.claude/scripts/
