@@ -74,14 +74,37 @@
 
 | Requirement | Phase | Status |
 | ----------- | ----- | ------ |
+| PLAN-01 | Phase 1 | Pending |
+| PLAN-02 | Phase 1 | Pending |
+| PLAN-03 | Phase 5 | Pending |
+| PLAN-04 | Phase 1 | Pending |
+| SEC-01 | Phase 1 | Pending |
+| SEC-02 | Phase 1 | Pending |
+| SEC-03 | Phase 1 | Pending |
+| MEM-01 | Phase 2 | Pending |
+| MEM-02 | Phase 2 | Pending |
+| MEM-03 | Phase 2 | Pending |
+| MEM-04 | Phase 2 | Pending |
+| HOOK-01 | Phase 2 | Pending |
+| HOOK-02 | Phase 2 | Pending |
+| HOOK-03 | Phase 2 | Pending |
+| HOOK-04 | Phase 2 | Pending |
+| CTX-01 | Phase 3 | Pending |
+| CTX-02 | Phase 3 | Pending |
+| CTX-03 | Phase 3 | Pending |
+| CTX-04 | Phase 3 | Pending |
+| DISC-01 | Phase 4 | Pending |
+| DISC-02 | Phase 4 | Pending |
+| DOC-01 | Phase 5 | Pending |
+| DOC-02 | Phase 5 | Pending |
 
 **Coverage:**
 
 - v1 requirements: 23 total
-- Mapped to phases: 0
-- Unmapped: 23 ⚠️
+- Mapped to phases: 23
+- Unmapped: 0 ✓
 
 ---
 
 _Requirements defined: 2026-10-22_
-_Last updated: 2026-10-22 after initial definition_
+_Last updated: 2026-10-22 after roadmap creation_
