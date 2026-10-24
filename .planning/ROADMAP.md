@@ -41,7 +41,14 @@
   3. `docs/security-checklist.md` содержит пункты из `CONCERNS.md` и ДЗ-1, у каждого — команда проверки и статус «закрыт / открыт / воспроизводим из git»
   4. Попытки `cat ./.env`, `grep … .env` и чтение `.env` по относительному пути через `reviewer` отклоняются, и это закреплено тестами Vitest; правка файла в `.claude/` агентом вызывает запрос подтверждения; `npm run check` зелёный
   5. В каталоге фазы 1 в `.planning/phases/` есть `PLAN.md`, итог выполнения и `VERIFICATION.md` — фаза прошла полный цикл GSD
-**Plans**: TBD
+**Plans:** 5 plans
+
+Plans:
+- [ ] 01-01-PLAN.md — единый источник плана: `CLAUDE.md` → `.planning/STATE.md`, строки 9/72 `AGENTS.md`, `docs/plan.md` — указатель, roadmap в `PROJECT.md` (PLAN-01, PLAN-02; волна 1)
+- [ ] 01-02-PLAN.md — закрыть чтение `.env` через аргументы Bash и `reviewer`: `secret-names.ts`, `protect-files`, `reviewer-readonly`, шаблон grep — не путь, тесты Vitest (SEC-02; волна 1)
+- [ ] 01-03-PLAN.md — `docs/security-checklist.md`, итог фазы в `docs/memory.md`, единая ручная проверка конца фазы (SEC-01, PLAN-04; волна 3)
+- [ ] 01-04-PLAN.md — второй слой permissions: deny `Read(**/.env*)` и Bash-шаблоны, ask `Edit(./.claude/**)`, регрессионный тест `settings.json` (SEC-02, SEC-03; волна 1)
+- [ ] 01-05-PLAN.md — остальные обходы Bash (`< .env`, `bash -c`, `--опция=`), `git add -f`, решение `ask` для записи в `.claude/` через Bash (SEC-02, SEC-03; волна 2)
 
 ### Phase 2: Память агента, быстрые команды и auto hooks
 **Goal**: Новая сессия продолжает работу без пересказа: агент помнит факты прошлых сессий (claude-mem или аналог), при старте получает дайджест позиции, а частые действия запускаются короткими командами
@@ -97,7 +104,7 @@
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Базовая линия, единый план и гигиена безопасности | 0/TBD | Not started | - |
+| 1. Базовая линия, единый план и гигиена безопасности | 0/5 | Planned | - |
 | 2. Память агента, быстрые команды и auto hooks | 0/TBD | Not started | - |
 | 3. Управление контекстом | 0/TBD | Not started | - |
 | 4. Discovery «продление и пени» | 0/TBD | Not started | - |
