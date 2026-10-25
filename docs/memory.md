@@ -3,7 +3,52 @@
 Журнал сессий и шагов: что сделано, какие решения приняты, что дальше, на чём споткнулись.
 Новые записи — сверху. Формат записи: **Сделано / Решение / Дальше / Ловушки**.
 
-## 2026-10-25 — Модуль 2, фаза 2, шаг 2 (в процессе): установка claude-mem 15.0.1 (ветка `feat/module-2`)
+## 2026-10-25 — Модуль 2, фаза 2, шаг 3: канарейка MEM-02 (ветка `feat/module-2`)
+
+**Сделано.** Канарейка 1: фальшивый `sk-ant-api03-…` выведен командой Bash → найден в
+`claude-mem.db` (сырой `stdout` в WAL) и в сжатом наблюдении, проиндексированном в
+`chroma/chroma.sqlite3` (Haiku переписал ключ дословно). Причина: маскирование по умолчанию
+выключено (`CLAUDE_MEM_REDACT_ENABLED: "false"`). Автор включил в `~/.claude-mem/settings.json`
+`CLAUDE_MEM_REDACT_ENABLED` и `CLAUDE_MEM_REDACT_GENERIC_ENABLED` = `"true"`, перезапустил worker.
+Канарейка 2 с новым ключом: ключа нет ни в `claude-mem.db*`, ни в `chroma/`, ни в `logs/`; в
+выводе и наблюдении — `<redacted type='anthropic_key'/>`. Контрольная метка той же команды в базе
+есть — вызов дошёл, «не найдено» не ложное. MEM-02 выполнен.
+
+**Решение.** Поиск — `grep -a -F -f <файл шаблонов>` по сырым байтам (`sqlite3` нет): полный ключ
+плюс два фрагмента; ключ не вставляется в текст команд, иначе сама проверка запишет его в базу.
+Ключ канарейки 1 оставлен в базе как свидетельство проблемы (он фальшивый).
+
+**Дальше.** MEM-03 «сессия A → сессия B»; README «Что не воспроизводится из git»: установка
+claude-mem и включение `REDACT_*`.
+
+**Ловушки.** claude-mem по умолчанию хранит секреты из вывода инструментов и в сыром виде, и в
+наблюдениях — `REDACT_ENABLED` включать сразу после установки. Встроенные шаблоны (`anthropic_key`,
+`openai_key`, GitHub, Slack, JWT…) — в `sqlite/SessionStore.js` плагина. `protect-files` отклоняет
+команду с `$(...)` и упоминанием `.env*` (fail-closed) — перечислять файлы явно, без `--exclude='.env*'`.
+
+## 2026-10-25 — Модуль 2, фаза 2, шаг 2: проверка установки claude-mem 15.0.1 (ветка `feat/module-2`)
+
+**Сделано.** После перезагрузки WSL: `npx -y claude-mem@15.0.1 telemetry disable` →
+`telemetry status` = `DISABLED` (`~/.claude-mem/telemetry.json`); `doctor` → «All required
+checks passed»: Bun 1.4.4, uv 0.13.0, плагин 15.0.1, `Hook launcher` `~/.local/bin/claude-mem`
+(protocol 1), worker healthy на `127.0.0.1:37700` (`/health` → `{"status":"ok"}`), Claude Code
+2.1.310. В сессии сработал `SessionStart`-hook claude-mem, MCP-инструменты подключены.
+
+**Решение.** При повторном `install` выбран провайдер «Anthropic Max Plan» (не CMEM Pro — облачная
+синхронизация, платно после триала) и модель сжатия Haiku 4.5 (сжатие идёт на каждое касание
+файла). Глобальный npm-пакет `claude-mem` удалён: CLI — через `npx -y claude-mem@15.0.1 ...`.
+
+**Дальше.** Канарейка MEM-02 и «сессия A → сессия B» (MEM-03) в новых сессиях; записать установку
+в README «Что не воспроизводится из git».
+
+**Ловушки.** Doctor проверяет копию `claude-mem` в каталоге nvm напрямую, независимо от порядка
+`PATH`: глобальный npm-пакет (`--version` = `15.0.1`) даёт ✗ `Hook launcher`, повторный
+`install` не помогает — только `npm uninstall -g claude-mem`. После него `npx` упал с `ENOENT
+.../_npx/<hash>/package.json` — повреждённый кэш, лечится `rm -rf ~/.npm/_npx/<hash>`. Предупреждение
+`Last install error: bun-missing` — устаревший `~/.claude-mem/last-install-error.json` (23:14,
+до установки Bun), повторный `install` его не очищает; на работу не влияет.
+
+## 2026-10-25 — Модуль 2, фаза 2, шаг 2 (начало): установка claude-mem 15.0.1 (ветка `feat/module-2`)
 
 **Сделано.** Автор поставил claude-mem в своём терминале: `npx -y claude-mem@15.0.1 install
 --provider claude` с `CLAUDE_MEM_TELEMETRY=off DO_NOT_TRACK=1`; встроенная auto memory
