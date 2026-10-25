@@ -348,6 +348,40 @@ describe('checkBashCommand write prefixes and writers', () => {
   });
 });
 
+describe('checkBashCommand git add global opts', () => {
+  it.each([
+    'git -C . add -f .',
+    'git -c core.x=1 add --force .',
+    'git --git-dir=.git add -f .',
+    'git add -f ..',
+    'git add --force src',
+    'git add --forc .',
+  ])('blocks forced git add with global opts: %s', (command) => {
+    expect(checkBashCommand(command)).not.toBeNull();
+  });
+
+  it.each([
+    'git -C . add src/a.ts',
+    'git -c core.x=1 status',
+    'git add -f dist/app.js',
+    'git -C sub add .',
+  ])('allows ordinary git add with global opts: %s', (command) => {
+    expect(checkBashCommand(command)).toBeNull();
+  });
+
+  // Проверка игнора идёт внутри vitest: Bash-команда `git check-ignore` с именем секретного файла
+  // была бы отклонена hook'ом как чтение секрета.
+  it('gitignore keeps envrc out of plain git add', () => {
+    const repoRoot = fileURLToPath(new URL('../..', import.meta.url));
+    const result = spawnSync('git', ['check-ignore', '-q', '.envrc'], {
+      cwd: repoRoot,
+      encoding: 'utf8',
+    });
+
+    expect(result.status).toBe(0);
+  });
+});
+
 // Страж живого hook'а (W2): команды исполнителя планов 01-07, 01-08, 01-09 не должны получать deny.
 // Строки — дословно из планов; если какая-то получила deny, сужать правило hook'а, а не строку.
 describe('executor commands of gap-closure plans', () => {
