@@ -247,21 +247,50 @@ function agentConfigAsk(file: string): BashDecision | null {
   };
 }
 
+// Глобальные опции git, которые берут значение отдельным аргументом: `git -C . add`, `git -c k=v add`.
+const GIT_GLOBAL_OPTIONS_WITH_VALUE = new Set([
+  '-C',
+  '-c',
+  '--git-dir',
+  '--work-tree',
+  '--namespace',
+  '--super-prefix',
+  '--config-env',
+]);
+
+// Снимает глобальные опции git перед подкомандой (WR-03): `git -C . add -f .` — это тоже `add`.
+function stripGitGlobalOptions(args: string[]): string[] {
+  let i = 0;
+  while (i < args.length && args[i]!.startsWith('-')) {
+    i += GIT_GLOBAL_OPTIONS_WITH_VALUE.has(args[i]!) ? 2 : 1;
+  }
+  return args.slice(i);
+}
+
 // `git add` с форсом добавляет в индекс игнорируемые файлы, в том числе .env* (D-09).
-function gitAddForceDecision(args: string[]): BashDecision | null {
+function gitAddForceDecision(rawArgs: string[]): BashDecision | null {
+  const args = stripGitGlobalOptions(rawArgs);
   if (args[0] !== 'add') return null;
   const flags = args.slice(1).filter((a) => a.startsWith('-'));
   const paths = args.slice(1).filter((a) => !a.startsWith('-'));
   const hasShortFlag = (letter: string) =>
     flags.some((f) => /^-[a-zA-Z]+$/.test(f) && f.includes(letter));
 
-  const forced = flags.includes('--force') || hasShortFlag('f');
+  // git принимает однозначный сокращённый длинный флаг: `--forc`, `--fo`.
+  const isForceLong = (f: string) => f.length >= '--fo'.length && '--force'.startsWith(f);
+  const forced = flags.some(isForceLong) || hasShortFlag('f');
   if (!forced) return null;
 
   const addsAll = flags.includes('--all') || hasShortFlag('A');
-  // Широкий pathspec: форс подхватит и игнорируемый .env. Каталог без `/` не распознаётся.
+  // Широкий pathspec: форс подхватит и игнорируемый секрет. Это корень проекта и выше (`.`, `..`),
+  // маска, каталог с `/` и путь, не похожий на файл (в имени нет точки): `src`, `config`.
+  // Каталог с точкой в имени (`my.dir`) эвристика принимает за файл.
   const isBroad = (p: string) =>
-    p === '.' || p === './' || p.startsWith(':') || p.endsWith('/') || p.includes('*');
+    isRootPath(p) ||
+    p.startsWith(':') ||
+    p.endsWith('/') ||
+    p.includes('*') ||
+    !path.posix.basename(p.replaceAll('\\', '/')).includes('.');
   const isRisky =
     addsAll ||
     paths.length === 0 ||

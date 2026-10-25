@@ -24,6 +24,7 @@ data/*.tmp
 .env
 .env.*
 !.env.example
+.envrc
 
 # Личные настройки агента
 .claude/settings.local.json
