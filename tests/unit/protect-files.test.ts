@@ -272,6 +272,38 @@ describe('checkBashCommand operand and fail-closed', () => {
   });
 });
 
+describe('checkBashDecision recursive grep', () => {
+  it.each([
+    'grep -r KEY .',
+    'grep -R KEY ./',
+    'grep -rn SECRET .',
+    'grep -rn KEY ..',
+    'rg --hidden KEY .',
+    'rg -u KEY',
+    'rg --no-ignore KEY .',
+  ])('asks before recursive grep over project root: %s', (command) => {
+    expect(checkBashDecision(command)?.decision).toBe('ask');
+  });
+
+  it.each([
+    'grep -rn TODO src/',
+    'grep -rn foo lib',
+    'grep -r KEY . --exclude-dir=.git',
+    'grep -rn KEY . --exclude=.env*',
+    'grep -n KEY file.ts',
+    'rg KEY src',
+  ])('allows recursive grep that cannot reach secrets: %s', (command) => {
+    expect(checkBashDecision(command)).toBeNull();
+  });
+
+  it.each(['grep -r KEY .env', 'grep -rn x .env.local'])(
+    'prefers deny over ask for recursive grep that names a secret: %s',
+    (command) => {
+      expect(checkBashDecision(command)?.decision).toBe('deny');
+    },
+  );
+});
+
 // Страж живого hook'а (W2): команды исполнителя планов 01-07, 01-08, 01-09 не должны получать deny.
 // Строки — дословно из планов; если какая-то получила deny, сужать правило hook'а, а не строку.
 describe('executor commands of gap-closure plans', () => {
