@@ -82,6 +82,38 @@ npm run check                                                # типы, лин�
 Если npm ходит через локальный HTTP-прокси, e2e падает по таймауту `webServer`. Тогда запускать
 так: `env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY npm run test:e2e`.
 
+## Что не воспроизводится из git
+
+Эти части среды живут вне репозитория или в `.gitignore`. После клонирования их нужно поставить
+заново, команды запускать в своём терминале.
+
+**Память claude-mem 15.0.1.** Плагин, worker и база наблюдений лежат в `~/.claude/plugins/` и
+`~/.claude-mem/`, база личная и в git не попадает.
+
+```bash
+CLAUDE_MEM_TELEMETRY=off DO_NOT_TRACK=1 npx -y claude-mem@15.0.1 install
+# провайдер — Anthropic Max Plan (без облачной синхронизации), модель сжатия — Haiku 4.5
+npx -y claude-mem@15.0.1 telemetry disable
+# маскирование секретов по умолчанию выключено — включить сразу после установки
+node -e 'const fs=require("fs"),f=process.env.HOME+"/.claude-mem/settings.json",s=JSON.parse(fs.readFileSync(f,"utf8"));s.CLAUDE_MEM_REDACT_ENABLED="true";s.CLAUDE_MEM_REDACT_GENERIC_ENABLED="true";fs.writeFileSync(f,JSON.stringify(s,null,2)+"\n")'
+npx -y claude-mem@15.0.1 restart
+npx -y claude-mem@15.0.1 doctor   # ожидается «All required checks passed», worker на :37700
+```
+
+Без `CLAUDE_MEM_REDACT_ENABLED` claude-mem сохраняет секреты из вывода команд и в сыром виде, и
+в сжатых наблюдениях — это показала канарейка с фальшивым ключом (`docs/memory.md`, шаг 3).
+Если `doctor` ругается на `Hook launcher`, удалить глобальный пакет: `npm uninstall -g claude-mem`.
+
+**GSD и `.claude/settings.local.json`.** Команды, агенты и hooks `gsd-*` ставит установщик GSD,
+он же пишет их в `.claude/settings.local.json`. Нужен Node ≥ 24 (через nvm).
+
+```bash
+npx @opengsd/gsd-core@1.18.0 --claude --local
+```
+
+Если npm ходит через локальный прокси и падает с `ECONNRESET`, все команды выше запускать через
+`env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY`.
+
 ## Структура
 
 ```text
