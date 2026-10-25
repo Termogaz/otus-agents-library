@@ -1,3 +1,5 @@
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { checkBashCommand, checkFilePath } from '../../.claude/hooks/protect-files.js';
 
@@ -65,5 +67,79 @@ describe('checkBashCommand', () => {
     'cat <<-END > notes.md\n\trm package-lock.json\n\tEND',
   ])('allows command that does not write protected files: %s', (command) => {
     expect(checkBashCommand(command)).toBeNull();
+  });
+});
+
+describe('checkBashCommand secret reads', () => {
+  it.each([
+    'cat .env',
+    'cat ./.env',
+    'cat /home/user/library/.env',
+    'cd src && cat ../.env',
+    'grep x .env',
+    'grep -n SECRET ./.env.local',
+    'grep -e x .env',
+    'grep -f .env src/a.ts',
+    'rg SECRET .env.local',
+    'less .env',
+    'head -n 1 .env.local',
+    'tail .envrc',
+    'cat .env*',
+    'cp .env /tmp/x',
+    'source .env',
+    '. ./.env',
+  ])('blocks reading secret file: %s', (command) => {
+    expect(checkBashCommand(command)).not.toBeNull();
+  });
+
+  it.each([
+    "grep '\\.env' .planning/research/SUMMARY.md",
+    'grep "\\.env" docs',
+    "grep -e x '\\.env' docs",
+    'cat .env.example',
+    'cat ./.env.sample',
+    'head .env.template',
+    'cat README.md',
+    'ls -la .env*',
+    'test -f .env',
+    'git commit -m "fix: .env parsing"',
+  ])('allows reading non-secret file: %s', (command) => {
+    expect(checkBashCommand(command)).toBeNull();
+  });
+
+  it.each([
+    "grep '.env' src/config.ts",
+    'grep -e .env src/config.ts',
+    'grep -n .env docs/about.md',
+    'rg -n .env docs',
+    'grep -e x -e .env src',
+    "egrep '.env|.envrc' README.md",
+  ])('allows grep pattern that mentions env: %s', (command) => {
+    expect(checkBashCommand(command)).toBeNull();
+  });
+});
+
+describe('protect-files hook process', () => {
+  const tsx = fileURLToPath(new URL('../../node_modules/.bin/tsx', import.meta.url));
+  const script = fileURLToPath(new URL('../../.claude/hooks/protect-files.ts', import.meta.url));
+
+  // Запускает настоящий hook так же, как Claude Code: JSON на stdin, ответ — код выхода.
+  function runHook(command: string) {
+    const input = JSON.stringify({ tool_name: 'Bash', tool_input: { command }, cwd: root });
+    return spawnSync(tsx, [script], { input, encoding: 'utf8' });
+  }
+
+  it('hook process denies reading secret file with exit code 2', { timeout: 20000 }, () => {
+    const result = runHook('cat ./.env');
+
+    expect(result.status).toBe(2);
+    expect(result.stderr).toContain('.env');
+  });
+
+  it('hook process lets ordinary command through', { timeout: 20000 }, () => {
+    const result = runHook('cat README.md');
+
+    expect(result.status).toBe(0);
+    expect(result.stdout).toBe('');
   });
 });
