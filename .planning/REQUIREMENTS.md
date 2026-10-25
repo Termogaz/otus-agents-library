@@ -24,12 +24,12 @@
 - [x] **MEM-01**: claude-mem 15.0.1 установлен с локальным провайдером, телеметрия выключена; `doctor` зелёный
 - [x] **MEM-02**: Канарейка: фальшивый ключ в выводе не находится в базе памяти
 - [x] **MEM-03**: Доказательство «сессия A → сессия B»: факт, которого нет в файлах репозитория, агент вспоминает в новой сессии
-- [ ] **MEM-04**: Запасной вариант («аналог») описан и рабочий: auto memory + `docs/memory.md` + `SessionStart`-дайджест
+- [x] **MEM-04**: Запасной вариант («аналог») описан и рабочий: auto memory + `docs/memory.md` + `SessionStart`-дайджест
 
 ### Быстрые команды и auto hooks
 
 - [ ] **HOOK-01**: Skills `/lib-check`, `/lib-status`, `/lib-handoff`, `/lib-commit`
-- [ ] **HOOK-02**: Hook `SessionStart` (в закоммиченном `.claude/settings.json`) вставляет ветку, позицию GSD и верхнюю запись `docs/memory.md` (≤ 3 КБ)
+- [x] **HOOK-02**: Hook `SessionStart` (в закоммиченном `.claude/settings.json`) вставляет ветку, позицию GSD и верхнюю запись `docs/memory.md` (≤ 3 КБ)
 - [ ] **HOOK-03**: Hook `PreCompact` пишет чек-пойнт в игнорируемый git каталог и всегда завершается с кодом 0
 - [ ] **HOOK-04**: Логика hooks покрыта тестами Vitest; `npm run check` зелёный
 
@@ -84,9 +84,9 @@
 | MEM-01 | Phase 2 | Complete |
 | MEM-02 | Phase 2 | Complete |
 | MEM-03 | Phase 2 | Complete |
-| MEM-04 | Phase 2 | Pending |
+| MEM-04 | Phase 2 | Complete |
 | HOOK-01 | Phase 2 | Pending |
-| HOOK-02 | Phase 2 | Pending |
+| HOOK-02 | Phase 2 | Complete |
 | HOOK-03 | Phase 2 | Pending |
 | HOOK-04 | Phase 2 | Pending |
 | CTX-01 | Phase 3 | Pending |
