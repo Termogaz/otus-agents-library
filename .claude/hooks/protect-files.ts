@@ -3,7 +3,7 @@
 import path from 'node:path';
 import { exitWithFeedback, isMain, readHookInput } from './lib/hook-input.js';
 import { isEnvFileName, isSecretPath } from './lib/secret-names.js';
-import { parseShell } from './lib/shell.js';
+import { parseShell, type ShellSegment } from './lib/shell.js';
 
 // Команды, которые меняют любой файл из аргументов.
 const WRITES_ANY_ARG = new Set(['rm', 'mv', 'tee', 'truncate', 'touch', 'chmod', 'chown']);
@@ -15,6 +15,10 @@ const IN_PLACE_EDITORS = new Set(['sed', 'perl']);
 const NON_READING_PROGRAMS = new Set(['ls', 'test', '[', 'stat']);
 // Поиск по шаблону: первый позиционный аргумент — шаблон, а не путь (D-05).
 const PATTERN_SEARCH_PROGRAMS = new Set(['grep', 'egrep', 'fgrep', 'rg']);
+
+// Вложенный shell: скрипт после `-c` разбирается рекурсивно, глубина ограничена.
+const NESTED_SHELLS = new Set(['sh', 'bash', 'zsh', 'dash']);
+const MAX_SHELL_DEPTH = 3;
 
 // Решение hook'а по Bash-команде: `deny` — отказ (код 2); `ask` выдаёт план 01-05.
 export type BashDecision = { decision: 'deny' | 'ask'; reason: string };
@@ -77,46 +81,95 @@ function searchOperands(args: string[]): string[] {
   return [...files, ...(patternByOption ? positional : positional.slice(1))];
 }
 
+// Значения длинных опций вида `--file=.env`: часть после первого `=` может быть путём.
+function optionValues(args: string[]): string[] {
+  return args
+    .filter((a) => a.startsWith('--') && a.includes('='))
+    .map((a) => a.slice(a.indexOf('=') + 1))
+    .filter((value) => value !== '');
+}
+
 // Аргументы команды, которые она может прочитать как файлы.
 function readOperands(program: string, args: string[]): string[] {
+  // У grep-семейства значения `--regexp=` и `--file=` разобраны в searchOperands.
   if (PATTERN_SEARCH_PROGRAMS.has(program)) return searchOperands(args);
-  return args.filter((a) => !a.startsWith('-'));
+  return [...args.filter((a) => !a.startsWith('-')), ...optionValues(args)];
+}
+
+// Строка-скрипт вложенного shell: аргумент после `-c` или склеенного флага вроде `-lc`.
+function nestedScript(args: string[]): string | undefined {
+  const flagIndex = args.findIndex((a) => /^-[a-zA-Z]+$/.test(a) && a.endsWith('c'));
+  return flagIndex === -1 ? undefined : args[flagIndex + 1];
+}
+
+function secretReadDecision(operand: string): BashDecision | null {
+  if (!isSecretPath(operand)) return null;
+  return {
+    decision: 'deny',
+    reason: `${operand}: чтение секретных файлов .env* запрещено (шаблоны .env.example, .env.sample, .env.template — можно)`,
+  };
+}
+
+function checkSegment(segment: ShellSegment, depth: number): BashDecision | null {
+  const { words, writeTargets, readTargets } = segment;
+  for (const target of writeTargets) {
+    const reason = protectedReason(target);
+    if (reason) return { decision: 'deny', reason };
+  }
+
+  // Цель `<`: shell открывает файл сам, поэтому проверяем её независимо от команды.
+  for (const target of readTargets) {
+    const decision = secretReadDecision(target);
+    if (decision) return decision;
+  }
+
+  const [name, ...args] = words[0] === 'sudo' ? words.slice(1) : words;
+  if (name === undefined) return null;
+  const program = path.posix.basename(name);
+  const files = args.filter((a) => !a.startsWith('-'));
+
+  let candidates: string[] = [];
+  if (WRITES_ANY_ARG.has(program)) candidates = files;
+  else if (WRITES_LAST_ARG.has(program)) candidates = files.slice(-1);
+  else if (IN_PLACE_EDITORS.has(program) && args.some(isInPlaceFlag)) candidates = files;
+
+  for (const file of candidates) {
+    const reason = protectedReason(file);
+    if (reason) return { decision: 'deny', reason };
+  }
+
+  // Чтение: проверяем аргументы-пути, а не подстроку команды (D-05).
+  if (!NON_READING_PROGRAMS.has(program)) {
+    for (const operand of readOperands(program, args)) {
+      const decision = secretReadDecision(operand);
+      if (decision) return decision;
+    }
+  }
+
+  // Вложенный shell: `bash -c "cat .env"` разбираем как отдельную команду.
+  if (NESTED_SHELLS.has(program)) {
+    const script = nestedScript(args);
+    if (script !== undefined) return checkCommand(script, depth + 1);
+  }
+  return null;
+}
+
+// Итог по всей команде: любой `deny` побеждает, иначе первый `ask`, иначе null.
+function checkCommand(command: string, depth: number): BashDecision | null {
+  if (depth > MAX_SHELL_DEPTH) {
+    return { decision: 'deny', reason: 'слишком глубокая вложенность shell, команду не проверить' };
+  }
+  let firstAsk: BashDecision | null = null;
+  for (const segment of parseShell(command)) {
+    const decision = checkSegment(segment, depth);
+    if (decision?.decision === 'deny') return decision;
+    if (decision && !firstAsk) firstAsk = decision;
+  }
+  return firstAsk;
 }
 
 export function checkBashDecision(command: string): BashDecision | null {
-  for (const { words, writeTargets } of parseShell(command)) {
-    for (const target of writeTargets) {
-      const reason = protectedReason(target);
-      if (reason) return { decision: 'deny', reason };
-    }
-
-    const [name, ...args] = words[0] === 'sudo' ? words.slice(1) : words;
-    if (name === undefined) continue;
-    const program = path.posix.basename(name);
-    const files = args.filter((a) => !a.startsWith('-'));
-
-    let candidates: string[] = [];
-    if (WRITES_ANY_ARG.has(program)) candidates = files;
-    else if (WRITES_LAST_ARG.has(program)) candidates = files.slice(-1);
-    else if (IN_PLACE_EDITORS.has(program) && args.some(isInPlaceFlag)) candidates = files;
-
-    for (const file of candidates) {
-      const reason = protectedReason(file);
-      if (reason) return { decision: 'deny', reason };
-    }
-
-    // Чтение: проверяем аргументы-пути, а не подстроку команды (D-05).
-    if (NON_READING_PROGRAMS.has(program)) continue;
-    for (const operand of readOperands(program, args)) {
-      if (isSecretPath(operand)) {
-        return {
-          decision: 'deny',
-          reason: `${operand}: чтение секретных файлов .env* запрещено (шаблоны .env.example, .env.sample, .env.template — можно)`,
-        };
-      }
-    }
-  }
-  return null;
+  return checkCommand(command, 0);
 }
 
 // Контракт сохранён: причина отказа или null.

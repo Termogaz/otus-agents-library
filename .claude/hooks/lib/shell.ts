@@ -6,6 +6,8 @@ export interface ShellSegment {
   words: string[];
   // Файлы, в которые идёт вывод: цели `>`, `>>`, `2>`, `&>`.
   writeTargets: string[];
+  // Файлы, из которых идёт ввод: цели `<`. Heredoc и here-string (`<<`, `<<<`) сюда не попадают.
+  readTargets: string[];
 }
 
 type Token = { kind: 'word'; value: string } | { kind: 'op'; value: string };
@@ -62,7 +64,11 @@ function tokenize(command: string): Token[] {
     }
     if (ch === '<') {
       pushWord();
-      tokens.push({ kind: 'op', value: '<' });
+      // `<<` (heredoc) и `<<<` (here-string) — не файл; одиночный `<` читает файл.
+      let count = 1;
+      while (command[i + count] === '<') count++;
+      i += count - 1;
+      tokens.push({ kind: 'op', value: count === 1 ? '<' : '<<' });
       continue;
     }
     if (ch === ';' || ch === '\n' || ch === '|' || ch === '&') {
@@ -107,23 +113,26 @@ function stripHeredocBodies(command: string): string {
 export function parseShell(command: string): ShellSegment[] {
   command = stripHeredocBodies(command);
   const segments: ShellSegment[] = [];
-  let current: ShellSegment = { words: [], writeTargets: [] };
+  let current: ShellSegment = { words: [], writeTargets: [], readTargets: [] };
   let pendingRedirect: string | null = null;
 
   for (const token of tokenize(command)) {
     if (token.kind === 'op' && CONTROL_OPS.has(token.value)) {
       segments.push(current);
-      current = { words: [], writeTargets: [] };
+      current = { words: [], writeTargets: [], readTargets: [] };
       pendingRedirect = null;
     } else if (token.kind === 'op') {
       pendingRedirect = token.value;
     } else if (pendingRedirect !== null) {
       if (pendingRedirect === '>') current.writeTargets.push(token.value);
+      else if (pendingRedirect === '<') current.readTargets.push(token.value);
       pendingRedirect = null;
     } else {
       current.words.push(token.value);
     }
   }
   segments.push(current);
-  return segments.filter((s) => s.words.length > 0 || s.writeTargets.length > 0);
+  return segments.filter(
+    (s) => s.words.length > 0 || s.writeTargets.length > 0 || s.readTargets.length > 0,
+  );
 }
