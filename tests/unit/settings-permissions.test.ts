@@ -2,6 +2,11 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 
+const hookEntrySchema = z.object({
+  matcher: z.string(),
+  hooks: z.array(z.object({ command: z.string() })),
+});
+
 // Схема сужает только нужные поля settings.json; остальное игнорируется.
 const settingsSchema = z.object({
   permissions: z.object({
@@ -11,12 +16,8 @@ const settingsSchema = z.object({
     deny: z.array(z.string()),
   }),
   hooks: z.object({
-    PreToolUse: z.array(
-      z.object({
-        matcher: z.string(),
-        hooks: z.array(z.object({ command: z.string() })),
-      }),
-    ),
+    SessionStart: z.array(hookEntrySchema),
+    PreToolUse: z.array(hookEntrySchema),
   }),
 });
 
@@ -76,6 +77,13 @@ describe('settings.json permissions', () => {
     const entry = settings.hooks.PreToolUse.find((item) => item.matcher === 'Edit|Write|Bash');
     expect(entry).toBeDefined();
     expect(entry?.hooks.some((hook) => hook.command.includes('protect-files.ts'))).toBe(true);
+  });
+
+  it('runs session-start digest on startup, resume, clear and compact', () => {
+    const entry = settings.hooks.SessionStart.find((item) =>
+      item.hooks.some((hook) => hook.command.includes('session-start.ts')),
+    );
+    expect(entry?.matcher).toBe('startup|resume|clear|compact');
   });
 
   it('asks before git push', () => {

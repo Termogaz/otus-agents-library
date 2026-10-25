@@ -18,7 +18,19 @@ export function readHookInput(): HookInput {
   return hookInputSchema.parse(JSON.parse(readFileSync(0, 'utf8')));
 }
 
-export function projectDir(input: HookInput): string {
+// Вход SessionStart: без tool_name и tool_input; source — startup, resume, clear или compact.
+const sessionStartInputSchema = z.object({
+  source: z.string(),
+  cwd: z.string(),
+});
+
+export type SessionStartInput = z.infer<typeof sessionStartInputSchema>;
+
+export function readSessionStartInput(): SessionStartInput {
+  return sessionStartInputSchema.parse(JSON.parse(readFileSync(0, 'utf8')));
+}
+
+export function projectDir(input: { cwd: string }): string {
   return process.env.CLAUDE_PROJECT_DIR ?? input.cwd;
 }
 
