@@ -118,6 +118,52 @@ function nestedScript(args: string[]): string | undefined {
   return flagIndex === -1 ? undefined : args[flagIndex + 1];
 }
 
+// Путь указывает на корень проекта или выше: `.`, `./`, `..`, `../..`.
+function isRootPath(operand: string): boolean {
+  const normalized = path.posix.normalize(operand.replaceAll('\\', '/'));
+  return normalized.split('/').every((part) => part === '' || part === '.' || part === '..');
+}
+
+// Рекурсивный поиск по корню может прочитать .env* без единого секретного аргумента (WR-04):
+// `grep -r KEY .`; у `rg` скрытые файлы читаются только с `--hidden`/`-u`/`--no-ignore`.
+// Явное исключение (`--exclude*`, у rg — `-g`/`--glob`) считаем безопасным: сужение задал автор команды.
+function recursiveRootSearchAsk(program: string, args: string[]): BashDecision | null {
+  if (!PATTERN_SEARCH_PROGRAMS.has(program)) return null;
+  const isRipgrep = program === 'rg';
+  let recursive = false;
+  let readsHidden = false;
+  let excluded = false;
+
+  for (const arg of args) {
+    if (arg === '--recursive' || arg === '--dereference-recursive') recursive = true;
+    else if (arg === '--hidden' || arg === '--no-ignore') readsHidden = true;
+    else if (arg.startsWith('--exclude')) excluded = true;
+    else if (arg === '--glob' || arg.startsWith('--glob=') || arg.startsWith('--iglob')) {
+      excluded = true;
+    } else if (arg.startsWith('-') && !arg.startsWith('--') && arg.length > 1) {
+      // Склеенные короткие флаги: `-rn`, `-uu`. После `-e`/`-f` идёт значение, а не флаги.
+      for (const flag of arg.slice(1)) {
+        if (flag === 'e' || flag === 'f') break;
+        if (flag === 'g') {
+          excluded = true;
+          break;
+        }
+        if (flag === 'r' || flag === 'R') recursive = true;
+        if (flag === 'u') readsHidden = true;
+      }
+    }
+  }
+
+  const reachesSecrets = isRipgrep ? readsHidden : recursive;
+  if (!reachesSecrets || excluded) return null;
+  const paths = searchOperands(args);
+  if (paths.length > 0 && !paths.some(isRootPath)) return null;
+  return {
+    decision: 'ask',
+    reason: 'рекурсивный grep по корню может прочитать .env*; сузьте путь или добавьте --exclude',
+  };
+}
+
 // Операнд проверяется целиком и по частям после `=`, `@`, `:` (`if=.env`, `@.env`, `HEAD:.env`).
 function secretReadDecision(operand: string): BashDecision | null {
   if (!isSecretOperand(operand)) return null;
@@ -208,6 +254,8 @@ function checkSegment(segment: ShellSegment, depth: number): BashDecision | null
       if (decision) return decision;
     }
   }
+
+  ask ??= recursiveRootSearchAsk(program, args);
 
   // Вложенный shell: `bash -c "cat .env"` разбираем как отдельную команду.
   if (NESTED_SHELLS.has(program)) {
