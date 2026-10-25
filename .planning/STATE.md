@@ -25,14 +25,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-10-22)
 
 **Core value:** Проверяющий по README и репозиторию видит, что каждый пункт текущего ДЗ выполнен и воспроизводим: настройка есть в git, есть доказательство работы (команда, скриншот, коммит).
-**Current focus:** Phase 02 — Память агента, быстрые команды и auto hooks (шаг 2: проверка установки claude-mem — telemetry, doctor, worker)
+**Current focus:** Phase 02 — Память агента, быстрые команды и auto hooks (шаг 5: hook `SessionStart` с дайджестом — HOOK-02 + MEM-04; без агентов GSD)
 
 ## Current Position
 
 Phase: 2 — Память агента, быстрые команды и auto hooks
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-10-25 — Phase 01 complete, transitioned to Phase 2
+Plan: без PLAN.md — шаги по схеме AGENTS.md (режим фазы 2 в ROADMAP)
+Status: In progress — MEM-01, MEM-02, MEM-03 выполнены
+Last activity: 2026-10-26 — claude-mem проверен, канарейка MEM-02, MEM-03 сессия A → B, README «Что не воспроизводится из git»
 
 Progress: [██░░░░░░░░] 20%
 
@@ -110,7 +110,7 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-25T15:45:39.976Z
-Stopped at: Phase 01 complete, ready to plan Phase 2
+Last session: 2026-10-26
+Stopped at: MEM-01…03 закрыты, ветка feat/module-2 запушена
 Resume file: None
-Next: re-run plan-checker on phase 1 plans, then /gsd-execute-phase 1
+Next: hook `SessionStart` (HOOK-02 + MEM-04) по TDD без GSD, затем `PreCompact`, затем `/lib-*`; подробности — верхние записи `docs/memory.md`
