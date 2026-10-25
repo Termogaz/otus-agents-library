@@ -203,6 +203,38 @@ describe('checkBashDecision agent config', () => {
   });
 });
 
+describe('checkBashCommand tokenizer bypasses', () => {
+  it.each([
+    'echo "\\""; cat .env',
+    "cat $'.env'",
+    'cat $".env"',
+    'cat \\\n.env',
+    '(cat .env)',
+    'cat <(cat .env)',
+    'echo "<<EOF"\ncat .env',
+    'x=$((1<<2))\ncat .env',
+  ])('blocks reading secret file: %s', (command) => {
+    expect(checkBashCommand(command)).not.toBeNull();
+  });
+
+  it.each([
+    'echo x >| .env',
+    'echo x >& .env',
+    'echo x >| package-lock.json',
+    '{ rm .git/index; }',
+    '(rm .env)',
+  ])('blocks write to protected file: %s', (command) => {
+    expect(checkBashCommand(command)).not.toBeNull();
+  });
+
+  it.each(['echo "a\\"b" > ok.txt', 'ls >&2', 'cmd 2>&1', 'echo ok >| docs/notes.md'])(
+    'allows command that does not write protected files: %s',
+    (command) => {
+      expect(checkBashCommand(command)).toBeNull();
+    },
+  );
+});
+
 describe('protect-files hook process', () => {
   const tsx = fileURLToPath(new URL('../../node_modules/.bin/tsx', import.meta.url));
   const script = fileURLToPath(new URL('../../.claude/hooks/protect-files.ts', import.meta.url));
@@ -222,6 +254,20 @@ describe('protect-files hook process', () => {
 
   it('hook process denies input redirect from secret file', { timeout: 20000 }, () => {
     const result = runHook('cat < .env');
+
+    expect(result.status).toBe(2);
+    expect(result.stderr).toContain('.env');
+  });
+
+  it('hook process denies quoted-escape bypass', { timeout: 20000 }, () => {
+    const result = runHook('echo "\\""; cat .env');
+
+    expect(result.status).toBe(2);
+    expect(result.stderr).toContain('.env');
+  });
+
+  it('hook process denies clobber redirect', { timeout: 20000 }, () => {
+    const result = runHook('echo x >| .env');
 
     expect(result.status).toBe(2);
     expect(result.stderr).toContain('.env');
