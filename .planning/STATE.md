@@ -25,14 +25,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-10-22)
 
 **Core value:** Проверяющий по README и репозиторию видит, что каждый пункт текущего ДЗ выполнен и воспроизводим: настройка есть в git, есть доказательство работы (команда, скриншот, коммит).
-**Current focus:** Phase 02 — Память агента, быстрые команды и auto hooks (шаг 6: hook `PreCompact` с чек-пойнтом — HOOK-03; без агентов GSD)
+**Current focus:** Phase 02 — Память агента, быстрые команды и auto hooks (шаг 7: быстрые команды `/lib-*` — HOOK-01; без агентов GSD)
 
 ## Current Position
 
 Phase: 2 — Память агента, быстрые команды и auto hooks
 Plan: без PLAN.md — шаги по схеме AGENTS.md (режим фазы 2 в ROADMAP)
-Status: In progress — MEM-01…04, HOOK-02 выполнены
-Last activity: 2026-10-26 — hook SessionStart с дайджестом (HOOK-02), запасной вариант памяти проверен без claude-mem (MEM-04)
+Status: In progress — MEM-01…04, HOOK-02, HOOK-03 выполнены
+Last activity: 2026-10-26 — hook PreCompact с чек-пойнтом проверен ручным `/compact` (HOOK-03)
 
 Progress: [██░░░░░░░░] 20%
 
@@ -111,6 +111,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 ## Session Continuity
 
 Last session: 2026-10-26
-Stopped at: HOOK-02 и MEM-04 закрыты (session-start.ts, скриншоты hw2-hook02-*, hw2-mem04-*)
+Stopped at: HOOK-03 закрыт (pre-compact.ts, скриншоты hw2-hook03-*)
 Resume file: None
-Next: hook `PreCompact` (HOOK-03) с чек-пойнтом в `.local/checkpoints/` и блоком в `SessionStart(compact)`, затем `/lib-*`; подробности — верхние записи `docs/memory.md`
+Next: быстрые команды `/lib-check`, `/lib-status`, `/lib-handoff`, `/lib-commit` (HOOK-01), затем HOOK-04; подробности — верхние записи `docs/memory.md`
