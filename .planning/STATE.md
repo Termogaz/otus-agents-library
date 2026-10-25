@@ -25,7 +25,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-10-22)
 
 **Core value:** Проверяющий по README и репозиторию видит, что каждый пункт текущего ДЗ выполнен и воспроизводим: настройка есть в git, есть доказательство работы (команда, скриншот, коммит).
-**Current focus:** Phase 02 — Память агента, быстрые команды и auto hooks (первый шаг — обходы из 01-REVIEW.md)
+**Current focus:** Phase 02 — Память агента, быстрые команды и auto hooks (шаг 2: проверка установки claude-mem — telemetry, doctor, worker)
 
 ## Current Position
 
