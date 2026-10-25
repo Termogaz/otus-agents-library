@@ -51,6 +51,7 @@ const WRAPPER_PROGRAMS: ReadonlyMap<string, ReadonlySet<string>> = new Map([
   ['nohup', new Set<string>()],
   ['setsid', new Set<string>()],
   ['builtin', new Set<string>()],
+  ['busybox', new Set<string>()],
 ]);
 // Ключевые слова shell перед командой: `if rm x; then rm y; fi`, `! rm x`, `{ rm x; }`.
 const SHELL_KEYWORDS = new Set(['if', 'elif', 'while', 'until', 'then', 'do', 'else', '!', '{']);
@@ -81,19 +82,40 @@ const OUTPUT_FILE_OPTIONS: ReadonlyMap<
 ]);
 
 // Вложенный shell: скрипт после `-c` разбирается рекурсивно, глубина ограничена.
-const NESTED_SHELLS = new Set(['sh', 'bash', 'zsh', 'dash']);
+const NESTED_SHELLS = new Set([
+  'sh',
+  'bash',
+  'zsh',
+  'dash',
+  'ksh',
+  'mksh',
+  'ash',
+  'fish',
+  'csh',
+  'tcsh',
+  'posh',
+  'yash',
+]);
+// Опции shell, которые берут значение отдельным аргументом: `-o pipefail`, `--rcfile f`.
+const SHELL_OPTIONS_WITH_VALUE = new Set(['-o', '+o', '-O', '+O', '--rcfile', '--init-file']);
+// Действия `find`, после которых идёт команда до `;` или `+`.
+const FIND_EXEC_ACTIONS = new Set(['-exec', '-execdir', '-ok', '-okdir']);
+// Условия `find`, значение которых — имя или путь файла.
+const FIND_NAME_TESTS = new Set(['-name', '-iname', '-path', '-ipath', '-wholename']);
+// Подкоманды git, которые меняют или удаляют файлы рабочего дерева.
+const GIT_WRITE_SUBCOMMANDS = new Set(['rm', 'mv', 'restore', 'checkout']);
 const MAX_SHELL_DEPTH = 3;
 
 // Fail-closed (CR-05): конструкции, которые эвристика не раскрывает. Если в такой команде
 // встречается секретный токен .env*, она отклоняется целиком. Без токена — не трогаем.
-const SHELL_NAME = '(?:sh|bash|zsh|dash)';
+const SHELL_NAME = '(?:sh|bash|zsh|dash|ksh|mksh|ash|fish|csh|tcsh|posh|yash)';
 // Shell, которому скрипт идёт со stdin: `bash <<EOF`, `bash <<< "..."`, `sh -s < file`.
 const SHELL_STDIN_FORM = new RegExp(
   `(?:^|[\\s;&|(){}])(?:\\S*/)?${SHELL_NAME}(?:\\s+-[^\\s<]+)*\\s*<`,
 );
 // Shell на конце канала: `echo '...' | bash`. `||` — не канал; `| bash script.sh` скрипт берёт из файла.
 const PIPE_TO_SHELL = new RegExp(
-  `(?<!\\|)\\|&?\\s*(?:sudo\\s+)?(?:\\S*/)?${SHELL_NAME}(?:\\s+-\\S+)*(?=\\s*(?:$|[;&|)<>}\\n]))`,
+  `(?<!\\|)\\|&?\\s*(?:sudo\\s+)?(?:busybox\\s+)?(?:\\S*/)?${SHELL_NAME}(?:\\s+-\\S+)*(?=\\s*(?:$|[;&|)<>}\\n]))`,
 );
 const EVAL_WORD = /(?:^|[\s;&|(){}])eval(?=[\s;&|()]|$)/;
 // Интерпретаторы, которым скрипт передают флагом: `python3 -c`, `node -e`, `perl -e`.
@@ -169,17 +191,104 @@ function optionValues(args: string[]): string[] {
     .filter((value) => value !== '');
 }
 
+// Значение, приклеенное к короткой опции: `curl -d@.env`, `awk -f.env`, `tar -T.env` (CR-03).
+function attachedOptionValues(args: string[]): string[] {
+  return args.filter((a) => /^-[A-Za-z]./.test(a)).map((a) => a.slice(2));
+}
+
 // Аргументы команды, которые она может прочитать как файлы.
 function readOperands(program: string, args: string[]): string[] {
   // У grep-семейства значения `--regexp=` и `--file=` разобраны в searchOperands.
   if (PATTERN_SEARCH_PROGRAMS.has(program)) return searchOperands(args);
-  return [...args.filter((a) => !a.startsWith('-')), ...optionValues(args)];
+  return [
+    ...args.filter((a) => !a.startsWith('-')),
+    ...optionValues(args),
+    ...attachedOptionValues(args),
+  ];
 }
 
-// Строка-скрипт вложенного shell: аргумент после `-c` или склеенного флага вроде `-lc`.
+// Флаг, который передаёт shell скрипт строкой: `-c`, `-lc`, `-ce` (CR-02).
+function isCommandFlag(arg: string): boolean {
+  return /^-[a-zA-Z]*c[a-zA-Z]*$/.test(arg) || arg === '--command' || arg.startsWith('--command=');
+}
+
+// Строка-скрипт вложенного shell по правилам bash (CR-02): опции идут до первого не-опции
+// или `--`, флаг `-c` может стоять в любом кластере (`-ce`), скрипт — первый позиционный аргумент.
+// У `fish` скрипт можно передать `--command`.
 function nestedScript(args: string[]): string | undefined {
-  const flagIndex = args.findIndex((a) => /^-[a-zA-Z]+$/.test(a) && a.endsWith('c'));
-  return flagIndex === -1 ? undefined : args[flagIndex + 1];
+  let commandFlag = false;
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i]!;
+    if (arg === '--') return commandFlag ? args[i + 1] : undefined;
+    if (arg === '--command') return args[i + 1];
+    if (arg.startsWith('--command=')) return arg.slice('--command='.length);
+    if (SHELL_OPTIONS_WITH_VALUE.has(arg)) {
+      i++;
+    } else if (/^[-+][a-zA-Z]+$/.test(arg)) {
+      if (arg.startsWith('-') && arg.includes('c')) commandFlag = true;
+    } else if (!arg.startsWith('--')) {
+      return commandFlag ? arg : undefined;
+    }
+  }
+  return undefined;
+}
+
+// Команда для `su -c 'cmd'` / `su --command=cmd`: значение идёт сразу за флагом, пользователь — где угодно.
+function suScript(args: string[]): string | undefined {
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i]!;
+    if (arg.startsWith('--command=')) return arg.slice('--command='.length);
+    if (arg === '--command' || /^-[a-zA-Z]*c$/.test(arg)) return args[i + 1];
+  }
+  return undefined;
+}
+
+// Скрипт, который команда запустит во вложенном shell, или undefined.
+function shellScriptOf(program: string, args: string[]): string | undefined {
+  if (program === 'su') return suScript(args);
+  return NESTED_SHELLS.has(program) ? nestedScript(args) : undefined;
+}
+
+// Команды после `find -exec … ;` / `-exec … +`: каждая — отдельная простая команда.
+function findExecCommands(args: string[]): string[][] {
+  const commands: string[][] = [];
+  for (let i = 0; i < args.length; i++) {
+    if (!FIND_EXEC_ACTIONS.has(args[i]!)) continue;
+    const words: string[] = [];
+    for (i++; i < args.length && args[i] !== ';' && args[i] !== '+'; i++) words.push(args[i]!);
+    commands.push(words);
+  }
+  return commands;
+}
+
+// Имена и пути из условий `find`, когда находка будет удалена (`-delete`).
+// Находку меняет `-delete` или писатель в `-exec` (`-exec rm {} \;`, `-exec sed -i … {} +`).
+function findDeletedNames(args: string[]): string[] {
+  const writesFound = findExecCommands(args).some(([name]) => {
+    const program = path.posix.basename(name ?? '');
+    return (
+      WRITES_ANY_ARG.has(program) || WRITES_LAST_ARG.has(program) || IN_PLACE_EDITORS.has(program)
+    );
+  });
+  if (!args.includes('-delete') && !writesFound) return [];
+  return args.filter((_, i) => i > 0 && FIND_NAME_TESTS.has(args[i - 1]!));
+}
+
+// Файл аргументов `xargs -a FILE` / `--arg-file=FILE`: xargs читает его сам, а обёртка снимается раньше.
+function xargsArgFiles(words: string[]): string[] {
+  const start = words.findIndex((w) => path.posix.basename(w) === 'xargs');
+  if (start === -1) return [];
+  const files: string[] = [];
+  for (let i = start + 1; i < words.length; i++) {
+    const arg = words[i]!;
+    if (arg === '-a' || arg === '--arg-file') {
+      const value = words[++i];
+      if (value !== undefined) files.push(value);
+    } else if (arg.startsWith('--arg-file=')) files.push(arg.slice('--arg-file='.length));
+    else if (/^-a./.test(arg)) files.push(arg.slice(2));
+    else if (!arg.startsWith('-')) break;
+  }
+  return files;
 }
 
 // Путь указывает на корень проекта или выше: `.`, `./`, `..`, `../..`.
@@ -265,6 +374,18 @@ function stripGitGlobalOptions(args: string[]): string[] {
     i += GIT_GLOBAL_OPTIONS_WITH_VALUE.has(args[i]!) ? 2 : 1;
   }
   return args.slice(i);
+}
+
+// `git rm/mv/restore/checkout` по защищённому файлу меняет его в обход npm и hook'а записи.
+function gitWriteDecision(rawArgs: string[]): BashDecision | null {
+  const [subcommand, ...args] = stripGitGlobalOptions(rawArgs);
+  if (subcommand === undefined || !GIT_WRITE_SUBCOMMANDS.has(subcommand)) return null;
+  for (const arg of args) {
+    if (arg.startsWith('-')) continue;
+    const reason = protectedReason(arg);
+    if (reason) return { decision: 'deny', reason };
+  }
+  return null;
 }
 
 // `git add` с форсом добавляет в индекс игнорируемые файлы, в том числе .env* (D-09).
@@ -404,7 +525,7 @@ function checkSegment(segment: ShellSegment, depth: number): BashDecision | null
   }
 
   // Цель `<`: shell открывает файл сам, поэтому проверяем её независимо от команды.
-  for (const target of readTargets) {
+  for (const target of [...readTargets, ...xargsArgFiles(words)]) {
     const decision = secretReadDecision(target);
     if (decision) return decision;
   }
@@ -422,6 +543,7 @@ function checkSegment(segment: ShellSegment, depth: number): BashDecision | null
   } else if (WRITES_LAST_ARG.has(program)) {
     candidates = targetDir === undefined ? files.slice(-1) : [targetDir];
   } else if (IN_PLACE_EDITORS.has(program) && args.some(isInPlaceFlag)) candidates = files;
+  else if (program === 'find') candidates = findDeletedNames(args);
   else candidates = outputFileTargets(program, args);
 
   for (const file of candidates) {
@@ -431,8 +553,17 @@ function checkSegment(segment: ShellSegment, depth: number): BashDecision | null
   }
 
   if (program === 'git') {
-    const decision = gitAddForceDecision(args);
+    const decision = gitAddForceDecision(args) ?? gitWriteDecision(args);
     if (decision) return decision;
+  }
+
+  // `find -exec cmd … ;`: каждую команду проверяем как отдельный сегмент.
+  if (program === 'find') {
+    for (const execWords of findExecCommands(args)) {
+      const decision = checkSegment({ words: execWords, writeTargets: [], readTargets: [] }, depth);
+      if (decision?.decision === 'deny') return decision;
+      ask ??= decision;
+    }
   }
 
   // Чтение: проверяем аргументы-пути, а не подстроку команды (D-05).
@@ -445,14 +576,12 @@ function checkSegment(segment: ShellSegment, depth: number): BashDecision | null
 
   ask ??= recursiveRootSearchAsk(program, args);
 
-  // Вложенный shell: `bash -c "cat .env"` разбираем как отдельную команду.
-  if (NESTED_SHELLS.has(program)) {
-    const script = nestedScript(args);
-    if (script !== undefined) {
-      const nested = checkCommand(script, depth + 1);
-      if (nested?.decision === 'deny') return nested;
-      ask ??= nested;
-    }
+  // Вложенный shell: `bash -c "cat .env"`, `su -c '…'` разбираем как отдельную команду.
+  const script = shellScriptOf(program, args);
+  if (script !== undefined) {
+    const nested = checkCommand(script, depth + 1);
+    if (nested?.decision === 'deny') return nested;
+    ask ??= nested;
   }
   return ask;
 }
@@ -468,6 +597,14 @@ function unmodellableReason(command: string): string | null {
   for (const { words } of parseShell(command)) {
     const [name, ...args] = stripCommandPrefixes(words);
     if (name === undefined) continue;
+    const program = path.posix.basename(name);
+    if (
+      (NESTED_SHELLS.has(program) || program === 'su') &&
+      args.some(isCommandFlag) &&
+      shellScriptOf(program, args) === undefined
+    ) {
+      return 'вложенный shell, скрипт которого не определён';
+    }
     if (
       SCRIPT_INTERPRETERS.test(path.posix.basename(name)) &&
       args.some((a) => SCRIPT_FLAG.test(a))
@@ -481,11 +618,28 @@ function unmodellableReason(command: string): string | null {
 // Есть ли в сыром тексте команды секретный токен .env*. Не зависит от токенизатора:
 // режет по пробелам и операторам, снимает кавычки и смотрит каждый кусок.
 function mentionsSecretToken(command: string): boolean {
-  return command.split(/[\s;&|<>()]+/).some((piece) => {
+  const byPieces = command.split(/[\s;&|<>()`]+/).some((piece) => {
     const bare = piece.replaceAll(/['"]/g, '').replace(/^\$/, '');
     if (bare === '') return false;
     return isSecretOperand(bare) || isSecretFileName(path.posix.basename(bare));
   });
+  if (byPieces) return true;
+  // Имя внутри конструкций вроде `${F:-.env}`: ищем `.env…` в тексте, не продолжающее другое слово.
+  return [...command.matchAll(/\.env[A-Za-z0-9_.\-*?~]*/g)].some(
+    (match) => !/[A-Za-z0-9_]/.test(command[match.index - 1] ?? '') && isSecretFileName(match[0]),
+  );
+}
+
+// Защищённые от записи файлы в тексте команды: `package-lock.json`, `.git/`, `.claude/` (WR-01).
+const PROTECTED_TOKEN =
+  /(?:^|[^\w.-])(?:package-lock\.json|\.git\/|\.git(?=[\s'"`;&|<>(){}]|$)|\.claude\/)/;
+// Признаки записи: программы-писатели, функции удаления и записи в скриптах, `>` не в /dev/null и не дубль дескриптора.
+const WRITE_HINT =
+  /(?:^|[^\w-])(?:rm|mv|cp|tee|truncate|touch|chmod|chown|install|ln|rsync|dd|unlink|remove|rename|rmSync|unlinkSync|writeFile\w*)(?![\w-])|>(?!&|>?\s*\/dev\/null)/;
+
+// Немоделируемая конструкция может изменить защищённый файл: в тексте есть и его имя, и признак записи.
+function mentionsProtectedWrite(command: string): boolean {
+  return PROTECTED_TOKEN.test(command) && WRITE_HINT.test(command);
 }
 
 // Итог по всей команде: любой `deny` побеждает, затем fail-closed `deny`, иначе первый `ask`, иначе null.
@@ -506,6 +660,12 @@ function checkCommand(command: string, depth: number): BashDecision | null {
       return {
         decision: 'deny',
         reason: `команда использует конструкцию, которую hook не разбирает (${reason}), и упоминает секрет .env* — отказ (fail-closed)`,
+      };
+    }
+    if (reason !== null && firstAsk === null && mentionsProtectedWrite(command)) {
+      return {
+        decision: 'ask',
+        reason: `команда использует конструкцию, которую hook не разбирает (${reason}), и может изменить package-lock.json, .git/ или .claude/ — нужно подтверждение`,
       };
     }
   }

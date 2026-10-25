@@ -1,5 +1,5 @@
 // Упрощённый разбор shell-команды для hooks. Это эвристика, а не парсер bash:
-// подстановки ($VAR, $(...)), heredoc и алиасы не раскрываются.
+// подстановки ($VAR, $(...)), heredoc и алиасы не раскрываются; комментарии `#` пропускаются.
 
 export interface ShellSegment {
   // Слова простой команды: имя и аргументы, без кавычек.
@@ -83,6 +83,11 @@ function tokenize(command: string): Token[] {
       i++;
       continue;
     }
+    if (ch === '#' && !hasWord) {
+      // Комментарий до конца строки (CR-01): кавычки в нём (`# it's`) ничего не открывают.
+      while (command[i + 1] !== undefined && command[i + 1] !== '\n') i++;
+      continue;
+    }
     if (ch === ' ' || ch === '\t') {
       pushWord();
       continue;
@@ -123,8 +128,8 @@ function tokenize(command: string): Token[] {
       tokens.push({ kind: 'op', value: count === 1 ? '<' : '<<' });
       continue;
     }
-    if (ch === '(' || ch === ')') {
-      // Подоболочка, `$(...)`, `<(...)`: вложенная команда становится отдельным сегментом.
+    if (ch === '(' || ch === ')' || ch === '`') {
+      // Подоболочка, `$(...)`, `<(...)`, обратные кавычки: вложенная команда становится отдельным сегментом.
       pushWord();
       tokens.push({ kind: 'op', value: ';' });
       continue;
@@ -208,7 +213,10 @@ function stripHeredocBodies(command: string): string {
       }
 
       // Контекст команды: здесь `<<` начинает heredoc.
-      if (ch === '\\') {
+      if (ch === '#' && (i === 0 || /[\s;&|()]/.test(line[i - 1]!))) {
+        // Комментарий до конца строки: кавычки и `<<` в нём не считаются (CR-01).
+        break;
+      } else if (ch === '\\') {
         i++;
       } else if (ch === "'") {
         scopes.push({ kind: 'single' });
