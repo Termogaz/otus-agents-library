@@ -304,6 +304,50 @@ describe('checkBashDecision recursive grep', () => {
   );
 });
 
+describe('checkBashCommand write prefixes and writers', () => {
+  it.each([
+    'FOO=1 rm package-lock.json',
+    'env sed -i s/a/b/ package-lock.json',
+    'nohup rm package-lock.json',
+    'xargs rm package-lock.json',
+    'if true; then rm package-lock.json; fi',
+    'sudo -u root rm package-lock.json',
+    'time rm .git/index',
+  ])('blocks write via command prefix: %s', (command) => {
+    expect(checkBashCommand(command)).not.toBeNull();
+  });
+
+  it.each([
+    'dd of=package-lock.json',
+    'curl -o package-lock.json http://x',
+    'curl --output .git/x http://x',
+    'wget -O package-lock.json http://x',
+  ])('blocks write via missing writer: %s', (command) => {
+    expect(checkBashCommand(command)).not.toBeNull();
+  });
+
+  it.each([
+    'env sed -i s/a/b/ .claude/settings.json',
+    'cp -t .claude/hooks a.ts',
+    'mv -t .claude/dir a.ts',
+  ])('asks before writing agent config via prefix or -t: %s', (command) => {
+    expect(checkBashDecision(command)?.decision).toBe('ask');
+  });
+
+  it.each([
+    'FOO=1 npm test',
+    'env NODE_ENV=test npm run build',
+    'nohup npm run dev',
+    'time npm ci',
+    'dd if=/dev/zero of=out.bin',
+    'curl -o out.json http://x',
+    'X=1',
+    'env -u http_proxy -u https_proxy npm test',
+  ])('allows ordinary command with prefix: %s', (command) => {
+    expect(checkBashCommand(command)).toBeNull();
+  });
+});
+
 // Страж живого hook'а (W2): команды исполнителя планов 01-07, 01-08, 01-09 не должны получать deny.
 // Строки — дословно из планов; если какая-то получила deny, сужать правило hook'а, а не строку.
 describe('executor commands of gap-closure plans', () => {
