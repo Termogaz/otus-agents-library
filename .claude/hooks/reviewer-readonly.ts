@@ -1,6 +1,6 @@
 // PreToolUse (Bash) во frontmatter агента reviewer: только команды чтения и проверки.
 import { exitWithFeedback, isMain, readHookInput } from './lib/hook-input.js';
-import { isSecretPath } from './lib/secret-names.js';
+import { isSecretOperand, isSecretPath } from './lib/secret-names.js';
 import { parseShell } from './lib/shell.js';
 
 const EXACT_COMMANDS = new Set([
@@ -50,6 +50,14 @@ export function checkReviewerCommand(command: string): string | null {
 
   if (program === 'git' && subcommand !== undefined) {
     if (GIT_READ_SUBCOMMANDS.has(subcommand)) {
+      // `--no-index` сравнивает произвольные файлы вне репозитория, в обход проверки операндов (CR-07).
+      if (args.includes('--no-index')) {
+        return deny(trimmed, '--no-index читает произвольные файлы, запрещён');
+      }
+      // Операнды git (`.env`, `HEAD:.env`, `:.env`) проверяются так же, как у cat/head/tail (CR-07).
+      if (args.some((a) => !a.startsWith('-') && isSecretOperand(a))) {
+        return deny(trimmed, 'чтение секретных файлов .env* запрещено');
+      }
       return args.some((a) => a.startsWith('--output'))
         ? deny(trimmed, '--output пишет в файл')
         : null;
