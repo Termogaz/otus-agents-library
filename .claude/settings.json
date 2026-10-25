@@ -30,6 +30,7 @@
       "Bash(git commit:*)"
     ],
     "ask": [
+      "Edit(./.claude/**)",
       "Bash(git push:*)",
       "Bash(gh pr create:*)",
       "Bash(gh pr merge:*)",
@@ -38,10 +39,20 @@
     ],
     "deny": [
       "Read(./.env*)",
+      "Read(**/.env*)",
       "Edit(./.env*)",
       "Bash(cat .env*)",
       "Bash(head .env*)",
       "Bash(tail .env*)",
+      "Bash(cat ./.env*)",
+      "Bash(head ./.env*)",
+      "Bash(tail ./.env*)",
+      "Bash(less .env*)",
+      "Bash(less ./.env*)",
+      "Bash(more .env*)",
+      "Bash(more ./.env*)",
+      "Bash(source .env*)",
+      "Bash(source ./.env*)",
       "Edit(./package-lock.json)",
       "Bash(rm -rf:*)",
       "Bash(git push --force:*)",
