@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { checkBashCommand, checkFilePath } from '../../.claude/hooks/protect-files.js';
+import { checkBashDecision } from '../../.claude/hooks/protect-files.js';
 
 const root = '/home/user/library';
 
@@ -142,6 +143,66 @@ describe('checkBashCommand input and nested shell', () => {
   });
 });
 
+describe('checkBashCommand git add', () => {
+  it.each([
+    'git add -f .env',
+    'git add --force .env.local',
+    'git add -f .',
+    'git add -fA',
+    'git add --force -A',
+    'git add -f config/',
+    "git add -f '*.local'",
+    'git add .envrc',
+  ])('blocks forced git add: %s', (command) => {
+    expect(checkBashCommand(command)).not.toBeNull();
+  });
+
+  it.each([
+    'git add src/a.ts',
+    'git add .env.example',
+    'git add -A',
+    'git add .',
+    'git add -f dist/app.js',
+  ])('allows ordinary git add: %s', (command) => {
+    expect(checkBashCommand(command)).toBeNull();
+  });
+});
+
+describe('checkBashDecision agent config', () => {
+  it.each([
+    'sed -i s/a/b/ .claude/settings.json',
+    'echo x > .claude/hooks/x.ts',
+    'echo x | tee .claude/settings.json',
+    'cp a.json .claude/settings.json',
+    'rm .claude/hooks/old.ts',
+    'echo x >> ~/.claude/settings.json',
+    "sh -c 'echo x > .claude/a.ts'",
+  ])('asks before writing agent config: %s', (command) => {
+    expect(checkBashDecision(command)?.decision).toBe('ask');
+  });
+
+  it.each([
+    'cp .env .claude/x',
+    'echo x > .claude/a.ts && cat .env',
+    'echo x > .claude/a.ts; rm package-lock.json',
+  ])('prefers deny over ask when the command also touches a secret: %s', (command) => {
+    expect(checkBashDecision(command)?.decision).toBe('deny');
+  });
+
+  it.each([
+    'cat .claude/settings.json',
+    'ls .claude/hooks',
+    'grep -n hooks .claude/settings.json',
+    'git diff .claude/settings.json',
+  ])('does not ask for reading agent config: %s', (command) => {
+    expect(checkBashDecision(command)).toBeNull();
+  });
+
+  it('keeps checkBashCommand null for commands that only ask', () => {
+    expect(checkBashCommand('sed -i s/a/b/ .claude/settings.json')).toBeNull();
+  });
+});
+
 describe('protect-files hook process', () => {
   const tsx = fileURLToPath(new URL('../../node_modules/.bin/tsx', import.meta.url));
   const script = fileURLToPath(new URL('../../.claude/hooks/protect-files.ts', import.meta.url));
@@ -164,6 +225,22 @@ describe('protect-files hook process', () => {
 
     expect(result.status).toBe(2);
     expect(result.stderr).toContain('.env');
+  });
+
+  it('hook process asks before writing agent config', { timeout: 20000 }, () => {
+    const result = runHook('sed -i s/a/b/ .claude/settings.json');
+
+    expect(result.status).toBe(0);
+    const output = JSON.parse(result.stdout) as {
+      hookSpecificOutput: {
+        hookEventName: string;
+        permissionDecision: string;
+        permissionDecisionReason: string;
+      };
+    };
+    expect(output.hookSpecificOutput.hookEventName).toBe('PreToolUse');
+    expect(output.hookSpecificOutput.permissionDecision).toBe('ask');
+    expect(output.hookSpecificOutput.permissionDecisionReason).toContain('.claude');
   });
 
   it('hook process lets ordinary command through', { timeout: 20000 }, () => {
