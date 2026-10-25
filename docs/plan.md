@@ -91,25 +91,8 @@ docs/         plan.md, memory.md, about.md
 
 ## Модуль 2: агентно-ориентированный пайплайн
 
-ДЗ-1 заморожено тегом `hw1-submitted`; ДЗ-2 ведём в этом же репозитории, ветка `feat/module-2`.
-
-- [x] Шаг 0. Тег `hw1-submitted` на GitHub, ветка `feat/module-2`
-- [ ] Шаг 1. GSD: установка, разбор кодовой базы, единый источник плана, architecture, security-checklist
-  - [x] 1а. Node 24 (nvm); `@opengsd/gsd-core@1.18.0 --claude --local`; файлы GSD вне git и линтера
-  - [x] 1б. `/gsd-onboard` → `/gsd-map-codebase` → `/gsd-new-project`: карта кода, исследование,
-        `PROJECT.md`, `REQUIREMENTS.md` (23), `ROADMAP.md` (5 фаз), `STATE.md`, `config.json`
-  - [ ] 1в. Единый источник плана, architecture, security-checklist
-- [ ] Шаг 2. Память: claude-mem (или аналог), проверка между сессиями
-- [ ] Шаг 3. Быстрые команды и auto hooks (`SessionStart`, `PreCompact`)
-- [ ] Шаг 4. Управление контекстом: автосжатие и чек-пойнты, скриншоты usage до и после
-- [ ] Шаг 5. Discovery в GSD для следующей вехи (продление и пени)
-- [ ] Шаг 6. README «Модуль 2», PR, `npm run check`
+С модуля 2 план и прогресс ведутся в GSD: фазы и критерии успеха — [`.planning/ROADMAP.md`](../.planning/ROADMAP.md), текущая позиция — [`.planning/STATE.md`](../.planning/STATE.md). ДЗ-1 заморожено тегом `hw1-submitted`; шаги 0, 1а и 1б модуля 2 (ветка `feat/module-2`, установка GSD Core, инициализация GSD-проекта) выполнены до перехода на GSD, их итоги — в `docs/memory.md`. Отметки шагов в этом файле больше не ведутся.
 
 ## Roadmap (следующие модули)
 
-- Хранилище: SQLite + миграции вместо JSON.
-- Тесты: отдельный файл данных для e2e, чтобы e2e не засорял `data/library.json` dev-сервера. Сервер уже читает путь из `LIBRARY_DATA_FILE`; осталось передать его в `webServer` в `playwright.config.ts`.
-- Правила: бронирование и очередь, продление, пени, блокировка должников.
-- Роли: библиотекарь / читатель, авторизация.
-- Интеграции: карточка книги по ISBN (Open Library), поиск, рекомендации через LLM.
-- Эксплуатация: фоновое напоминание о просрочке, деплой, логи.
+Перенесён в [`.planning/PROJECT.md`](../.planning/PROJECT.md) (раздел «Out of Scope»), чтобы его видел `/gsd-new-milestone`.
