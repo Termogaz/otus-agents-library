@@ -15,6 +15,7 @@ data/
 .claude/hooks/managed-hooks-registry.cjs
 .claude/hooks/package.json
 .claude/scripts/
+.gsd/
 
 # Документы GSD: пишутся и обновляются его скриптами, не Prettier
 .planning/
