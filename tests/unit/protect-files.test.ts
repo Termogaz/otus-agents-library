@@ -119,6 +119,29 @@ describe('checkBashCommand secret reads', () => {
   });
 });
 
+describe('checkBashCommand input and nested shell', () => {
+  it.each([
+    'cat < .env',
+    'while read l; do echo $l; done < .env.local',
+    'bash -c "cat .env"',
+    "sh -lc 'head .envrc'",
+    "zsh -c 'source ./.env'",
+    'grep --file=.env x',
+  ])('blocks reading secret file: %s', (command) => {
+    expect(checkBashCommand(command)).not.toBeNull();
+  });
+
+  it.each([
+    'cat <<< .env',
+    'cat <<EOF > notes.md\n.env\nEOF',
+    'grep --regexp=.env src/config.ts',
+    'bash -c "cat README.md"',
+    'sort < input.txt',
+  ])('allows input that is not a secret file: %s', (command) => {
+    expect(checkBashCommand(command)).toBeNull();
+  });
+});
+
 describe('protect-files hook process', () => {
   const tsx = fileURLToPath(new URL('../../node_modules/.bin/tsx', import.meta.url));
   const script = fileURLToPath(new URL('../../.claude/hooks/protect-files.ts', import.meta.url));
@@ -131,6 +154,13 @@ describe('protect-files hook process', () => {
 
   it('hook process denies reading secret file with exit code 2', { timeout: 20000 }, () => {
     const result = runHook('cat ./.env');
+
+    expect(result.status).toBe(2);
+    expect(result.stderr).toContain('.env');
+  });
+
+  it('hook process denies input redirect from secret file', { timeout: 20000 }, () => {
+    const result = runHook('cat < .env');
 
     expect(result.status).toBe(2);
     expect(result.stderr).toContain('.env');
