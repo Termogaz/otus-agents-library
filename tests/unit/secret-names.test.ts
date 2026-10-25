@@ -5,10 +5,18 @@ import {
   isSecretFileName,
   isSecretPath,
 } from '../../.claude/hooks/lib/secret-names.js';
+import { isSecretOperand } from '../../.claude/hooks/lib/secret-names.js';
 
 describe('isSecretFileName', () => {
   it.each(['.env', '.env.local', '.env.production', '.envrc', '.env.dist', '.env*'])(
     'treats %s as secret file name',
+    (name) => {
+      expect(isSecretFileName(name)).toBe(true);
+    },
+  );
+
+  it.each(['.env~', '.env{,}', '.env{,.local}', '.env:x', '.env#'])(
+    'treats unusual env tail %s as secret file name',
     (name) => {
       expect(isSecretFileName(name)).toBe(true);
     },
@@ -25,6 +33,30 @@ describe('isSecretFileName', () => {
   ])('does not treat %s as secret file name', (name) => {
     expect(isSecretFileName(name)).toBe(false);
   });
+});
+
+describe('isSecretOperand', () => {
+  it.each([
+    'if=.env',
+    'of=.env.local',
+    '@.env',
+    'file=@.env',
+    'HEAD:.env',
+    ':.env',
+    '.env:x',
+    '.env',
+    './.env',
+    '../.env',
+  ])('detects secret operand %s', (arg) => {
+    expect(isSecretOperand(arg)).toBe(true);
+  });
+
+  it.each(['if=out.bin', '@README.md', 'HEAD:src/app.ts', '.env.example', 'HEAD:.env.sample'])(
+    'does not detect secret operand %s',
+    (arg) => {
+      expect(isSecretOperand(arg)).toBe(false);
+    },
+  );
 });
 
 describe('isSecretPath', () => {
