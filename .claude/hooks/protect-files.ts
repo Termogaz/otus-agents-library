@@ -16,6 +16,70 @@ const NON_READING_PROGRAMS = new Set(['ls', 'test', '[', 'stat']);
 // Поиск по шаблону: первый позиционный аргумент — шаблон, а не путь (D-05).
 const PATTERN_SEARCH_PROGRAMS = new Set(['grep', 'egrep', 'fgrep', 'rg']);
 
+// Команды, у которых есть `-t DIR` / `--target-directory=DIR`: запись идёт в каталог, а не в последний аргумент.
+const TARGET_DIRECTORY_PROGRAMS = new Set(['cp', 'mv', 'install', 'ln']);
+
+// Обёртки, запускающие следующее слово как команду (WR-01): значение — опции, которые берут
+// отдельный аргумент (`env -u NAME`, `sudo -u user`). Опции без значения просто пропускаются.
+// Опции, которые могут оказаться флагом без значения (`sudo -h`), сюда не входят: лишнее слово
+// съело бы настоящую команду.
+const WRAPPER_PROGRAMS: ReadonlyMap<string, ReadonlySet<string>> = new Map([
+  ['env', new Set(['-u', '--unset', '-C', '--chdir'])],
+  [
+    'sudo',
+    new Set([
+      '-u',
+      '--user',
+      '-g',
+      '--group',
+      '-p',
+      '--prompt',
+      '-C',
+      '-D',
+      '-r',
+      '-t',
+      '-T',
+      '-U',
+    ]),
+  ],
+  ['nice', new Set(['-n', '--adjustment'])],
+  ['timeout', new Set(['-s', '--signal', '-k', '--kill-after'])],
+  ['xargs', new Set(['-I', '-n', '-P', '-d', '-L', '-s', '-E', '-a', '--max-args', '--max-procs'])],
+  ['time', new Set(['-f', '--format', '-o', '--output'])],
+  ['exec', new Set(['-a'])],
+  ['command', new Set<string>()],
+  ['nohup', new Set<string>()],
+  ['setsid', new Set<string>()],
+  ['builtin', new Set<string>()],
+]);
+// Ключевые слова shell перед командой: `if rm x; then rm y; fi`, `! rm x`, `{ rm x; }`.
+const SHELL_KEYWORDS = new Set(['if', 'elif', 'while', 'until', 'then', 'do', 'else', '!', '{']);
+const ASSIGNMENT_WORD = /^[A-Za-z_][A-Za-z0-9_]*=/;
+
+// Опции программ-писателей, значение которых — файл, куда идёт вывод (WR-01).
+// `short` — буквы в кластере (`-sSo file`), `valueLetters` — буквы, после которых кластер кончается значением.
+const OUTPUT_FILE_OPTIONS: ReadonlyMap<
+  string,
+  { short: string; valueLetters: string; long: readonly string[] }
+> = new Map([
+  [
+    'curl',
+    {
+      short: 'oDc',
+      valueLetters: 'AbcCdDeEFHKmoPQrtTuUwxXyYz',
+      long: ['--output', '--dump-header', '--cookie-jar'],
+    },
+  ],
+  [
+    'wget',
+    {
+      short: 'Ooa',
+      valueLetters: 'aoOetTwQPUiBlIARDX',
+      long: ['--output-document', '--output-file', '--append-output'],
+    },
+  ],
+]);
+
 // Вложенный shell: скрипт после `-c` разбирается рекурсивно, глубина ограничена.
 const NESTED_SHELLS = new Set(['sh', 'bash', 'zsh', 'dash']);
 const MAX_SHELL_DEPTH = 3;
@@ -209,6 +273,96 @@ function gitAddForceDecision(args: string[]): BashDecision | null {
   };
 }
 
+// Снимает с начала простой команды всё, что не является настоящей программой (WR-01):
+// присваивания `NAME=value`, ключевые слова `then`/`do`/`!`/`{`, обёртки `env`/`nohup`/`xargs`/`sudo`
+// с их опциями. Результат — программа и её аргументы; пустой массив, если команды нет (`X=1`).
+function stripCommandPrefixes(words: string[]): string[] {
+  let rest = words;
+  // Каждый проход укорачивает `rest`, поэтому цикл конечен.
+  for (;;) {
+    const [first, ...tail] = rest;
+    if (first === undefined) return rest;
+    if (SHELL_KEYWORDS.has(first) || ASSIGNMENT_WORD.test(first)) {
+      rest = tail;
+      continue;
+    }
+    const wrapper = path.posix.basename(first);
+    const valueOptions = WRAPPER_PROGRAMS.get(wrapper);
+    if (valueOptions === undefined) return rest;
+    rest = skipWrapperOptions(wrapper, tail, valueOptions);
+  }
+}
+
+function skipWrapperOptions(
+  wrapper: string,
+  args: string[],
+  valueOptions: ReadonlySet<string>,
+): string[] {
+  let i = 0;
+  while (i < args.length) {
+    const arg = args[i]!;
+    if (arg === '--') {
+      i++;
+      break;
+    }
+    if (wrapper === 'env' && (arg === '-S' || arg === '--split-string')) {
+      // `env -S 'rm x'`: строка после опции — это сама команда со словами.
+      const script = args[i + 1] ?? '';
+      return [...script.split(/\s+/).filter((w) => w !== ''), ...args.slice(i + 2)];
+    }
+    if (!arg.startsWith('-') || arg === '-') break;
+    i += valueOptions.has(arg) ? 2 : 1;
+  }
+  const rest = args.slice(i);
+  // `timeout 5 cmd`: первое слово после опций — длительность, а не команда.
+  return wrapper === 'timeout' ? rest.slice(1) : rest;
+}
+
+// Каталог из `-t DIR`, `-tDIR`, `-rt DIR` или `--target-directory[=]DIR`, либо undefined.
+function targetDirectory(args: string[]): string | undefined {
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i]!;
+    if (arg === '--') return undefined;
+    if (arg === '--target-directory') return args[i + 1];
+    if (arg.startsWith('--target-directory=')) return arg.slice('--target-directory='.length);
+    const cluster = /^-([a-zA-Z]*)t(.*)$/.exec(arg);
+    if (cluster && !arg.startsWith('--')) return cluster[2] === '' ? args[i + 1] : cluster[2];
+  }
+  return undefined;
+}
+
+// Файлы, в которые пишут dd (`of=`), curl и wget (`-o`/`-O`/`--output`) — не последний аргумент (WR-01).
+function outputFileTargets(program: string, args: string[]): string[] {
+  if (program === 'dd') {
+    return args.filter((a) => a.startsWith('of=')).map((a) => a.slice('of='.length));
+  }
+  const options = OUTPUT_FILE_OPTIONS.get(program);
+  if (options === undefined) return [];
+
+  const targets: string[] = [];
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i]!;
+    if (arg.startsWith('--')) {
+      const eq = arg.indexOf('=');
+      const name = eq === -1 ? arg : arg.slice(0, eq);
+      if (!options.long.includes(name)) continue;
+      const value = eq === -1 ? args[++i] : arg.slice(eq + 1);
+      if (value !== undefined) targets.push(value);
+    } else if (arg.startsWith('-') && arg.length > 1) {
+      // Кластер `-sSo file`: до первой буквы, берущей значение, остальное — флаги.
+      for (let j = 1; j < arg.length; j++) {
+        const letter = arg[j]!;
+        if (!options.valueLetters.includes(letter)) continue;
+        const attached = arg.slice(j + 1);
+        const value = attached === '' ? args[++i] : attached;
+        if (options.short.includes(letter) && value !== undefined) targets.push(value);
+        break;
+      }
+    }
+  }
+  return targets;
+}
+
 function checkSegment(segment: ShellSegment, depth: number): BashDecision | null {
   const { words, writeTargets, readTargets } = segment;
   // `ask` не прерывает проверку: отказ по секрету в той же команде приоритетнее (D-12).
@@ -226,15 +380,20 @@ function checkSegment(segment: ShellSegment, depth: number): BashDecision | null
     if (decision) return decision;
   }
 
-  const [name, ...args] = words[0] === 'sudo' ? words.slice(1) : words;
+  const [name, ...args] = stripCommandPrefixes(words);
   if (name === undefined) return ask;
   const program = path.posix.basename(name);
   const files = args.filter((a) => !a.startsWith('-'));
+  const targetDir = TARGET_DIRECTORY_PROGRAMS.has(program) ? targetDirectory(args) : undefined;
 
-  let candidates: string[] = [];
-  if (WRITES_ANY_ARG.has(program)) candidates = files;
-  else if (WRITES_LAST_ARG.has(program)) candidates = files.slice(-1);
-  else if (IN_PLACE_EDITORS.has(program) && args.some(isInPlaceFlag)) candidates = files;
+  let candidates: string[];
+  if (WRITES_ANY_ARG.has(program)) {
+    // `mv -t DIR a`: каталог из `--target-directory=DIR` не попал бы в `files`.
+    candidates = targetDir === undefined ? files : [...files, targetDir];
+  } else if (WRITES_LAST_ARG.has(program)) {
+    candidates = targetDir === undefined ? files.slice(-1) : [targetDir];
+  } else if (IN_PLACE_EDITORS.has(program) && args.some(isInPlaceFlag)) candidates = files;
+  else candidates = outputFileTargets(program, args);
 
   for (const file of candidates) {
     const reason = protectedReason(file);
@@ -278,7 +437,7 @@ function unmodellableReason(command: string): string | null {
     return 'shell получает скрипт со stdin';
   }
   for (const { words } of parseShell(command)) {
-    const [name, ...args] = words[0] === 'sudo' ? words.slice(1) : words;
+    const [name, ...args] = stripCommandPrefixes(words);
     if (name === undefined) continue;
     if (
       SCRIPT_INTERPRETERS.test(path.posix.basename(name)) &&
