@@ -35,4 +35,23 @@ describe('checkReviewerCommand', () => {
   ])('blocks command that may change files: %s', (command) => {
     expect(checkReviewerCommand(command)).not.toBeNull();
   });
+
+  it.each([
+    'cat .env',
+    'cat ./.env.local',
+    'head -n 5 .env',
+    'tail .envrc',
+    'wc -l .env',
+    'cat docs/../.env',
+    'cat /home/user/library/.env',
+  ])('blocks reading secret file: %s', (command) => {
+    expect(checkReviewerCommand(command)).not.toBeNull();
+  });
+
+  it.each(['cat .env.example', 'cat README.md', 'head -n 5 package.json', 'ls -la .env*'])(
+    'allows reading non-secret file: %s',
+    (command) => {
+      expect(checkReviewerCommand(command)).toBeNull();
+    },
+  );
 });
