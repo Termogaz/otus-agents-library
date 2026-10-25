@@ -28,6 +28,20 @@ export function isMain(moduleUrl: string): boolean {
   return script !== undefined && moduleUrl === pathToFileURL(script).href;
 }
 
+// Решение `ask` для PreToolUse: Claude Code покажет причину пользователю и спросит подтверждение.
+// Формат — одна строка JSON в stdout и код 0 (документация hooks Claude Code, PreToolUse).
+export function exitWithAsk(reason: string): never {
+  const output = {
+    hookSpecificOutput: {
+      hookEventName: 'PreToolUse',
+      permissionDecision: 'ask',
+      permissionDecisionReason: reason,
+    },
+  };
+  process.stdout.write(`${JSON.stringify(output)}\n`);
+  process.exit(0);
+}
+
 // Код 2: для PreToolUse — отказ, для PostToolUse — сообщение агенту; stderr уходит агенту.
 export function exitWithFeedback(message: string): never {
   process.stderr.write(`${message}\n`);

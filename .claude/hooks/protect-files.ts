@@ -1,7 +1,7 @@
 // PreToolUse (Edit|Write|Bash): запрет записи в .env*, .git/ и package-lock.json,
 // а для Bash — ещё и чтения секретных .env* через аргументы-пути команд.
 import path from 'node:path';
-import { exitWithFeedback, isMain, readHookInput } from './lib/hook-input.js';
+import { exitWithAsk, exitWithFeedback, isMain, readHookInput } from './lib/hook-input.js';
 import { isEnvFileName, isSecretPath } from './lib/secret-names.js';
 import { parseShell, type ShellSegment } from './lib/shell.js';
 
@@ -20,7 +20,7 @@ const PATTERN_SEARCH_PROGRAMS = new Set(['grep', 'egrep', 'fgrep', 'rg']);
 const NESTED_SHELLS = new Set(['sh', 'bash', 'zsh', 'dash']);
 const MAX_SHELL_DEPTH = 3;
 
-// Решение hook'а по Bash-команде: `deny` — отказ (код 2); `ask` выдаёт план 01-05.
+// Решение hook'а по Bash-команде: `deny` — отказ (код 2), `ask` — запрос подтверждения (код 0 и JSON).
 export type BashDecision = { decision: 'deny' | 'ask'; reason: string };
 
 function protectedReason(file: string): string | null {
@@ -110,11 +110,51 @@ function secretReadDecision(operand: string): BashDecision | null {
   };
 }
 
+// Запись в конфигурацию агента (.claude/) не запрещена, но требует подтверждения (D-12).
+function agentConfigAsk(file: string): BashDecision | null {
+  const normalized = path.posix.normalize(file.replaceAll('\\', '/'));
+  if (!normalized.split('/').includes('.claude')) return null;
+  return {
+    decision: 'ask',
+    reason: `${file}: правка конфигурации агента в .claude/ требует подтверждения`,
+  };
+}
+
+// `git add` с форсом добавляет в индекс игнорируемые файлы, в том числе .env* (D-09).
+function gitAddForceDecision(args: string[]): BashDecision | null {
+  if (args[0] !== 'add') return null;
+  const flags = args.slice(1).filter((a) => a.startsWith('-'));
+  const paths = args.slice(1).filter((a) => !a.startsWith('-'));
+  const hasShortFlag = (letter: string) =>
+    flags.some((f) => /^-[a-zA-Z]+$/.test(f) && f.includes(letter));
+
+  const forced = flags.includes('--force') || hasShortFlag('f');
+  if (!forced) return null;
+
+  const addsAll = flags.includes('--all') || hasShortFlag('A');
+  // Широкий pathspec: форс подхватит и игнорируемый .env. Каталог без `/` не распознаётся.
+  const isBroad = (p: string) =>
+    p === '.' || p === './' || p.startsWith(':') || p.endsWith('/') || p.includes('*');
+  const isRisky =
+    addsAll ||
+    paths.length === 0 ||
+    paths.some((p) => isBroad(p) || isEnvFileName(path.posix.basename(p.replaceAll('\\', '/'))));
+  if (!isRisky) return null;
+  return {
+    decision: 'deny',
+    reason: 'git add --force может закоммитить игнорируемые секреты .env*',
+  };
+}
+
 function checkSegment(segment: ShellSegment, depth: number): BashDecision | null {
   const { words, writeTargets, readTargets } = segment;
+  // `ask` не прерывает проверку: отказ по секрету в той же команде приоритетнее (D-12).
+  let ask: BashDecision | null = null;
+
   for (const target of writeTargets) {
     const reason = protectedReason(target);
     if (reason) return { decision: 'deny', reason };
+    ask ??= agentConfigAsk(target);
   }
 
   // Цель `<`: shell открывает файл сам, поэтому проверяем её независимо от команды.
@@ -124,7 +164,7 @@ function checkSegment(segment: ShellSegment, depth: number): BashDecision | null
   }
 
   const [name, ...args] = words[0] === 'sudo' ? words.slice(1) : words;
-  if (name === undefined) return null;
+  if (name === undefined) return ask;
   const program = path.posix.basename(name);
   const files = args.filter((a) => !a.startsWith('-'));
 
@@ -136,6 +176,12 @@ function checkSegment(segment: ShellSegment, depth: number): BashDecision | null
   for (const file of candidates) {
     const reason = protectedReason(file);
     if (reason) return { decision: 'deny', reason };
+    ask ??= agentConfigAsk(file);
+  }
+
+  if (program === 'git') {
+    const decision = gitAddForceDecision(args);
+    if (decision) return decision;
   }
 
   // Чтение: проверяем аргументы-пути, а не подстроку команды (D-05).
@@ -149,9 +195,13 @@ function checkSegment(segment: ShellSegment, depth: number): BashDecision | null
   // Вложенный shell: `bash -c "cat .env"` разбираем как отдельную команду.
   if (NESTED_SHELLS.has(program)) {
     const script = nestedScript(args);
-    if (script !== undefined) return checkCommand(script, depth + 1);
+    if (script !== undefined) {
+      const nested = checkCommand(script, depth + 1);
+      if (nested?.decision === 'deny') return nested;
+      ask ??= nested;
+    }
   }
-  return null;
+  return ask;
 }
 
 // Итог по всей команде: любой `deny` побеждает, иначе первый `ask`, иначе null.
@@ -186,6 +236,7 @@ if (isMain(import.meta.url)) {
       if (result?.decision === 'deny') {
         exitWithFeedback(`protect-files: команда отклонена — ${result.reason}.`);
       }
+      if (result?.decision === 'ask') exitWithAsk(`protect-files: ${result.reason}.`);
     } else {
       const reason = checkFilePath(tool_input.file_path ?? '');
       if (reason) exitWithFeedback(`Запись в защищённый файл заблокирована hook'ом: ${reason}.`);
