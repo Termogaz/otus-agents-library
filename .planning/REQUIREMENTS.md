@@ -8,16 +8,16 @@
 
 ### Планирование GSD
 
-- [ ] **PLAN-01**: `ROADMAP.md`, `REQUIREMENTS.md`, `STATE.md` созданы; `/gsd-progress` показывает позицию вехи
-- [ ] **PLAN-02**: Единый источник плана — `docs/plan.md` становится указателем на `.planning/`; правило про прогресс в `AGENTS.md` согласовано с автором
+- [x] **PLAN-01**: `ROADMAP.md`, `REQUIREMENTS.md`, `STATE.md` созданы; `/gsd-progress` показывает позицию вехи
+- [x] **PLAN-02**: Единый источник плана — `docs/plan.md` становится указателем на `.planning/`; правило про прогресс в `AGENTS.md` согласовано с автором
 - [ ] **PLAN-03**: `docs/architecture.md` описывает архитектуру среды агента (слои инструкций, планирования, памяти, hooks, контекста) со ссылкой на `.planning/codebase/ARCHITECTURE.md`
-- [ ] **PLAN-04**: Хотя бы одна фаза проходит полный цикл GSD: `PLAN.md` → выполнение → `VERIFICATION.md`
+- [x] **PLAN-04**: Хотя бы одна фаза проходит полный цикл GSD: `PLAN.md` → выполнение → `VERIFICATION.md`
 
 ### Безопасность
 
-- [ ] **SEC-01**: `docs/security-checklist.md` — пункты из `CONCERNS.md` и ДЗ-1, у каждого команда проверки и статус (закрыт / открыт / воспроизводим из git)
-- [ ] **SEC-02**: Обходы чтения `.env` закрыты (`cat ./.env`, `grep … .env`, относительные пути в `reviewer`) и покрыты тестами
-- [ ] **SEC-03**: Правка `.claude/**` агентом требует подтверждения (`ask`)
+- [x] **SEC-01**: `docs/security-checklist.md` — пункты из `CONCERNS.md` и ДЗ-1, у каждого команда проверки и статус (закрыт / открыт / воспроизводим из git)
+- [x] **SEC-02**: Обходы чтения `.env` закрыты (`cat ./.env`, `grep … .env`, относительные пути в `reviewer`) и покрыты тестами
+- [x] **SEC-03**: Правка `.claude/**` агентом требует подтверждения (`ask`)
 
 ### Память агента
 
@@ -74,13 +74,13 @@
 
 | Requirement | Phase | Status |
 | ----------- | ----- | ------ |
-| PLAN-01 | Phase 1 | Pending |
-| PLAN-02 | Phase 1 | Pending |
+| PLAN-01 | Phase 1 | Complete |
+| PLAN-02 | Phase 1 | Complete |
 | PLAN-03 | Phase 5 | Pending |
-| PLAN-04 | Phase 1 | Pending |
-| SEC-01 | Phase 1 | Pending |
-| SEC-02 | Phase 1 | Pending |
-| SEC-03 | Phase 1 | Pending |
+| PLAN-04 | Phase 1 | Complete |
+| SEC-01 | Phase 1 | Complete |
+| SEC-02 | Phase 1 | Complete |
+| SEC-03 | Phase 1 | Complete |
 | MEM-01 | Phase 2 | Pending |
 | MEM-02 | Phase 2 | Pending |
 | MEM-03 | Phase 2 | Pending |

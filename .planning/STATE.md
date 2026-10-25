@@ -2,19 +2,20 @@
 gsd_state_version: "1.0"
 milestone: v1.0
 milestone_name: "ДЗ-2: агентно-ориентированный пайплайн"
-current_phase: 1
-current_phase_name: Базовая линия, единый план и гигиена безопасности
+current_phase: 2
+current_phase_name: Память агента, быстрые команды и auto hooks
 status: planning
-stopped_at: Phase 1 context gathered
-last_updated: "2026-10-22T20:11:20.255Z"
-last_activity: 2026-10-22
-last_activity_desc: создан roadmap вехи ДЗ-2 (5 фаз, 23 требования)
-state_head: b1fd26394f68472fe2cb218126b3e9d68b13e00e
+stopped_at: Phase 01 complete, ready to plan Phase 2
+last_updated: "2026-10-25T19:18:30.212Z"
+last_activity: 2026-10-25
+last_activity_desc: Phase 01 complete, transitioned to Phase 2
+state_head: b33b07ab4ef2ddfa51c30f793c6cbb3643722e75
 progress:
   total_phases: 5
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  completed_phases: 1
+  total_plans: 9
+  completed_plans: 9
+  percent: 20
 ---
 
 # Project State
@@ -24,21 +25,21 @@ progress:
 See: .planning/PROJECT.md (updated 2026-10-22)
 
 **Core value:** Проверяющий по README и репозиторию видит, что каждый пункт текущего ДЗ выполнен и воспроизводим: настройка есть в git, есть доказательство работы (команда, скриншот, коммит).
-**Current focus:** Phase 1 — Базовая линия, единый план и гигиена безопасности
+**Current focus:** Phase 02 — Память агента, быстрые команды и auto hooks (первый шаг — обходы из 01-REVIEW.md)
 
 ## Current Position
 
-Phase: 1 of 5 (Базовая линия, единый план и гигиена безопасности)
-Plan: 0 of TBD in current phase
+Phase: 2 — Память агента, быстрые команды и auto hooks
+Plan: Not started
 Status: Ready to plan
-Last activity: 2026-10-22 — создан roadmap вехи ДЗ-2 (5 фаз, 23 требования)
+Last activity: 2026-10-25 — Phase 01 complete, transitioned to Phase 2
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [██░░░░░░░░] 20%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 0
+- Total plans completed: 9
 - Average duration: -
 - Total execution time: -
 
@@ -46,13 +47,26 @@ Progress: [░░░░░░░░░░] 0%
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
+| 01 | 9 | - | - |
 
 **Recent Trend:**
 - Last 5 plans: -
 - Trend: -
 
 *Updated after each plan completion*
+**Per-Plan Metrics:**
+
+| Plan | Duration | Tasks | Files |
+|------|----------|-------|-------|
+| Phase 01 P01 | 2 min | 2 tasks | 6 files |
+| Phase 01 P02 | 2 min | 2 tasks | 6 files |
+| Phase 01 P04 | 4 min | 1 tasks | 2 files |
+| Phase 01 P05 | 5 min | 2 tasks | 4 files |
+| Phase 01 P03 | 2 min | 2 tasks | 2 files |
+| Phase 01 P06 | 14 min | 2 tasks | 5 files |
+| Phase 01 P07 | 4 min | 2 tasks | 2 files |
+| Phase 01 P08 | 5 min | 3 tasks | 5 files |
+| Phase 01 P09 | 5 min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -65,6 +79,15 @@ Recent decisions affecting current work:
 - [Roadmap]: снимки `/context` и `/usage` «до» — первый шаг фазы 1, до любых изменений среды
 - [Roadmap]: Discovery — отдельная фаза 4 внутри вехи (spec-phase и discuss-phase требуют фазу в ROADMAP); зависит только от фазы 1
 - [Init]: `commit_docs: false`, `create_tag: false`, `.claude/CLAUDE.md` от GSD не генерируется (см. PROJECT.md)
+- [Phase 01]: [01-01] CLAUDE.md импортирует @.planning/STATE.md; AGENTS.md и review-step ведут прогресс в .planning/ (D-02, D-03); roadmap будущих модулей — в PROJECT.md Out of Scope (D-04)
+- [Phase 01]: D-05/D-07/D-08: protect-files проверяет аргументы-пути через общий isSecretPath (secret-names.ts), шаблон grep не путь; reviewer-readonly использует ту же функцию
+- [Phase 01]: 01-04: Bash-deny для grep не добавлен (D-05); Write(./.claude/**) не добавлен — Edit(...) покрывает Write
+- [Phase 01]: [01-05] protect-files: readTargets для <, рекурсия по sh/bash/zsh/dash -c (глубина ≤3, глубже — deny), значение --опция=путь; git add -f с секретом/широким pathspec — deny; запись в .claude/ через Bash — ask (D-05, D-09, D-12)
+- [Phase 01]: 01-03: в security-checklist статус «закрыт» только при проходящей команде vitest -t (проверка строки Tests N passed); ограничения эвристики и платформы записаны в строках, исправления открытых пунктов отложены
+- [Phase 01]: [01-06] shell.ts: heredoc ищется со стеком контекстов (кавычки, $((…)), $(…)); ( ) всегда разделители сегмента, { } — только отдельным словом; >&N — дублирование дескриптора; isSecretOperand делит операнд по =@:
+- [Phase 01]: [01-07] fail-closed только на верхнем уровне: нестандартная конструкция (подстановка, канал или heredoc в shell, eval, интерпретатор с -c/-e) плюс секретный токен в сыром тексте = deny; приоритет deny сегмента > fail-closed > ask; рекурсивный grep по корню — ask
+- [Phase 01]: 01-08: protect-files снимает префиксы команды (stripCommandPrefixes, WRAPPER_PROGRAMS) перед program; писатели dd/curl/wget и цель -t; git add -f учитывает глобальные опции и путь без точки как широкий pathspec; reviewer-readonly проверяет git read-операнды через isSecretOperand и запрещает --no-index
+- [Phase 01]: 01-09: checklist без новых строк (предел D-13): WR-05, WR-07, IN-03 в строке Fail-open hooks, WR-06 с отказами fail-closed в строке чтения секретов, остаток WR-01 в строке записи; IN-01 только в memory; статус закрыт определён как воспроизведённые обходы закрыты и закреплены тестом
 
 ### Pending Todos
 
@@ -87,7 +110,7 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-24
-Stopped at: Phase 1 plans revised (5 plans, 3 waves) — re-check by gsd-plan-checker pending (revision 1/3 not yet verified)
-Resume file: .planning/phases/01-bazovaya-liniya-edinyy-plan-i-gigiena-bezopasnosti/01-03-PLAN.md
+Last session: 2026-10-25T15:45:39.976Z
+Stopped at: Phase 01 complete, ready to plan Phase 2
+Resume file: None
 Next: re-run plan-checker on phase 1 plans, then /gsd-execute-phase 1

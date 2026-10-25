@@ -23,7 +23,7 @@
 
 Дробные фазы выполняются между соседними целыми по порядку номеров.
 
-- [ ] **Phase 1: Базовая линия, единый план и гигиена безопасности** - снимки «до», план в GSD, security-checklist, закрытые обходы `.env` и правок `.claude/`
+- [x] **Phase 1: Базовая линия, единый план и гигиена безопасности** - снимки «до», план в GSD, security-checklist, закрытые обходы `.env` и правок `.claude/` (completed 2026-10-25)
 - [ ] **Phase 2: Память агента, быстрые команды и auto hooks** - claude-mem с канарейкой и запасным вариантом, skills `/lib-*`, hooks `SessionStart` и `PreCompact` с тестами
 - [ ] **Phase 3: Управление контекстом** - порог автосжатия, восстановление позиции после сжатия, statusline, снимки «после» и политика контекста
 - [ ] **Phase 4: Discovery «продление и пени»** - `/gsd-explore` → SPEC → CONTEXT с открытыми вопросами, без кода
@@ -32,6 +32,7 @@
 ## Phase Details
 
 ### Phase 1: Базовая линия, единый план и гигиена безопасности
+
 **Goal**: Точка «до» зафиксирована, план вехи ведётся в одном месте (GSD), известные обходы запретов закрыты до подключения памяти, а сама фаза проходит полный цикл GSD
 **Depends on**: Nothing (first phase)
 **Requirements**: PLAN-01, PLAN-02, PLAN-04, SEC-01, SEC-02, SEC-03
@@ -41,16 +42,29 @@
   3. `docs/security-checklist.md` содержит пункты из `CONCERNS.md` и ДЗ-1, у каждого — команда проверки и статус «закрыт / открыт / воспроизводим из git»
   4. Попытки `cat ./.env`, `grep … .env` и чтение `.env` по относительному пути через `reviewer` отклоняются, и это закреплено тестами Vitest; правка файла в `.claude/` агентом вызывает запрос подтверждения; `npm run check` зелёный
   5. В каталоге фазы 1 в `.planning/phases/` есть `PLAN.md`, итог выполнения и `VERIFICATION.md` — фаза прошла полный цикл GSD
-**Plans:** 5 plans
+
+**Plans:** 9/9 plans complete (5 executed, 4 gap closure)
 
 Plans:
-- [ ] 01-01-PLAN.md — единый источник плана: `CLAUDE.md` → `.planning/STATE.md`, строки 9/72 `AGENTS.md`, `docs/plan.md` — указатель, roadmap в `PROJECT.md` (PLAN-01, PLAN-02; волна 1)
-- [ ] 01-02-PLAN.md — закрыть чтение `.env` через аргументы Bash и `reviewer`: `secret-names.ts`, `protect-files`, `reviewer-readonly`, шаблон grep — не путь, тесты Vitest (SEC-02; волна 1)
-- [ ] 01-03-PLAN.md — `docs/security-checklist.md`, итог фазы в `docs/memory.md`, единая ручная проверка конца фазы (SEC-01, PLAN-04; волна 3)
-- [ ] 01-04-PLAN.md — второй слой permissions: deny `Read(**/.env*)` и Bash-шаблоны, ask `Edit(./.claude/**)`, регрессионный тест `settings.json` (SEC-02, SEC-03; волна 1)
-- [ ] 01-05-PLAN.md — остальные обходы Bash (`< .env`, `bash -c`, `--опция=`), `git add -f`, решение `ask` для записи в `.claude/` через Bash (SEC-02, SEC-03; волна 2)
+**Wave 1**
+- [x] 01-01-PLAN.md — единый источник плана: `CLAUDE.md` → `.planning/STATE.md`, строки 9/72 `AGENTS.md`, `docs/plan.md` — указатель, roadmap в `PROJECT.md` (PLAN-01, PLAN-02; волна 1)
+- [x] 01-02-PLAN.md — закрыть чтение `.env` через аргументы Bash и `reviewer`: `secret-names.ts`, `protect-files`, `reviewer-readonly`, шаблон grep — не путь, тесты Vitest (SEC-02; волна 1)
+- [x] 01-04-PLAN.md — второй слой permissions: deny `Read(**/.env*)` и Bash-шаблоны, ask `Edit(./.claude/**)`, регрессионный тест `settings.json` (SEC-02, SEC-03; волна 1)
+- [x] 01-06-PLAN.md — gap closure: токенизатор `shell.ts` как bash (CR-01…CR-04, heredoc вне кавычек), хвост секретного имени и `isSecretOperand` в `secret-names.ts` (WR-02) (SEC-02; волна 1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [x] 01-05-PLAN.md — остальные обходы Bash (`< .env`, `bash -c`, `--опция=`), `git add -f`, решение `ask` для записи в `.claude/` через Bash (SEC-02, SEC-03; волна 2)
+- [x] 01-07-PLAN.md — gap closure: `protect-files` — операнды `=@:` (CR-06), fail-closed при немоделируемых конструкциях (CR-05), `ask` для рекурсивного grep по корню (WR-04) (SEC-02; волна 2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [x] 01-03-PLAN.md — `docs/security-checklist.md`, итог фазы в `docs/memory.md`, единая ручная проверка конца фазы (SEC-01, PLAN-04; волна 3)
+- [x] 01-08-PLAN.md — gap closure: обёртки и писатели записи (WR-01), `git add -f` с глобальными опциями и `.envrc` в `.gitignore` (WR-03), reviewer — операнды `git diff/show/log` и запрет `--no-index` (CR-07) (SEC-02, SEC-03; волна 3)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [x] 01-09-PLAN.md — gap closure: правдивые статусы `docs/security-checklist.md`, уточнение в `docs/memory.md`, README — прогресс в `.planning/` (SEC-01, PLAN-02; волна 4)
 
 ### Phase 2: Память агента, быстрые команды и auto hooks
+
 **Goal**: Новая сессия продолжает работу без пересказа: агент помнит факты прошлых сессий (claude-mem или аналог), при старте получает дайджест позиции, а частые действия запускаются короткими командами
 **Depends on**: Phase 1
 **Requirements**: MEM-01, MEM-02, MEM-03, MEM-04, HOOK-01, HOOK-02, HOOK-03, HOOK-04
@@ -60,9 +74,15 @@ Plans:
   3. Новая сессия начинается с дайджеста hook'а `SessionStart` из закоммиченного `.claude/settings.json` — ветка, позиция GSD, верхняя запись `docs/memory.md`, не больше 3 КБ; при выключенном claude-mem запасной вариант (auto memory + `docs/memory.md` + дайджест) так же возвращает агенту контекст прошлой сессии
   4. Команды `/lib-check`, `/lib-status`, `/lib-handoff`, `/lib-commit` доступны в сессии и делают заявленное; команды с побочными эффектами запускаются только явным вызовом
   5. Ручной `/compact` оставляет файл чек-пойнта в игнорируемом git каталоге, а `PreCompact` завершается с кодом 0 даже при ошибке; логика hooks покрыта тестами Vitest, `npm run check` зелёный
+
+**Первый шаг, до подключения памяти** (перенесён из фазы 1 по решению автора, см. overrides в `01-VERIFICATION.md`): закрыть обходы CR-01…CR-03, WR-01, WR-03, WR-04 из `01-REVIEW.md` в `protect-files` и `reviewer-readonly` обычным TDD-шагом без GSD и вернуть строкам чек-листа статус «закрыт».
+
+**Режим работы**: без агентов GSD — шаги по схеме `AGENTS.md` (ветка, TDD, `npm run check`, коммит, `docs/memory.md`); прогресс отмечается в `.planning/` вручную.
+
 **Plans**: TBD
 
 ### Phase 3: Управление контекстом
+
 **Goal**: Контекст сессии управляем: сжатие срабатывает по обоснованному порогу, не теряет позицию работы, а эффект виден на снимках «до» и «после» одного сценария
 **Depends on**: Phase 2
 **Requirements**: CTX-01, CTX-02, CTX-03, CTX-04
@@ -71,9 +91,11 @@ Plans:
   2. После ручного `/compact` и после автосжатия агент в первом же ответе называет текущую фазу, ветку и шаг — из чек-пойнта, который вернул `SessionStart(compact)`
   3. Statusline GSD показывает заполнение контекста, а монитор контекста выдаёт предупреждение при пересечении порога (снимок)
   4. Снимки `/context` и `/usage` «после» сняты на том же сценарии, что снимки «до» из фазы 1, и лежат рядом с подписями (модель, окно, что включено); политика контекста — когда `/compact`, когда `/clear`, что сохранять — записана в `AGENTS.md` или README
+
 **Plans**: TBD
 
 ### Phase 4: Discovery «продление и пени»
+
 **Goal**: Следующая веха получает согласованную через GSD спецификацию продления и пеней с явными открытыми вопросами — без изменений кода и тестов приложения
 **Depends on**: Phase 1
 **Requirements**: DISC-01, DISC-02
@@ -82,9 +104,11 @@ Plans:
   2. В SPEC перечислены открытые вопросы: срок и число продлений, ставка и потолок пени, блокировка выдачи должникам, миграция формата хранилища
   3. `git diff --stat main -- src tests` пуст — Discovery не изменил ни код, ни тесты
   4. Итог Discovery сформулирован несколькими строками «решили / отложили», готовыми для README «Модуль 2»
+
 **Plans**: TBD
 
 ### Phase 5: Архитектура, README и сдача
+
 **Goal**: Проверяющий по README «Модуль 2» находит для каждого пункта ДЗ-2 артефакт, команду проверки и скриншот, понимает архитектуру среды агента и получает PR с зелёной проверкой
 **Depends on**: Phase 1, Phase 2, Phase 3, Phase 4
 **Requirements**: PLAN-03, DOC-01, DOC-02
@@ -94,6 +118,7 @@ Plans:
   3. В README есть раздел «Что не воспроизводится из git» (данные claude-mem, `settings.local.json`, statusline, файлы GSD) с командами восстановления
   4. `npm run check` зелёный на `feat/module-2`; PR `feat/module-2` → `main` открыт с заголовком и описанием на русском, в коммитах и PR нет атрибуции агента
   5. Тег `hw2-submitted` поставлен автором вручную; GSD тегов вида `v1.0` не создавал
+
 **Plans**: TBD
 
 ## Progress
@@ -104,7 +129,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Базовая линия, единый план и гигиена безопасности | 0/5 | Planned | - |
+| 1. Базовая линия, единый план и гигиена безопасности | 9/9 | Complete    | 2026-10-25 |
 | 2. Память агента, быстрые команды и auto hooks | 0/TBD | Not started | - |
 | 3. Управление контекстом | 0/TBD | Not started | - |
 | 4. Discovery «продление и пени» | 0/TBD | Not started | - |
