@@ -6,4 +6,4 @@
 
 Текущий план и прогресс:
 
-@docs/plan.md
+@.planning/STATE.md
