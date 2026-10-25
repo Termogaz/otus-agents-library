@@ -68,6 +68,13 @@ describe('git read operands', () => {
     expect(checkReviewerCommand(command)).not.toBeNull();
   });
 
+  it.each(["git show ':(top).env'", "git log -p -- ':(top).env'", 'cat {.env,x}', 'cat .{env,x}'])(
+    'blocks pathspec magic and braces around secret: %s',
+    (command) => {
+      expect(checkReviewerCommand(command)).not.toBeNull();
+    },
+  );
+
   it.each(['git diff --no-index /dev/null README.md'])(
     'blocks git --no-index entirely: %s',
     (command) => {

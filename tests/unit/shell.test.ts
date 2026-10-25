@@ -6,6 +6,22 @@ function allWords(command: string): string[] {
   return parseShell(command).flatMap((s) => s.words);
 }
 
+describe('parseShell comments and backticks', () => {
+  it('skips a comment with a quote and parses the next line', () => {
+    expect(allWords("echo hi # it's\ncat .env")).toEqual(['echo', 'hi', 'cat', '.env']);
+  });
+
+  it('keeps hash inside quotes and inside a word', () => {
+    expect(allWords('echo "a # b" a#b')).toEqual(['echo', 'a # b', 'a#b']);
+  });
+
+  it('splits backtick substitution into its own segment', () => {
+    const segments = parseShell('echo `rm x`');
+
+    expect(segments.map((s) => s.words)).toEqual([['echo'], ['rm', 'x']]);
+  });
+});
+
 describe('parseShell tokenizer', () => {
   it('tokenizes escaped quote inside double quotes', () => {
     const segments = parseShell('echo "\\""; cat .env');

@@ -59,6 +59,22 @@ describe('isSecretOperand', () => {
   );
 });
 
+describe('isSecretOperand pathspec and braces', () => {
+  it.each([':(top).env', ':(glob)**/.env', ':!.env', '{.env,x}', '.{env,x}', '.e{n,m}v'])(
+    'treats %s as secret operand',
+    (arg) => {
+      expect(isSecretOperand(arg)).toBe(true);
+    },
+  );
+
+  it.each([':(top)src/app.ts', '{a,b}.txt', '.env.{example,sample}', ':!docs'])(
+    'does not treat %s as secret operand',
+    (arg) => {
+      expect(isSecretOperand(arg)).toBe(false);
+    },
+  );
+});
+
 describe('isSecretPath', () => {
   it.each(['./.env', '/home/user/library/.env', '../.env', 'docs/../.env', 'config/.env.test'])(
     'detects secret path %s',
