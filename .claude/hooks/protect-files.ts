@@ -2,7 +2,7 @@
 // а для Bash — ещё и чтения секретных .env* через аргументы-пути команд.
 import path from 'node:path';
 import { exitWithAsk, exitWithFeedback, isMain, readHookInput } from './lib/hook-input.js';
-import { isEnvFileName, isSecretPath } from './lib/secret-names.js';
+import { isEnvFileName, isSecretFileName, isSecretOperand } from './lib/secret-names.js';
 import { parseShell, type ShellSegment } from './lib/shell.js';
 
 // Команды, которые меняют любой файл из аргументов.
@@ -19,6 +19,22 @@ const PATTERN_SEARCH_PROGRAMS = new Set(['grep', 'egrep', 'fgrep', 'rg']);
 // Вложенный shell: скрипт после `-c` разбирается рекурсивно, глубина ограничена.
 const NESTED_SHELLS = new Set(['sh', 'bash', 'zsh', 'dash']);
 const MAX_SHELL_DEPTH = 3;
+
+// Fail-closed (CR-05): конструкции, которые эвристика не раскрывает. Если в такой команде
+// встречается секретный токен .env*, она отклоняется целиком. Без токена — не трогаем.
+const SHELL_NAME = '(?:sh|bash|zsh|dash)';
+// Shell, которому скрипт идёт со stdin: `bash <<EOF`, `bash <<< "..."`, `sh -s < file`.
+const SHELL_STDIN_FORM = new RegExp(
+  `(?:^|[\\s;&|(){}])(?:\\S*/)?${SHELL_NAME}(?:\\s+-[^\\s<]+)*\\s*<`,
+);
+// Shell на конце канала: `echo '...' | bash`. `||` — не канал; `| bash script.sh` скрипт берёт из файла.
+const PIPE_TO_SHELL = new RegExp(
+  `(?<!\\|)\\|&?\\s*(?:sudo\\s+)?(?:\\S*/)?${SHELL_NAME}(?:\\s+-\\S+)*(?=\\s*(?:$|[;&|)<>}\\n]))`,
+);
+const EVAL_WORD = /(?:^|[\s;&|(){}])eval(?=[\s;&|()]|$)/;
+// Интерпретаторы, которым скрипт передают флагом: `python3 -c`, `node -e`, `perl -e`.
+const SCRIPT_INTERPRETERS = /^(?:python[\d.]*|node|ruby|perl)$/;
+const SCRIPT_FLAG = /^(?:-[a-zA-Z]*[ceE]|--eval|--print)$/;
 
 // Решение hook'а по Bash-команде: `deny` — отказ (код 2), `ask` — запрос подтверждения (код 0 и JSON).
 export type BashDecision = { decision: 'deny' | 'ask'; reason: string };
@@ -102,8 +118,9 @@ function nestedScript(args: string[]): string | undefined {
   return flagIndex === -1 ? undefined : args[flagIndex + 1];
 }
 
+// Операнд проверяется целиком и по частям после `=`, `@`, `:` (`if=.env`, `@.env`, `HEAD:.env`).
 function secretReadDecision(operand: string): BashDecision | null {
-  if (!isSecretPath(operand)) return null;
+  if (!isSecretOperand(operand)) return null;
   return {
     decision: 'deny',
     reason: `${operand}: чтение секретных файлов .env* запрещено (шаблоны .env.example, .env.sample, .env.template — можно)`,
@@ -204,7 +221,38 @@ function checkSegment(segment: ShellSegment, depth: number): BashDecision | null
   return ask;
 }
 
-// Итог по всей команде: любой `deny` побеждает, иначе первый `ask`, иначе null.
+// Причина, по которой команду нельзя разобрать эвристикой, либо null.
+function unmodellableReason(command: string): string | null {
+  if (/\$\(|`/.test(command)) return 'подстановка команды';
+  if (/\$[A-Za-z_{]/.test(command)) return 'подстановка переменной';
+  if (EVAL_WORD.test(command)) return 'eval';
+  if (SHELL_STDIN_FORM.test(command) || PIPE_TO_SHELL.test(command)) {
+    return 'shell получает скрипт со stdin';
+  }
+  for (const { words } of parseShell(command)) {
+    const [name, ...args] = words[0] === 'sudo' ? words.slice(1) : words;
+    if (name === undefined) continue;
+    if (
+      SCRIPT_INTERPRETERS.test(path.posix.basename(name)) &&
+      args.some((a) => SCRIPT_FLAG.test(a))
+    ) {
+      return 'интерпретатор со скриптом в аргументе';
+    }
+  }
+  return null;
+}
+
+// Есть ли в сыром тексте команды секретный токен .env*. Не зависит от токенизатора:
+// режет по пробелам и операторам, снимает кавычки и смотрит каждый кусок.
+function mentionsSecretToken(command: string): boolean {
+  return command.split(/[\s;&|<>()]+/).some((piece) => {
+    const bare = piece.replaceAll(/['"]/g, '').replace(/^\$/, '');
+    if (bare === '') return false;
+    return isSecretOperand(bare) || isSecretFileName(path.posix.basename(bare));
+  });
+}
+
+// Итог по всей команде: любой `deny` побеждает, затем fail-closed `deny`, иначе первый `ask`, иначе null.
 function checkCommand(command: string, depth: number): BashDecision | null {
   if (depth > MAX_SHELL_DEPTH) {
     return { decision: 'deny', reason: 'слишком глубокая вложенность shell, команду не проверить' };
@@ -214,6 +262,16 @@ function checkCommand(command: string, depth: number): BashDecision | null {
     const decision = checkSegment(segment, depth);
     if (decision?.decision === 'deny') return decision;
     if (decision && !firstAsk) firstAsk = decision;
+  }
+  // Вложенный скрипт целиком входит в исходную команду, поэтому достаточно проверить верхний уровень.
+  if (depth === 0) {
+    const reason = unmodellableReason(command);
+    if (reason !== null && mentionsSecretToken(command)) {
+      return {
+        decision: 'deny',
+        reason: `команда использует конструкцию, которую hook не разбирает (${reason}), и упоминает секрет .env* — отказ (fail-closed)`,
+      };
+    }
   }
   return firstAsk;
 }
