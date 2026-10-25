@@ -55,3 +55,33 @@ describe('checkReviewerCommand', () => {
     },
   );
 });
+
+describe('git read operands', () => {
+  it.each([
+    'git diff --no-index /dev/null .env',
+    'git show HEAD:.env',
+    'git show :.env',
+    'git log -p -- .env',
+    'git diff HEAD .env',
+    'git show HEAD:.env.local',
+  ])('blocks git read of secret file: %s', (command) => {
+    expect(checkReviewerCommand(command)).not.toBeNull();
+  });
+
+  it.each(['git diff --no-index /dev/null README.md'])(
+    'blocks git --no-index entirely: %s',
+    (command) => {
+      expect(checkReviewerCommand(command)).not.toBeNull();
+    },
+  );
+
+  it.each([
+    'git diff main...HEAD',
+    'git show ee6b114:docs/plan.md',
+    'git log --oneline',
+    'git status --short',
+    'git diff main...HEAD --stat',
+  ])('allows ordinary git read: %s', (command) => {
+    expect(checkReviewerCommand(command)).toBeNull();
+  });
+});
