@@ -91,6 +91,7 @@ describe('buildDigest', () => {
       branch: 'feat/module-2',
       changedFiles: 1,
       position: 'Phase: 2',
+      checkpoint: null,
       memoryEntry: '## Шаг 5\n\nтекст',
     });
     expect(digest).toContain('Ветка: feat/module-2');
@@ -104,6 +105,7 @@ describe('buildDigest', () => {
       branch: null,
       changedFiles: null,
       position: null,
+      checkpoint: null,
       memoryEntry: '## Шаг 5',
     });
     expect(digest).not.toContain('Ветка');
@@ -116,11 +118,36 @@ describe('buildDigest', () => {
       branch: 'feat/module-2',
       changedFiles: 0,
       position: 'Phase: 2',
+      checkpoint: null,
       memoryEntry: `## Длинная запись\n\n${'я'.repeat(5000)}`,
     });
     expect(Buffer.byteLength(digest, 'utf8')).toBeLessThanOrEqual(DIGEST_LIMIT_BYTES);
     expect(digest).toContain('Phase: 2');
     expect(digest).toContain('обрезано');
+  });
+
+  it('puts checkpoint after compaction before memory entry', () => {
+    const digest = buildDigest({
+      branch: 'feat/module-2',
+      changedFiles: 0,
+      position: 'Phase: 2',
+      checkpoint: 'Сжатие: manual',
+      memoryEntry: '## Шаг 5',
+    });
+    expect(digest).toContain('Чек-пойнт перед сжатием');
+    expect(digest.indexOf('Сжатие: manual')).toBeLessThan(digest.indexOf('## Шаг 5'));
+  });
+
+  it('stays within the byte limit with a large checkpoint', () => {
+    const digest = buildDigest({
+      branch: 'feat/module-2',
+      changedFiles: 0,
+      position: 'Phase: 2',
+      checkpoint: 'ч'.repeat(3000),
+      memoryEntry: '## Шаг 5',
+    });
+    expect(Buffer.byteLength(digest, 'utf8')).toBeLessThanOrEqual(DIGEST_LIMIT_BYTES);
+    expect(digest).toContain('Phase: 2');
   });
 
   it('limits the digest to 3 KB', () => {

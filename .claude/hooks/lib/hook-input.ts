@@ -30,6 +30,18 @@ export function readSessionStartInput(): SessionStartInput {
   return sessionStartInputSchema.parse(JSON.parse(readFileSync(0, 'utf8')));
 }
 
+// Вход PreCompact: trigger — manual (команда /compact) или auto.
+const preCompactInputSchema = z.object({
+  trigger: z.string(),
+  cwd: z.string(),
+});
+
+export type PreCompactInput = z.infer<typeof preCompactInputSchema>;
+
+export function readPreCompactInput(): PreCompactInput {
+  return preCompactInputSchema.parse(JSON.parse(readFileSync(0, 'utf8')));
+}
+
 export function projectDir(input: { cwd: string }): string {
   return process.env.CLAUDE_PROJECT_DIR ?? input.cwd;
 }

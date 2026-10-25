@@ -1,19 +1,20 @@
-// SessionStart: дайджест для новой сессии — ветка, позиция GSD, верхняя запись docs/memory.md.
+// SessionStart: дайджест для новой сессии — ветка, позиция GSD, верхняя запись docs/memory.md;
+// после сжатия (source=compact) — ещё чек-пойнт PreCompact.
 // Hook информационный: любая ошибка пропускает раздел, код выхода всегда 0.
-import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
-import { isMain, projectDir, readSessionStartInput } from './lib/hook-input.js';
+import { isMain, readSessionStartInput } from './lib/hook-input.js';
+import { attempt, CHECKPOINT_FILE, git, rootDir } from './lib/hook-utils.js';
 
 export const DIGEST_LIMIT_BYTES = 3072;
 
 const POSITION_PREFIXES = ['Phase:', 'Status:', 'Stopped at:', 'Next:'];
-const CUT_MARK = '\n…(обрезано, полностью — docs/memory.md)';
 
 export interface DigestParts {
   branch: string | null;
   changedFiles: number | null;
   position: string | null;
+  checkpoint: string | null;
   memoryEntry: string | null;
 }
 
@@ -35,62 +36,73 @@ export function extractTopEntry(memory: string): string | null {
   return lines.slice(start, end).join('\n').trim();
 }
 
+const bytes = (text: string) => Buffer.byteLength(text, 'utf8');
+
 // Обрезает текст до maxBytes байт UTF-8, не разрывая многобайтовый символ.
 export function truncateUtf8(text: string, maxBytes: number): string {
-  if (Buffer.byteLength(text, 'utf8') <= maxBytes) return text;
+  if (bytes(text) <= maxBytes) return text;
   let result = '';
-  let bytes = 0;
+  let size = 0;
   for (const char of text) {
-    const size = Buffer.byteLength(char, 'utf8');
-    if (bytes + size > maxBytes) break;
+    const charSize = bytes(char);
+    if (size + charSize > maxBytes) break;
     result += char;
-    bytes += size;
+    size += charSize;
   }
   return result;
 }
 
+// Дописывает раздел в остаток бюджета; не влезающий раздел обрезается с пометкой.
+function appendSection(digest: string, title: string, body: string, source: string): string {
+  const prefix = `${digest}\n\n${title}`;
+  const cutMark = `\n…(обрезано, полностью — ${source})`;
+  const budget = DIGEST_LIMIT_BYTES - bytes(prefix);
+  if (bytes(body) <= budget) return prefix + body;
+  if (budget <= bytes(cutMark)) return digest;
+  return prefix + truncateUtf8(body, budget - bytes(cutMark)) + cutMark;
+}
+
+// Разделы — по убыванию важности: следующий получает то, что осталось от предыдущих.
 export function buildDigest(parts: DigestParts): string {
-  const sections = ['# Дайджест сессии (hook SessionStart)'];
+  let digest = '# Дайджест сессии (hook SessionStart)';
   const git: string[] = [];
   if (parts.branch !== null) git.push(`Ветка: ${parts.branch}`);
   if (parts.changedFiles !== null) git.push(`Незакоммиченных файлов: ${parts.changedFiles}`);
-  if (git.length > 0) sections.push(git.join('\n'));
+  if (git.length > 0) digest = appendSection(digest, '', git.join('\n'), 'git status');
   if (parts.position !== null) {
-    sections.push(`Позиция GSD (.planning/STATE.md):\n${parts.position}`);
+    digest = appendSection(
+      digest,
+      'Позиция GSD (.planning/STATE.md):\n',
+      parts.position,
+      '.planning/STATE.md',
+    );
   }
-  const head = sections.join('\n\n');
-  if (parts.memoryEntry === null) return truncateUtf8(head, DIGEST_LIMIT_BYTES);
-
-  // Бюджет сверх заголовка и позиции целиком отдаём записи журнала.
-  const title = '\n\nВерхняя запись docs/memory.md:\n';
-  const budget = DIGEST_LIMIT_BYTES - Buffer.byteLength(head + title, 'utf8');
-  const entry =
-    Buffer.byteLength(parts.memoryEntry, 'utf8') <= budget
-      ? parts.memoryEntry
-      : truncateUtf8(parts.memoryEntry, budget - Buffer.byteLength(CUT_MARK, 'utf8')) + CUT_MARK;
-  return truncateUtf8(head + title + entry, DIGEST_LIMIT_BYTES);
+  if (parts.checkpoint !== null) {
+    digest = appendSection(
+      digest,
+      `Чек-пойнт перед сжатием (${CHECKPOINT_FILE}):\n`,
+      parts.checkpoint,
+      CHECKPOINT_FILE,
+    );
+  }
+  if (parts.memoryEntry !== null) {
+    digest = appendSection(
+      digest,
+      'Верхняя запись docs/memory.md:\n',
+      parts.memoryEntry,
+      'docs/memory.md',
+    );
+  }
+  return digest;
 }
 
 export function sessionStartOutput(digest: string) {
   return { hookSpecificOutput: { hookEventName: 'SessionStart', additionalContext: digest } };
 }
 
-// Пустой результат вместо исключения: раздел дайджеста просто пропускается.
-function attempt<T>(read: () => T): T | null {
-  try {
-    return read();
-  } catch {
-    return null;
-  }
-}
-
-function git(root: string, args: string[]): string {
-  return execFileSync('git', args, { cwd: root, encoding: 'utf8', stdio: 'pipe' });
-}
-
 if (isMain(import.meta.url)) {
   const input = attempt(readSessionStartInput);
-  const root = input ? projectDir(input) : (process.env.CLAUDE_PROJECT_DIR ?? process.cwd());
+  const root = rootDir(input);
   const readText = (file: string) => readFileSync(path.join(root, file), 'utf8');
   const digest = buildDigest({
     branch: attempt(() => git(root, ['branch', '--show-current']).trim() || '(detached HEAD)'),
@@ -98,6 +110,8 @@ if (isMain(import.meta.url)) {
       () => git(root, ['status', '--porcelain']).split('\n').filter(Boolean).length,
     ),
     position: attempt(() => extractPosition(readText('.planning/STATE.md'))),
+    checkpoint:
+      input?.source === 'compact' ? attempt(() => readText(CHECKPOINT_FILE).trim()) : null,
     memoryEntry: attempt(() => extractTopEntry(readText('docs/memory.md'))),
   });
   process.stdout.write(`${JSON.stringify(sessionStartOutput(digest))}\n`);

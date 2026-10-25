@@ -17,6 +17,7 @@ const settingsSchema = z.object({
   }),
   hooks: z.object({
     SessionStart: z.array(hookEntrySchema),
+    PreCompact: z.array(hookEntrySchema),
     PreToolUse: z.array(hookEntrySchema),
   }),
 });
@@ -84,6 +85,13 @@ describe('settings.json permissions', () => {
       item.hooks.some((hook) => hook.command.includes('session-start.ts')),
     );
     expect(entry?.matcher).toBe('startup|resume|clear|compact');
+  });
+
+  it('writes checkpoint before manual and auto compaction', () => {
+    const entry = settings.hooks.PreCompact.find((item) =>
+      item.hooks.some((hook) => hook.command.includes('pre-compact.ts')),
+    );
+    expect(entry?.matcher).toBe('manual|auto');
   });
 
   it('asks before git push', () => {
