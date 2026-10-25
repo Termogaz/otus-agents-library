@@ -1,12 +1,16 @@
 // PreToolUse (Bash) во frontmatter агента reviewer: только команды чтения и проверки.
 import { exitWithFeedback, isMain, readHookInput } from './lib/hook-input.js';
+import { isSecretPath } from './lib/secret-names.js';
 import { parseShell } from './lib/shell.js';
 
 const EXACT_COMMANDS = new Set([
   'npm run check',
   'env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY npm run test:e2e',
 ]);
-const READ_PROGRAMS = new Set(['ls', 'cat', 'head', 'tail', 'wc']);
+// Выводят только имена, содержимое файлов не читают — аргументы не проверяем.
+const NAME_ONLY_PROGRAMS = new Set(['ls']);
+// Читают содержимое файлов: операнд-путь не должен быть секретным (D-07).
+const CONTENT_READ_PROGRAMS = new Set(['cat', 'head', 'tail', 'wc']);
 const GIT_READ_SUBCOMMANDS = new Set(['status', 'diff', 'log', 'show']);
 const GIT_BRANCH_READ_FLAGS = new Set([
   '--show-current',
@@ -33,7 +37,16 @@ export function checkReviewerCommand(command: string): string | null {
   const [segment] = parseShell(trimmed);
   const [program, subcommand, ...args] = segment?.words ?? [];
   if (program === undefined) return deny(trimmed, 'пустая команда');
-  if (READ_PROGRAMS.has(program)) return null;
+  if (NAME_ONLY_PROGRAMS.has(program)) return null;
+  if (CONTENT_READ_PROGRAMS.has(program)) {
+    // Операнды: всё, что не опция; `subcommand` — это первый аргумент команды.
+    const operands = [subcommand, ...args].filter(
+      (a): a is string => a !== undefined && !a.startsWith('-'),
+    );
+    return operands.some(isSecretPath)
+      ? deny(trimmed, 'чтение секретных файлов .env* запрещено')
+      : null;
+  }
 
   if (program === 'git' && subcommand !== undefined) {
     if (GIT_READ_SUBCOMMANDS.has(subcommand)) {
