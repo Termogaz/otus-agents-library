@@ -30,9 +30,9 @@ See: .planning/PROJECT.md (updated 2026-10-22)
 ## Current Position
 
 Phase: 3 — Управление контекстом
-Plan: режим фазы не выбран (GSD или шаги по AGENTS.md — решить с автором)
-Status: Not started — фаза 2 закрыта 2026-10-26 (MEM-01…04, HOOK-01…04)
-Last activity: 2026-10-26 — HOOK-04: тесты запуска скриптов hooks (`542b311`), фаза 2 закрыта
+Plan: без PLAN.md — шаги по схеме AGENTS.md, как в фазе 2 (решение автора 2026-10-26)
+Status: In progress — CTX-01 выполнен
+Last activity: 2026-10-26 — `autoCompactWindow: 200000` в settings.json, `/context` показывает окно 200k (CTX-01, `c79819f`)
 
 Progress: [████░░░░░░] 40%
 
@@ -97,7 +97,7 @@ None yet.
 
 - Фаза 1: правка `AGENTS.md` (правило про прогресс) и `CLAUDE.md` (`@docs/plan.md`) — только с согласия автора
 - Фаза 2: research перед планированием — claude-mem в WSL (Bun/uv, прокси, порт 37700 или 37777, `<private>`, `CLAUDE_MEM_ONLINE_OPTIN`), размер `additionalContext`, runtime hooks (`tsx` или Node), каталог чек-пойнтов (рекомендован `.local/checkpoints/`); установка claude-mem вне проекта — с согласия автора
-- Фаза 3: подтвердить `autoCompactWindow` в установленной версии Claude Code; формат `/context` и `/usage` на подписке; statusLine — в `settings.local.json`
+- Фаза 3: `autoCompactWindow` подтверждён в 2.1.310 (CTX-01); формат `/context` и `/usage` на подписке; statusLine — в `settings.local.json`
 - Фаза 4: Discovery только через `/gsd-explore`, `/gsd-spec-phase`, `/gsd-discuss-phase`; не запускать `/gsd-new-milestone`, `/gsd-autonomous`, `/gsd-execute-phase`
 
 ## Deferred Items
@@ -111,6 +111,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 ## Session Continuity
 
 Last session: 2026-10-26
-Stopped at: фаза 2 закрыта (HOOK-04 — тесты запуска скриптов hooks, 557 тестов)
+Stopped at: CTX-01 закрыт (порог 200k, скриншот hw2-ctx01-context)
 Resume file: None
-Next: фаза 3 — подтвердить `autoCompactWindow` в установленной версии Claude Code, выбрать порог (CTX-01); подробности — верхние записи `docs/memory.md`
+Next: CTX-02 — после `/compact` и автосжатия агент называет фазу, ветку и шаг; затем CTX-03 (statusline GSD), CTX-04 (снимки «после», политика контекста); подробности — верхние записи `docs/memory.md`
