@@ -31,8 +31,8 @@ See: .planning/PROJECT.md (updated 2026-10-22)
 
 Phase: 4 — Discovery «продление и пени»
 Plan: через команды GSD (`/gsd-explore` → `/gsd-spec-phase` → `/gsd-discuss-phase`)
-Status: Not started — фаза 3 закрыта 2026-10-26 (CTX-01…04)
-Last activity: 2026-10-26 — снимки «после» и сравнение в `docs/context-usage.md`, политика контекста в `AGENTS.md` (CTX-04), фаза 3 закрыта
+Status: In progress — `/gsd-explore` пройден, следующий шаг `/gsd-spec-phase 4`
+Last activity: 2026-10-26 — `/gsd-explore` «продление и пени»: `.planning/notes/renewal-and-fines.md`, `.planning/research/questions.md`
 
 Progress: [██████░░░░] 60%
 
@@ -111,6 +111,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 ## Session Continuity
 
 Last session: 2026-10-26
-Stopped at: фаза 3 закрыта (CTX-04 — снимки «после», политика контекста)
+Stopped at: фаза 4 — `/gsd-explore` пройден (`50cdd44`), spec-phase не начат
 Resume file: None
-Next: фаза 4 — в новой сессии `/gsd-explore` по теме «продление и пени»; подробности — верхние записи `docs/memory.md`
+Next: `/gsd-spec-phase 4` (вход — `.planning/notes/renewal-and-fines.md` и `.planning/research/questions.md`), затем `/gsd-discuss-phase 4`; подробности — верхняя запись `docs/memory.md`
