@@ -42,6 +42,8 @@ CLAUDE.local.md
 .claude/hooks/managed-hooks-registry.cjs
 .claude/hooks/package.json
 .claude/scripts/
+# Служебный файл состояния GSD (пересоздаётся командами GSD)
+.planning/state.json
 
 # Личные заметки и выгрузки бесед (не публикуем)
 .local/

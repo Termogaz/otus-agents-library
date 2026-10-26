@@ -2,17 +2,17 @@
 gsd_state_version: "1.0"
 milestone: v1.0
 milestone_name: "ДЗ-2: агентно-ориентированный пайплайн"
-current_phase: 2
-current_phase_name: Память агента, быстрые команды и auto hooks
-status: planning
-stopped_at: фаза 4 закрыта (итог Discovery в 04-CONTEXT.md)
+current_phase: 5
+current_phase_name: Архитектура, README и сдача
+status: complete
+stopped_at: веха модуля 2 сдана (PR #15 влит, тег `hw2-submitted`)
 last_updated: "2026-10-26T18:07:26.430Z"
 last_activity: 2026-10-26
-last_activity_desc: Phase 01 complete, transitioned to Phase 2
+last_activity_desc: PR #15 влит, тег hw2-submitted, статус приведён к факту
 state_head: c74ef93a8b2fb724042070d5031ce42f376eb5a0
 progress:
   total_phases: 5
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 9
   completed_plans: 9
 ---
@@ -24,14 +24,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-10-22)
 
 **Core value:** Проверяющий по README и репозиторию видит, что каждый пункт текущего ДЗ выполнен и воспроизводим: настройка есть в git, есть доказательство работы (команда, скриншот, коммит).
-**Current focus:** Веха модуля 2 выполнена — PR #15 в `main` ждёт merge и тега `hw2-submitted` от автора
+**Current focus:** Веха модуля 2 сдана — PR #15 влит в `main`, тег `hw2-submitted` на коммите merge `a69df22`
 
 ## Current Position
 
 Phase: 5 — Архитектура, README и сдача
 Plan: TBD
-Status: Complete — PLAN-03, DOC-01, DOC-02 выполнены; PR #15 открыт
-Last activity: 2026-10-26 — push `feat/module-2`, PR #15 `feat/module-2` → `main` (DOC-02)
+Status: Complete — PLAN-03, DOC-01, DOC-02 выполнены; PR #15 влит, тег `hw2-submitted` поставлен
+Last activity: 2026-10-26 — PR #15 влит в `main`, тег `hw2-submitted` запушен; статус и `.gitignore` приведены к факту
 
 Progress: [██████████] 100%
 
@@ -110,6 +110,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 ## Session Continuity
 
 Last session: 2026-10-26T18:07:26.371Z
-Stopped at: фаза 5 закрыта, PR #15 открыт
+Stopped at: веха модуля 2 сдана (PR #15 влит, тег `hw2-submitted`)
 Resume file: None
-Next: автор — merge PR #15 и тег `hw2-submitted`; затем новая веха (модуль 3)
+Next: `/clear` и новая веха (модуль 3)
