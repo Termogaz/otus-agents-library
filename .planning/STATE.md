@@ -5,14 +5,14 @@ milestone_name: "ДЗ-2: агентно-ориентированный пайп�
 current_phase: 2
 current_phase_name: Память агента, быстрые команды и auto hooks
 status: planning
-stopped_at: фаза 4 — CONTEXT записан
-last_updated: "2026-10-26T18:06:47.428Z"
+stopped_at: фаза 4 закрыта (итог Discovery в 04-CONTEXT.md)
+last_updated: "2026-10-26T18:07:26.430Z"
 last_activity: 2026-10-26
 last_activity_desc: Phase 01 complete, transitioned to Phase 2
-state_head: 418b73f4b2deb4d439469431a921a53583e34160
+state_head: c74ef93a8b2fb724042070d5031ce42f376eb5a0
 progress:
   total_phases: 5
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 9
   completed_plans: 9
 ---
@@ -24,16 +24,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-10-22)
 
 **Core value:** Проверяющий по README и репозиторию видит, что каждый пункт текущего ДЗ выполнен и воспроизводим: настройка есть в git, есть доказательство работы (команда, скриншот, коммит).
-**Current focus:** Phase 04 — Discovery «продление и пени» (только `/gsd-explore`, `/gsd-spec-phase`, `/gsd-discuss-phase`)
+**Current focus:** Phase 05 — Архитектура, README и сдача (`docs/architecture.md`, README «Модуль 2», PR в `main`)
 
 ## Current Position
 
-Phase: 4 — Discovery «продление и пени»
-Plan: через команды GSD (`/gsd-explore` → `/gsd-spec-phase` → `/gsd-discuss-phase`)
-Status: In progress — `/gsd-discuss-phase 4` пройден (`04-CONTEXT.md`, D-01…D-10); осталось итог «решили / отложили» для README «Модуль 2» (критерий 4)
-Last activity: 2026-10-26 — `04-CONTEXT.md`: политика в `LoanPolicy`, миграция в `load()`, выдачи v1 `fineExempt`, имена; критерий 3 — diff от `ca429d0`
+Phase: 5 — Архитектура, README и сдача
+Plan: TBD
+Status: Not started — фаза 4 закрыта 2026-10-26 (DISC-01, DISC-02)
+Last activity: 2026-10-26 — итог Discovery «решили / отложили» в `04-CONTEXT.md` (критерий 4), критерии 1–3 проверены, фаза 4 закрыта
 
-Progress: [██████░░░░] 60%
+Progress: [████████░░] 80%
 
 ## Performance Metrics
 
@@ -109,7 +109,7 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-26T18:06:47.365Z
-Stopped at: фаза 4 — CONTEXT записан (`.planning/phases/04-discovery-prodlenie-i-peni/04-CONTEXT.md`)
-Resume file: .planning/phases/04-discovery-prodlenie-i-peni/04-CONTEXT.md
-Next: итог Discovery «решили / отложили» для README «Модуль 2» (критерий 4 фазы 4) и проверка критериев 1–3; затем закрыть фазу 4
+Last session: 2026-10-26T18:07:26.371Z
+Stopped at: фаза 4 закрыта (итог Discovery в `04-CONTEXT.md`)
+Resume file: None
+Next: фаза 5 — `docs/architecture.md`, README «Модуль 2» (итог Discovery взять из `<summary>` в `04-CONTEXT.md`), PR в `main`; подробности — верхние записи `docs/memory.md`

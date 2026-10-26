@@ -42,8 +42,8 @@
 
 ### Discovery
 
-- [ ] **DISC-01**: Discovery «продление и пени» пройден через GSD (`/gsd-explore` → SPEC → CONTEXT), без изменений в `src/` и `tests/`
-- [ ] **DISC-02**: В SPEC зафиксированы открытые вопросы: срок и число продлений, ставка и потолок пени, блокировка выдачи, миграция формата хранилища
+- [x] **DISC-01**: Discovery «продление и пени» пройден через GSD (`/gsd-explore` → SPEC → CONTEXT), без изменений в `src/` и `tests/`
+- [x] **DISC-02**: В SPEC зафиксированы открытые вопросы: срок и число продлений, ставка и потолок пени, блокировка выдачи, миграция формата хранилища
 
 ### Сдача
 
@@ -93,8 +93,8 @@
 | CTX-02 | Phase 3 | Complete |
 | CTX-03 | Phase 3 | Complete |
 | CTX-04 | Phase 3 | Complete |
-| DISC-01 | Phase 4 | Pending |
-| DISC-02 | Phase 4 | Pending |
+| DISC-01 | Phase 4 | Complete |
+| DISC-02 | Phase 4 | Complete |
 | DOC-01 | Phase 5 | Pending |
 | DOC-02 | Phase 5 | Pending |
 
