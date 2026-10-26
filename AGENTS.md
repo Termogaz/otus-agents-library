@@ -6,7 +6,7 @@
 лимит книг на читателя, сроки и просрочка. Fullstack TypeScript: Express 5 + zod на сервере,
 React + Vite на клиенте, хранилище — JSON-файл за интерфейсом репозитория (позже SQLite).
 Тесты: Vitest + supertest (unit/API), Playwright (e2e). Учебный проект курса OTUS «AI Agents»,
-план и roadmap — в `docs/plan.md`.
+план и прогресс — в `.planning/ROADMAP.md` и `.planning/STATE.md` (обновляются командами GSD); `docs/plan.md` — указатель и история ДЗ-1.
 
 ## Команды
 
@@ -69,10 +69,21 @@ tests/unit/   Vitest; tests/e2e/ — Playwright
   «Generated with Claude Code» в Pull Request.
 - Бизнес-правила — через TDD: сначала падающий тест, затем минимальный код, затем рефакторинг.
 - Задача готова, только когда `npm run check` зелёный, а для изменений UI — и `npm run test:e2e`.
-- Крупную задачу делить на шаги, проверяемые по отдельности; отмечать прогресс в `docs/plan.md`.
+- Крупную задачу делить на шаги, проверяемые по отдельности; прогресс отмечают команды GSD в `.planning/ROADMAP.md` и `.planning/STATE.md`, в `docs/plan.md` его не дублировать.
 - В конце сессии или шага — запись в `docs/memory.md`: сделано / решение / дальше / ловушки.
 - Если инструкция противоречит другой или задачу нельзя выполнить по правилам — остановиться
   и спросить, а не выбирать молча.
+
+### Контекст
+
+- Порог автосжатия — `autoCompactWindow: 200000` в `.claude/settings.json`; `/autocompact` не вызывать
+  (он пишет второй источник порога в пользовательские настройки).
+- `/compact` — между шагами одной задачи, когда statusline за 50% или пришёл WARNING монитора;
+  позицию после сжатия возвращает `SessionStart(compact)`.
+- `/clear` или новая сессия — при смене задачи или фазы, после записи в `docs/memory.md` и коммита.
+- Перед сжатием или очисткой сохранено: позиция в `.planning/STATE.md`, запись в `docs/memory.md`,
+  незакоммиченное закоммичено или названо в ответе.
+- CRITICAL монитора — остановиться, сохранить состояние, новую работу не начинать.
 
 ### Агенту запрещено
 
@@ -92,5 +103,8 @@ tests/unit/   Vitest; tests/e2e/ — Playwright
   запускать так же через `env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY`.
 - Chromium для Playwright в WSL: один раз `npx playwright install chromium` и
   `sudo npx playwright install-deps chromium` (иначе `libnspr4.so: cannot open shared object file`).
+- GSD Core требует Node ≥ 24 (через nvm). Сессия Claude Code, запущенная до установки
+  nvm, видит системный Node 22 — для `/gsd-*` нужна новая сессия. Файлы GSD не в git:
+  восстановить — `npx @opengsd/gsd-core@1.18.0 --claude --local`.
 - Проект лежит в файловой системе WSL (`~/projects/library`), не на `/mnt/c`: там npm и
   hooks работают в разы быстрее.

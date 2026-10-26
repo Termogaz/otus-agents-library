@@ -4,6 +4,7 @@
     "pr": "",
     "sessionUrl": false
   },
+  "autoCompactWindow": 200000,
   "permissions": {
     "defaultMode": "acceptEdits",
     "allow": [
@@ -30,6 +31,7 @@
       "Bash(git commit:*)"
     ],
     "ask": [
+      "Edit(./.claude/**)",
       "Bash(git push:*)",
       "Bash(gh pr create:*)",
       "Bash(gh pr merge:*)",
@@ -38,10 +40,20 @@
     ],
     "deny": [
       "Read(./.env*)",
+      "Read(**/.env*)",
       "Edit(./.env*)",
       "Bash(cat .env*)",
       "Bash(head .env*)",
       "Bash(tail .env*)",
+      "Bash(cat ./.env*)",
+      "Bash(head ./.env*)",
+      "Bash(tail ./.env*)",
+      "Bash(less .env*)",
+      "Bash(less ./.env*)",
+      "Bash(more .env*)",
+      "Bash(more ./.env*)",
+      "Bash(source .env*)",
+      "Bash(source ./.env*)",
       "Edit(./package-lock.json)",
       "Bash(rm -rf:*)",
       "Bash(git push --force:*)",
@@ -51,6 +63,30 @@
     ]
   },
   "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/node_modules/.bin/tsx \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/session-start.ts",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "manual|auto",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/node_modules/.bin/tsx \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/pre-compact.ts",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
     "PreToolUse": [
       {
         "matcher": "Edit|Write|Bash",

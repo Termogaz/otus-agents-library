@@ -89,11 +89,10 @@ docs/         plan.md, memory.md, about.md
 - [x] Повторная сверка с ДЗ: `git branch` в allow сужен до просмотра; подпись про `.env` уточнена; скриншот `env-write-blocked.png`
 - [x] Сделать репозиторий public (`gh repo edit --visibility public`), push, ссылка на сдачу: https://github.com/Termogaz/otus-agents-library
 
+## Модуль 2: агентно-ориентированный пайплайн
+
+С модуля 2 план и прогресс ведутся в GSD: фазы и критерии успеха — [`.planning/ROADMAP.md`](../.planning/ROADMAP.md), текущая позиция — [`.planning/STATE.md`](../.planning/STATE.md). ДЗ-1 заморожено тегом `hw1-submitted`; шаги 0, 1а и 1б модуля 2 (ветка `feat/module-2`, установка GSD Core, инициализация GSD-проекта) выполнены до перехода на GSD, их итоги — в `docs/memory.md`. Отметки шагов в этом файле больше не ведутся.
+
 ## Roadmap (следующие модули)
 
-- Хранилище: SQLite + миграции вместо JSON.
-- Тесты: отдельный файл данных для e2e, чтобы e2e не засорял `data/library.json` dev-сервера. Сервер уже читает путь из `LIBRARY_DATA_FILE`; осталось передать его в `webServer` в `playwright.config.ts`.
-- Правила: бронирование и очередь, продление, пени, блокировка должников.
-- Роли: библиотекарь / читатель, авторизация.
-- Интеграции: карточка книги по ISBN (Open Library), поиск, рекомендации через LLM.
-- Эксплуатация: фоновое напоминание о просрочке, деплой, логи.
+Перенесён в [`.planning/PROJECT.md`](../.planning/PROJECT.md) (раздел «Out of Scope»), чтобы его видел `/gsd-new-milestone`.

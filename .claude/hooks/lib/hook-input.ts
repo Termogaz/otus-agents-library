@@ -18,7 +18,31 @@ export function readHookInput(): HookInput {
   return hookInputSchema.parse(JSON.parse(readFileSync(0, 'utf8')));
 }
 
-export function projectDir(input: HookInput): string {
+// Вход SessionStart: без tool_name и tool_input; source — startup, resume, clear или compact.
+const sessionStartInputSchema = z.object({
+  source: z.string(),
+  cwd: z.string(),
+});
+
+export type SessionStartInput = z.infer<typeof sessionStartInputSchema>;
+
+export function readSessionStartInput(): SessionStartInput {
+  return sessionStartInputSchema.parse(JSON.parse(readFileSync(0, 'utf8')));
+}
+
+// Вход PreCompact: trigger — manual (команда /compact) или auto.
+const preCompactInputSchema = z.object({
+  trigger: z.string(),
+  cwd: z.string(),
+});
+
+export type PreCompactInput = z.infer<typeof preCompactInputSchema>;
+
+export function readPreCompactInput(): PreCompactInput {
+  return preCompactInputSchema.parse(JSON.parse(readFileSync(0, 'utf8')));
+}
+
+export function projectDir(input: { cwd: string }): string {
   return process.env.CLAUDE_PROJECT_DIR ?? input.cwd;
 }
 
@@ -26,6 +50,20 @@ export function projectDir(input: HookInput): string {
 export function isMain(moduleUrl: string): boolean {
   const script = process.argv[1];
   return script !== undefined && moduleUrl === pathToFileURL(script).href;
+}
+
+// Решение `ask` для PreToolUse: Claude Code покажет причину пользователю и спросит подтверждение.
+// Формат — одна строка JSON в stdout и код 0 (документация hooks Claude Code, PreToolUse).
+export function exitWithAsk(reason: string): never {
+  const output = {
+    hookSpecificOutput: {
+      hookEventName: 'PreToolUse',
+      permissionDecision: 'ask',
+      permissionDecisionReason: reason,
+    },
+  };
+  process.stdout.write(`${JSON.stringify(output)}\n`);
+  process.exit(0);
 }
 
 // Код 2: для PreToolUse — отказ, для PostToolUse — сообщение агенту; stderr уходит агенту.

@@ -1,3 +1,5 @@
+import { spawnSync } from 'node:child_process';
+import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { checkReviewerCommand } from '../../.claude/hooks/reviewer-readonly.js';
 
@@ -34,5 +36,91 @@ describe('checkReviewerCommand', () => {
     'rm AGENTS.md',
   ])('blocks command that may change files: %s', (command) => {
     expect(checkReviewerCommand(command)).not.toBeNull();
+  });
+
+  it.each([
+    'cat .env',
+    'cat ./.env.local',
+    'head -n 5 .env',
+    'tail .envrc',
+    'wc -l .env',
+    'cat docs/../.env',
+    'cat /home/user/library/.env',
+  ])('blocks reading secret file: %s', (command) => {
+    expect(checkReviewerCommand(command)).not.toBeNull();
+  });
+
+  it.each(['cat .env.example', 'cat README.md', 'head -n 5 package.json', 'ls -la .env*'])(
+    'allows reading non-secret file: %s',
+    (command) => {
+      expect(checkReviewerCommand(command)).toBeNull();
+    },
+  );
+});
+
+describe('git read operands', () => {
+  it.each([
+    'git diff --no-index /dev/null .env',
+    'git show HEAD:.env',
+    'git show :.env',
+    'git log -p -- .env',
+    'git diff HEAD .env',
+    'git show HEAD:.env.local',
+  ])('blocks git read of secret file: %s', (command) => {
+    expect(checkReviewerCommand(command)).not.toBeNull();
+  });
+
+  it.each(["git show ':(top).env'", "git log -p -- ':(top).env'", 'cat {.env,x}', 'cat .{env,x}'])(
+    'blocks pathspec magic and braces around secret: %s',
+    (command) => {
+      expect(checkReviewerCommand(command)).not.toBeNull();
+    },
+  );
+
+  it.each(['git diff --no-index /dev/null README.md'])(
+    'blocks git --no-index entirely: %s',
+    (command) => {
+      expect(checkReviewerCommand(command)).not.toBeNull();
+    },
+  );
+
+  it.each([
+    'git diff main...HEAD',
+    'git show ee6b114:docs/plan.md',
+    'git log --oneline',
+    'git status --short',
+    'git diff main...HEAD --stat',
+  ])('allows ordinary git read: %s', (command) => {
+    expect(checkReviewerCommand(command)).toBeNull();
+  });
+});
+
+describe('reviewer-readonly hook script', () => {
+  const root = path.resolve(import.meta.dirname, '../..');
+  const tsx = path.join(root, 'node_modules', '.bin', 'tsx');
+  const script = path.join(root, '.claude', 'hooks', 'reviewer-readonly.ts');
+
+  function runHook(stdin: string) {
+    return spawnSync(tsx, [script], { input: stdin, timeout: 15000, encoding: 'utf8' });
+  }
+
+  function bashCall(command: string): string {
+    return JSON.stringify({ tool_name: 'Bash', tool_input: { command }, cwd: root });
+  }
+
+  it('lets read command through with exit code 0', () => {
+    expect(runHook(bashCall('git status --short')).status).toBe(0);
+  });
+
+  it('blocks write command with exit code 2 and reason for agent', () => {
+    const result = runHook(bashCall('git commit -m x'));
+    expect(result.status).toBe(2);
+    expect(result.stderr).toContain('reviewer работает только на чтение');
+  });
+
+  it('blocks call it cannot parse (fail-closed)', () => {
+    const result = runHook('не json');
+    expect(result.status).toBe(2);
+    expect(result.stderr).toContain('не удалось проверить вызов');
   });
 });
