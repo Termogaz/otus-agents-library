@@ -30,8 +30,8 @@ See: .planning/PROJECT.md (updated 2026-10-22)
 
 Phase: 5 — Архитектура, README и сдача
 Plan: TBD
-Status: Not started — фаза 4 закрыта 2026-10-26 (DISC-01, DISC-02)
-Last activity: 2026-10-26 — итог Discovery «решили / отложили» в `04-CONTEXT.md` (критерий 4), критерии 1–3 проверены, фаза 4 закрыта
+Status: In progress — PLAN-03 выполнен (`docs/architecture.md`)
+Last activity: 2026-10-26 — `docs/architecture.md`: среда агента по пяти слоям, ссылки проверены (PLAN-03)
 
 Progress: [████████░░] 80%
 
@@ -110,6 +110,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 ## Session Continuity
 
 Last session: 2026-10-26T18:07:26.371Z
-Stopped at: фаза 4 закрыта (итог Discovery в `04-CONTEXT.md`)
+Stopped at: фаза 5, PLAN-03 выполнен
 Resume file: None
-Next: фаза 5 — `docs/architecture.md`, README «Модуль 2» (итог Discovery взять из `<summary>` в `04-CONTEXT.md`), PR в `main`; подробности — верхние записи `docs/memory.md`
+Next: README «Модуль 2» — таблица «пункт ДЗ → артефакт → команда → скриншот» (итог Discovery из `<summary>` в `04-CONTEXT.md`), раздел «Что не воспроизводится из git» (DOC-01); затем PR в `main` (DOC-02)

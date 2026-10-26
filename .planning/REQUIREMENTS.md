@@ -10,7 +10,7 @@
 
 - [x] **PLAN-01**: `ROADMAP.md`, `REQUIREMENTS.md`, `STATE.md` созданы; `/gsd-progress` показывает позицию вехи
 - [x] **PLAN-02**: Единый источник плана — `docs/plan.md` становится указателем на `.planning/`; правило про прогресс в `AGENTS.md` согласовано с автором
-- [ ] **PLAN-03**: `docs/architecture.md` описывает архитектуру среды агента (слои инструкций, планирования, памяти, hooks, контекста) со ссылкой на `.planning/codebase/ARCHITECTURE.md`
+- [x] **PLAN-03**: `docs/architecture.md` описывает архитектуру среды агента (слои инструкций, планирования, памяти, hooks, контекста) со ссылкой на `.planning/codebase/ARCHITECTURE.md`
 - [x] **PLAN-04**: Хотя бы одна фаза проходит полный цикл GSD: `PLAN.md` → выполнение → `VERIFICATION.md`
 
 ### Безопасность
@@ -76,7 +76,7 @@
 | ----------- | ----- | ------ |
 | PLAN-01 | Phase 1 | Complete |
 | PLAN-02 | Phase 1 | Complete |
-| PLAN-03 | Phase 5 | Pending |
+| PLAN-03 | Phase 5 | Complete |
 | PLAN-04 | Phase 1 | Complete |
 | SEC-01 | Phase 1 | Complete |
 | SEC-02 | Phase 1 | Complete |
