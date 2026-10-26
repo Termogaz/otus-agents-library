@@ -27,7 +27,7 @@
 - [x] **Phase 2: Память агента, быстрые команды и auto hooks** - claude-mem с канарейкой и запасным вариантом, skills `/lib-*`, hooks `SessionStart` и `PreCompact` с тестами (completed 2026-10-26)
 - [x] **Phase 3: Управление контекстом** - порог автосжатия, восстановление позиции после сжатия, statusline, снимки «после» и политика контекста (completed 2026-10-26)
 - [x] **Phase 4: Discovery «продление и пени»** - `/gsd-explore` → SPEC → CONTEXT с открытыми вопросами, без кода (completed 2026-10-26)
-- [ ] **Phase 5: Архитектура, README и сдача** - `docs/architecture.md`, README «Модуль 2», PR в `main`, тег `hw2-submitted`
+- [x] **Phase 5: Архитектура, README и сдача** - `docs/architecture.md`, README «Модуль 2», PR в `main`, тег `hw2-submitted` (completed 2026-10-26)
 
 ## Phase Details
 
@@ -133,4 +133,4 @@ Plans:
 | 2. Память агента, быстрые команды и auto hooks | -/- (без планов) | Complete | 2026-10-26 |
 | 3. Управление контекстом | -/- (без планов) | Complete | 2026-10-26 |
 | 4. Discovery «продление и пени» | -/- (без планов) | Complete | 2026-10-26 |
-| 5. Архитектура, README и сдача | 0/TBD | Not started | - |
+| 5. Архитектура, README и сдача | -/- (без планов) | Complete | 2026-10-26 |

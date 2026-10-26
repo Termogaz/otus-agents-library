@@ -24,16 +24,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-10-22)
 
 **Core value:** Проверяющий по README и репозиторию видит, что каждый пункт текущего ДЗ выполнен и воспроизводим: настройка есть в git, есть доказательство работы (команда, скриншот, коммит).
-**Current focus:** Phase 05 — Архитектура, README и сдача (`docs/architecture.md`, README «Модуль 2», PR в `main`)
+**Current focus:** Веха модуля 2 выполнена — PR #15 в `main` ждёт merge и тега `hw2-submitted` от автора
 
 ## Current Position
 
 Phase: 5 — Архитектура, README и сдача
 Plan: TBD
-Status: In progress — PLAN-03, DOC-01 выполнены; осталось DOC-02 (PR, тег)
-Last activity: 2026-10-26 — README «Модуль 2»: таблица по пяти пунктам ДЗ со скриншотами, итог Discovery, «Что не воспроизводится из git» (DOC-01)
+Status: Complete — PLAN-03, DOC-01, DOC-02 выполнены; PR #15 открыт
+Last activity: 2026-10-26 — push `feat/module-2`, PR #15 `feat/module-2` → `main` (DOC-02)
 
-Progress: [████████░░] 80%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -110,6 +110,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 ## Session Continuity
 
 Last session: 2026-10-26T18:07:26.371Z
-Stopped at: фаза 5, DOC-01 выполнен
+Stopped at: фаза 5 закрыта, PR #15 открыт
 Resume file: None
-Next: DOC-02 — `npm run check`, push `feat/module-2`, PR в `main` на русском без атрибуции; тег `hw2-submitted` ставит автор вручную
+Next: автор — merge PR #15 и тег `hw2-submitted`; затем новая веха (модуль 3)

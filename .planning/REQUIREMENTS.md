@@ -48,7 +48,7 @@
 ### Сдача
 
 - [x] **DOC-01**: README «Модуль 2» — таблица «пункт ДЗ → артефакт → команда → скриншот» и раздел «что не воспроизводится из git»
-- [ ] **DOC-02**: PR `feat/module-2` → `main` на русском, без атрибуции, `npm run check` зелёный; тег `hw2-submitted` вручную
+- [x] **DOC-02**: PR `feat/module-2` → `main` на русском, без атрибуции, `npm run check` зелёный; тег `hw2-submitted` вручную
 
 ## v2 Requirements
 
@@ -96,7 +96,7 @@
 | DISC-01 | Phase 4 | Complete |
 | DISC-02 | Phase 4 | Complete |
 | DOC-01 | Phase 5 | Complete |
-| DOC-02 | Phase 5 | Pending |
+| DOC-02 | Phase 5 | Complete (PR #15; тег — автор после merge) |
 
 **Coverage:**
 
