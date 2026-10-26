@@ -28,7 +28,7 @@
 
 ### Быстрые команды и auto hooks
 
-- [ ] **HOOK-01**: Skills `/lib-check`, `/lib-status`, `/lib-handoff`, `/lib-commit`
+- [x] **HOOK-01**: Skills `/lib-check`, `/lib-status`, `/lib-handoff`, `/lib-commit`
 - [x] **HOOK-02**: Hook `SessionStart` (в закоммиченном `.claude/settings.json`) вставляет ветку, позицию GSD и верхнюю запись `docs/memory.md` (≤ 3 КБ)
 - [x] **HOOK-03**: Hook `PreCompact` пишет чек-пойнт в игнорируемый git каталог и всегда завершается с кодом 0
 - [ ] **HOOK-04**: Логика hooks покрыта тестами Vitest; `npm run check` зелёный
@@ -85,7 +85,7 @@
 | MEM-02 | Phase 2 | Complete |
 | MEM-03 | Phase 2 | Complete |
 | MEM-04 | Phase 2 | Complete |
-| HOOK-01 | Phase 2 | Pending |
+| HOOK-01 | Phase 2 | Complete |
 | HOOK-02 | Phase 2 | Complete |
 | HOOK-03 | Phase 2 | Complete |
 | HOOK-04 | Phase 2 | Pending |
