@@ -25,16 +25,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-10-22)
 
 **Core value:** Проверяющий по README и репозиторию видит, что каждый пункт текущего ДЗ выполнен и воспроизводим: настройка есть в git, есть доказательство работы (команда, скриншот, коммит).
-**Current focus:** Phase 03 — Управление контекстом (порог автосжатия, восстановление позиции после сжатия, statusline, снимки «после»)
+**Current focus:** Phase 04 — Discovery «продление и пени» (только `/gsd-explore`, `/gsd-spec-phase`, `/gsd-discuss-phase`)
 
 ## Current Position
 
-Phase: 3 — Управление контекстом
-Plan: без PLAN.md — шаги по схеме AGENTS.md, как в фазе 2 (решение автора 2026-10-26)
-Status: In progress — CTX-01…03 выполнены
-Last activity: 2026-10-26 — statusLine на gsd-statusline.js в settings.local.json, монитор контекста выдал WARNING (CTX-03, скриншоты hw2-ctx03-*)
+Phase: 4 — Discovery «продление и пени»
+Plan: через команды GSD (`/gsd-explore` → `/gsd-spec-phase` → `/gsd-discuss-phase`)
+Status: Not started — фаза 3 закрыта 2026-10-26 (CTX-01…04)
+Last activity: 2026-10-26 — снимки «после» и сравнение в `docs/context-usage.md`, политика контекста в `AGENTS.md` (CTX-04), фаза 3 закрыта
 
-Progress: [████░░░░░░] 40%
+Progress: [██████░░░░] 60%
 
 ## Performance Metrics
 
@@ -111,6 +111,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 ## Session Continuity
 
 Last session: 2026-10-26
-Stopped at: CTX-03 закрыт (statusline со шкалой контекста, WARNING монитора; порог возвращён к 35)
+Stopped at: фаза 3 закрыта (CTX-04 — снимки «после», политика контекста)
 Resume file: None
-Next: CTX-04 — снимки `/context` и `/usage` «после» на сценарии фазы 1 с подписями, политика контекста в `AGENTS.md` или README; подробности — верхние записи `docs/memory.md`
+Next: фаза 4 — в новой сессии `/gsd-explore` по теме «продление и пени»; подробности — верхние записи `docs/memory.md`
