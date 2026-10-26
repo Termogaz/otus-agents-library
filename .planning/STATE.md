@@ -31,8 +31,8 @@ See: .planning/PROJECT.md (updated 2026-10-22)
 
 Phase: 3 — Управление контекстом
 Plan: без PLAN.md — шаги по схеме AGENTS.md, как в фазе 2 (решение автора 2026-10-26)
-Status: In progress — CTX-01 выполнен
-Last activity: 2026-10-26 — `autoCompactWindow: 200000` в settings.json, `/context` показывает окно 200k (CTX-01, `c79819f`)
+Status: In progress — CTX-01, CTX-02 выполнены
+Last activity: 2026-10-26 — после ручного `/compact` и автосжатия агент называет фазу, ветку и шаг (CTX-02, скриншоты hw2-ctx02-manual, hw2-ctx02-auto)
 
 Progress: [████░░░░░░] 40%
 
@@ -111,6 +111,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 ## Session Continuity
 
 Last session: 2026-10-26
-Stopped at: CTX-01 закрыт (порог 200k, скриншот hw2-ctx01-context)
+Stopped at: CTX-02 закрыт (позиция после ручного и автосжатия, скриншоты hw2-ctx02-*)
 Resume file: None
-Next: CTX-02 — после `/compact` и автосжатия агент называет фазу, ветку и шаг; затем CTX-03 (statusline GSD), CTX-04 (снимки «после», политика контекста); подробности — верхние записи `docs/memory.md`
+Next: CTX-03 — statusline GSD в `settings.local.json`, монитор контекста с предупреждениями; затем CTX-04 (снимки «после», политика контекста); подробности — верхние записи `docs/memory.md`
