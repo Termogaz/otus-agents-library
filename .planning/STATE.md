@@ -31,8 +31,8 @@ See: .planning/PROJECT.md (updated 2026-10-22)
 
 Phase: 3 — Управление контекстом
 Plan: без PLAN.md — шаги по схеме AGENTS.md, как в фазе 2 (решение автора 2026-10-26)
-Status: In progress — CTX-01, CTX-02 выполнены
-Last activity: 2026-10-26 — после ручного `/compact` и автосжатия агент называет фазу, ветку и шаг (CTX-02, скриншоты hw2-ctx02-manual, hw2-ctx02-auto)
+Status: In progress — CTX-01…03 выполнены
+Last activity: 2026-10-26 — statusLine на gsd-statusline.js в settings.local.json, монитор контекста выдал WARNING (CTX-03, скриншоты hw2-ctx03-*)
 
 Progress: [████░░░░░░] 40%
 
@@ -97,7 +97,7 @@ None yet.
 
 - Фаза 1: правка `AGENTS.md` (правило про прогресс) и `CLAUDE.md` (`@docs/plan.md`) — только с согласия автора
 - Фаза 2: research перед планированием — claude-mem в WSL (Bun/uv, прокси, порт 37700 или 37777, `<private>`, `CLAUDE_MEM_ONLINE_OPTIN`), размер `additionalContext`, runtime hooks (`tsx` или Node), каталог чек-пойнтов (рекомендован `.local/checkpoints/`); установка claude-mem вне проекта — с согласия автора
-- Фаза 3: `autoCompactWindow` подтверждён в 2.1.310 (CTX-01); формат `/context` и `/usage` на подписке; statusLine — в `settings.local.json`
+- Фаза 3: `autoCompactWindow` подтверждён в 2.1.310 (CTX-01); формат `/context` и `/usage` на подписке; statusLine — в `settings.local.json` (CTX-03)
 - Фаза 4: Discovery только через `/gsd-explore`, `/gsd-spec-phase`, `/gsd-discuss-phase`; не запускать `/gsd-new-milestone`, `/gsd-autonomous`, `/gsd-execute-phase`
 
 ## Deferred Items
@@ -111,6 +111,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 ## Session Continuity
 
 Last session: 2026-10-26
-Stopped at: CTX-02 закрыт (позиция после ручного и автосжатия, скриншоты hw2-ctx02-*)
+Stopped at: CTX-03 закрыт (statusline со шкалой контекста, WARNING монитора; порог возвращён к 35)
 Resume file: None
-Next: CTX-03 — statusline GSD в `settings.local.json`, монитор контекста с предупреждениями; затем CTX-04 (снимки «после», политика контекста); подробности — верхние записи `docs/memory.md`
+Next: CTX-04 — снимки `/context` и `/usage` «после» на сценарии фазы 1 с подписями, политика контекста в `AGENTS.md` или README; подробности — верхние записи `docs/memory.md`

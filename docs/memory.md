@@ -3,6 +3,31 @@
 Журнал сессий и шагов: что сделано, какие решения приняты, что дальше, на чём споткнулись.
 Новые записи — сверху. Формат записи: **Сделано / Решение / Дальше / Ловушки**.
 
+## 2026-10-26 — Модуль 2, фаза 3, шаг 3: statusline и монитор контекста CTX-03 (ветка `feat/module-2`)
+
+**Сделано.** `statusLine` на `.claude/hooks/gsd-statusline.js` в `.claude/settings.local.json` (вне git):
+`"statusLine": {"type": "command", "command": "<поиск node, как у GSD-hooks> \"${CLAUDE_PROJECT_DIR:-$PWD}\"/.claude/hooks/gsd-statusline.js"}`.
+Строка показывает шкалу контекста (51%) — `docs/screenshots/hw2-ctx03-statusline.png`. Statusline пишет
+`/tmp/claude-ctx-<сессия>.json` (`used_tokens`, `threshold_tokens: 167000` — порог сжатия от окна 200k),
+и `gsd-context-monitor.js`, подключённый ещё установщиком, ожил. Для показа WARNING временно
+`hooks.context_warning_threshold: 70` в `.planning/config.json`: на следующем Bash —
+«CONTEXT WARNING: Usage at 53% (88k of 167k usable tokens). Remaining: 47%» —
+`docs/screenshots/hw2-ctx03-warning.png`. Порог возвращён к 35 (ключ удалён). CTX-03 выполнен.
+
+**Решение.** Готовые скрипты GSD, без `/gsd-*` и агентов; свой statusline отвергнут — без файла метрик
+монитор GSD не работает. Процент — от порога сжатия (167k), не от окна: WARNING при остатке ≤35%
+(~108k), CRITICAL ≤25%. На демонстрации CRITICAL не поднимали: на нём монитор сам запускает
+`gsd-tools state record-session` и перезаписывает «Stopped at» в `STATE.md`.
+
+**Дальше.** CTX-04: снимки `/context` и `/usage` «после» на сценарии фазы 1, подписи; политика контекста
+(когда `/compact`, когда `/clear`, что сохранять) — в `AGENTS.md` или README.
+
+**Ловушки.** Без `CLAUDE_PROJECT_DIR` путь вида `"$CLAUDE_PROJECT_DIR"/...` превращается в
+`/.claude/hooks/...` (`MODULE_NOT_FOUND`) — отсюда запасной `$PWD`. Сразу после старта сессии шкалы
+нет: `context_window` приходит после первого ответа. Строка содержит `⬆ /gsd-update` (GSD закреплён
+на 1.18.0, не обновлять) и прогресс вехи GSD «20%», не совпадающий с `STATE.md`. Снимок предупреждения —
+цитата в ответе агента; сам вывод hook виден в подробном режиме (`ctrl+o`).
+
 ## 2026-10-26 — Модуль 2, фаза 3, шаг 2: позиция после сжатия CTX-02 (ветка `feat/module-2`)
 
 **Сделано.** Проверены оба вида сжатия. Ручной `/compact` (чек-пойнт `manual`, 16:56:28Z): агент в

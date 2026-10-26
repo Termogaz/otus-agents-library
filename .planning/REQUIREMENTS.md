@@ -37,7 +37,7 @@
 
 - [x] **CTX-01**: Порог автосжатия задан и обоснован (`autoCompactWindow` или аналог)
 - [x] **CTX-02**: После сжатия `SessionStart(compact)` возвращает чек-пойнт; агент называет фазу, ветку и шаг
-- [ ] **CTX-03**: Statusline GSD включён; монитор контекста выдаёт предупреждения
+- [x] **CTX-03**: Statusline GSD включён; монитор контекста выдаёт предупреждения
 - [ ] **CTX-04**: Скриншоты `/context` и `/usage` до и после на одном сценарии, с подписями; политика контекста записана
 
 ### Discovery
@@ -91,7 +91,7 @@
 | HOOK-04 | Phase 2 | Complete |
 | CTX-01 | Phase 3 | Complete |
 | CTX-02 | Phase 3 | Complete |
-| CTX-03 | Phase 3 | Pending |
+| CTX-03 | Phase 3 | Complete |
 | CTX-04 | Phase 3 | Pending |
 | DISC-01 | Phase 4 | Pending |
 | DISC-02 | Phase 4 | Pending |
