@@ -4,6 +4,7 @@
     "pr": "",
     "sessionUrl": false
   },
+  "autoCompactWindow": 200000,
   "permissions": {
     "defaultMode": "acceptEdits",
     "allow": [

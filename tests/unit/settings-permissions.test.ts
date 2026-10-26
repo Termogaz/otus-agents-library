@@ -9,6 +9,7 @@ const hookEntrySchema = z.object({
 
 // Схема сужает только нужные поля settings.json; остальное игнорируется.
 const settingsSchema = z.object({
+  autoCompactWindow: z.unknown().optional(),
   permissions: z.object({
     defaultMode: z.string(),
     allow: z.array(z.string()),
@@ -97,5 +98,19 @@ describe('settings.json permissions', () => {
   it('asks before git push', () => {
     expect(ask).toContain('Bash(git push:*)');
     expect(deny).toContain('Bash(git push --force:*)');
+  });
+});
+
+describe('settings.json context', () => {
+  it('sets auto-compact window within range supported by Claude Code', () => {
+    // 2.1.310 принимает целое число токенов от 100 000 до 1 000 000; обоснование 200 000 — docs/memory.md.
+    const window = z
+      .number()
+      .int()
+      .min(100_000)
+      .max(1_000_000)
+      .safeParse(settings.autoCompactWindow);
+    expect(window.success).toBe(true);
+    expect(window.data).toBe(200_000);
   });
 });
