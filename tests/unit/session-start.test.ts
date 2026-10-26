@@ -1,4 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { spawnSync } from 'node:child_process';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { afterEach, describe, expect, it } from 'vitest';
+import { z } from 'zod';
+import { CHECKPOINT_FILE } from '../../.claude/hooks/lib/hook-utils.js';
 import {
   buildDigest,
   DIGEST_LIMIT_BYTES,
@@ -7,6 +13,14 @@ import {
   sessionStartOutput,
   truncateUtf8,
 } from '../../.claude/hooks/session-start.js';
+
+// Вывод скрипта: JSON с дайджестом в additionalContext.
+const hookOutputSchema = z.object({
+  hookSpecificOutput: z.object({
+    hookEventName: z.literal('SessionStart'),
+    additionalContext: z.string(),
+  }),
+});
 
 const state = [
   '# Project State',
@@ -160,5 +174,72 @@ describe('sessionStartOutput', () => {
     expect(sessionStartOutput('дайджест')).toEqual({
       hookSpecificOutput: { hookEventName: 'SessionStart', additionalContext: 'дайджест' },
     });
+  });
+});
+
+describe('session-start hook script', () => {
+  const root = path.resolve(import.meta.dirname, '../..');
+  const tsx = path.join(root, 'node_modules', '.bin', 'tsx');
+  const script = path.join(root, '.claude', 'hooks', 'session-start.ts');
+  let workDir: string | null = null;
+
+  afterEach(() => {
+    if (workDir) rmSync(workDir, { recursive: true, force: true });
+    workDir = null;
+  });
+
+  // Временный проект вне git: ветка и счётчик файлов пропускаются, остальное читается из файлов.
+  function makeProject(): string {
+    const dir = mkdtempSync(path.join(tmpdir(), 'session-start-'));
+    mkdirSync(path.join(dir, '.planning'));
+    writeFileSync(path.join(dir, '.planning', 'STATE.md'), state);
+    mkdirSync(path.join(dir, 'docs'));
+    writeFileSync(
+      path.join(dir, 'docs', 'memory.md'),
+      '# Память\n\n## Шаг 7\n\nСделано: команды.\n',
+    );
+    mkdirSync(path.join(dir, '.local', 'checkpoints'), { recursive: true });
+    writeFileSync(path.join(dir, CHECKPOINT_FILE), 'Сжатие: manual\n');
+    return dir;
+  }
+
+  function runHook(projectDir: string, stdin: string) {
+    const result = spawnSync(tsx, [script], {
+      input: stdin,
+      timeout: 15000,
+      encoding: 'utf8',
+      env: { ...process.env, CLAUDE_PROJECT_DIR: projectDir },
+    });
+    const output = result.status === 0 ? hookOutputSchema.parse(JSON.parse(result.stdout)) : null;
+    return { status: result.status, context: output?.hookSpecificOutput.additionalContext ?? '' };
+  }
+
+  it('prints digest as SessionStart additionalContext on startup', () => {
+    workDir = makeProject();
+    const { status, context } = runHook(
+      workDir,
+      JSON.stringify({ source: 'startup', cwd: workDir }),
+    );
+    expect(status).toBe(0);
+    expect(context).toContain('Phase: 2');
+    expect(context).toContain('Сделано: команды.');
+    expect(context).not.toContain('Сжатие: manual');
+  });
+
+  it('includes checkpoint only after compaction', () => {
+    workDir = makeProject();
+    const { status, context } = runHook(
+      workDir,
+      JSON.stringify({ source: 'compact', cwd: workDir }),
+    );
+    expect(status).toBe(0);
+    expect(context).toContain('Сжатие: manual');
+  });
+
+  it('still prints digest with exit code 0 on malformed input', () => {
+    workDir = makeProject();
+    const { status, context } = runHook(workDir, 'не json');
+    expect(status).toBe(0);
+    expect(context).toContain('Phase: 2');
   });
 });

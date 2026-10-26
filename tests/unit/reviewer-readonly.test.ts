@@ -1,3 +1,5 @@
+import { spawnSync } from 'node:child_process';
+import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { checkReviewerCommand } from '../../.claude/hooks/reviewer-readonly.js';
 
@@ -90,5 +92,35 @@ describe('git read operands', () => {
     'git diff main...HEAD --stat',
   ])('allows ordinary git read: %s', (command) => {
     expect(checkReviewerCommand(command)).toBeNull();
+  });
+});
+
+describe('reviewer-readonly hook script', () => {
+  const root = path.resolve(import.meta.dirname, '../..');
+  const tsx = path.join(root, 'node_modules', '.bin', 'tsx');
+  const script = path.join(root, '.claude', 'hooks', 'reviewer-readonly.ts');
+
+  function runHook(stdin: string) {
+    return spawnSync(tsx, [script], { input: stdin, timeout: 15000, encoding: 'utf8' });
+  }
+
+  function bashCall(command: string): string {
+    return JSON.stringify({ tool_name: 'Bash', tool_input: { command }, cwd: root });
+  }
+
+  it('lets read command through with exit code 0', () => {
+    expect(runHook(bashCall('git status --short')).status).toBe(0);
+  });
+
+  it('blocks write command with exit code 2 and reason for agent', () => {
+    const result = runHook(bashCall('git commit -m x'));
+    expect(result.status).toBe(2);
+    expect(result.stderr).toContain('reviewer работает только на чтение');
+  });
+
+  it('blocks call it cannot parse (fail-closed)', () => {
+    const result = runHook('не json');
+    expect(result.status).toBe(2);
+    expect(result.stderr).toContain('не удалось проверить вызов');
   });
 });
