@@ -12,7 +12,9 @@
 файлы по именам, без push/`--amend`/атрибуции. Тест `tests/unit/lib-skills.test.ts` (14): frontmatter,
 `disable-model-invocation` у handoff/commit, check/status без Edit и git-записи, handoff пишет только
 `docs/memory.md`, нигде нет `.env`; `npm run check` — 549 тестов. Все четыре команды вызваны в сессии
-вручную. Не закоммичено: эта запись, отметка HOOK-01 в `.planning/`, скриншоты `hw2-hook01-*`.
+вручную, запись и отметка HOOK-01 закоммичены через `/lib-commit` (`8120acb`). Доказательства —
+`docs/screenshots/hw2-hook01-status.png`, `-check`, `-handoff`, `-handoff-answer`, `-commit`;
+отметка в `.planning/` — `hw2-hook01-mark-*.png`.
 
 **Решение.** Skills, а не `.claude/commands/` — так названо в HOOK-01, рядом с `review-step`.
 Префикс `lib-`: проектный skill с именем встроенной команды (`/checkpoint`, `/compact`) её
