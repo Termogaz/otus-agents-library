@@ -30,8 +30,8 @@ See: .planning/PROJECT.md (updated 2026-10-22)
 
 Phase: 5 — Архитектура, README и сдача
 Plan: TBD
-Status: In progress — PLAN-03 выполнен (`docs/architecture.md`)
-Last activity: 2026-10-26 — `docs/architecture.md`: среда агента по пяти слоям, ссылки проверены (PLAN-03)
+Status: In progress — PLAN-03, DOC-01 выполнены; осталось DOC-02 (PR, тег)
+Last activity: 2026-10-26 — README «Модуль 2»: таблица по пяти пунктам ДЗ со скриншотами, итог Discovery, «Что не воспроизводится из git» (DOC-01)
 
 Progress: [████████░░] 80%
 
@@ -110,6 +110,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 ## Session Continuity
 
 Last session: 2026-10-26T18:07:26.371Z
-Stopped at: фаза 5, PLAN-03 выполнен
+Stopped at: фаза 5, DOC-01 выполнен
 Resume file: None
-Next: README «Модуль 2» — таблица «пункт ДЗ → артефакт → команда → скриншот» (итог Discovery из `<summary>` в `04-CONTEXT.md`), раздел «Что не воспроизводится из git» (DOC-01); затем PR в `main` (DOC-02)
+Next: DOC-02 — `npm run check`, push `feat/module-2`, PR в `main` на русском без атрибуции; тег `hw2-submitted` ставит автор вручную

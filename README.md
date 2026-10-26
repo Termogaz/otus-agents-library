@@ -82,10 +82,58 @@ npm run check                                                # типы, лин�
 Если npm ходит через локальный HTTP-прокси, e2e падает по таймауту `webServer`. Тогда запускать
 так: `env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY npm run test:e2e`.
 
+## Модуль 2: агентно-ориентированный пайплайн
+
+Задание — [`docs/homework-2.md`](docs/homework-2.md). Вся работа сделана в ветке `feat/module-2`
+как веха GSD из пяти фаз: план и прогресс — [`.planning/ROADMAP.md`](.planning/ROADMAP.md), требования
+с отметками — [`.planning/REQUIREMENTS.md`](.planning/REQUIREMENTS.md). Архитектура среды агента по
+слоям (инструкции, планирование, память, hooks, контекст) — [`docs/architecture.md`](docs/architecture.md).
+Ход работы по шагам, с решениями и ловушками — [`docs/memory.md`](docs/memory.md).
+
+Команды вида `/…` вводятся в сессии Claude Code, остальные — в терминале из корня проекта.
+
+| Пункт ДЗ                                   | Артефакты                                                                                                                                                                                                                                                                                                                     | Команда проверки                                                                                                                                                                             | Скриншоты                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1. gsd-core, проект инициирован            | [`ROADMAP.md`](.planning/ROADMAP.md), [`STATE.md`](.planning/STATE.md), [`REQUIREMENTS.md`](.planning/REQUIREMENTS.md), [`architecture.md`](docs/architecture.md), [`security-checklist.md`](docs/security-checklist.md); полный цикл GSD — [фаза 1](.planning/phases/01-bazovaya-liniya-edinyy-plan-i-gigiena-bezopasnosti/) | `/gsd-progress`; `npx vitest run tests/unit/protect-files.test.ts tests/unit/secret-names.test.ts tests/unit/reviewer-readonly.test.ts tests/unit/shell.test.ts` (439 тестов обходов `.env`) | [`/gsd-progress`](docs/screenshots/hw2-plan01-progress.png)                                                                                                                                                                                                                                                                                                                                                                                                      |
+| 2. Память агента                           | claude-mem 15.0.1 (вне git, установка — ниже); запасной вариант — [`docs/memory.md`](docs/memory.md) + дайджест [`session-start.ts`](.claude/hooks/session-start.ts)                                                                                                                                                          | `npx -y claude-mem@15.0.1 doctor`; в новой сессии: «Какое кодовое имя у следующей фичи?» — факта нет в репозитории                                                                           | [сессия A](docs/screenshots/hw2-mem03-session-a.png), [сессия B](docs/screenshots/hw2-mem03-session-b.png); без claude-mem — [плагины выключены](docs/screenshots/hw2-mem04-plugins-off.png), [ответ по дайджесту](docs/screenshots/hw2-mem04-digest-answer.png)                                                                                                                                                                                                 |
+| 3. Быстрые команды и auto hooks            | [`.claude/skills/lib-*`](.claude/skills/), hooks [`session-start.ts`](.claude/hooks/session-start.ts), [`pre-compact.ts`](.claude/hooks/pre-compact.ts), регистрация — [`.claude/settings.json`](.claude/settings.json)                                                                                                       | `/lib-status`, `/lib-check`, `/hooks`; `npx vitest run tests/unit/session-start.test.ts tests/unit/pre-compact.test.ts tests/unit/lib-skills.test.ts tests/unit/format-and-lint.test.ts`     | [`/lib-status`](docs/screenshots/hw2-hook01-status.png), [`/lib-check`](docs/screenshots/hw2-hook01-check.png), [`/lib-handoff`](docs/screenshots/hw2-hook01-handoff.png), [`/lib-commit`](docs/screenshots/hw2-hook01-commit.png), [`/hooks`](docs/screenshots/hw2-hook02-hooks-menu.png), [дайджест](docs/screenshots/hw2-hook02-session-answer.png), [чек-пойнт](docs/screenshots/hw2-hook03-compact.png)                                                     |
+| 4. Управление контекстом, usage до и после | `autoCompactWindow: 200000` в [`.claude/settings.json`](.claude/settings.json), чек-пойнт `PreCompact` → `SessionStart(compact)`, statusline и монитор GSD, политика — раздел «Контекст» в [`AGENTS.md`](AGENTS.md), замеры — [`docs/context-usage.md`](docs/context-usage.md)                                                | `/context` (строка «Auto-compact window: 200k tokens»); `npx vitest run tests/unit/settings-permissions.test.ts -t "auto-compact window"`                                                    | usage [до](docs/screenshots/hw2-usage-before.png) / [после](docs/screenshots/hw2-usage-after.png); `/context` [до](docs/screenshots/hw2-context-before-progress.png) / [после](docs/screenshots/hw2-context-after-progress.png); [сжатие вручную](docs/screenshots/hw2-ctx02-manual.png), [автосжатие](docs/screenshots/hw2-ctx02-auto.png), [statusline](docs/screenshots/hw2-ctx03-statusline.png), [WARNING монитора](docs/screenshots/hw2-ctx03-warning.png) |
+| 5. Discovery в GSD                         | [`renewal-and-fines.md`](.planning/notes/renewal-and-fines.md) (`/gsd-explore`), [`04-SPEC.md`](.planning/phases/04-discovery-prodlenie-i-peni/04-SPEC.md), [`04-CONTEXT.md`](.planning/phases/04-discovery-prodlenie-i-peni/04-CONTEXT.md)                                                                                   | `git diff --stat ca429d0 -- src tests` — пусто: Discovery код не менял                                                                                                                       | [пустой diff и артефакты](docs/screenshots/hw2-disc01-diff.png)                                                                                                                                                                                                                                                                                                                                                                                                  |
+
+### Итог Discovery «продление и пени»
+
+Пройдено `/gsd-explore` → `/gsd-spec-phase` (неоднозначность 0.17 при пороге 0.20) → `/gsd-discuss-phase`.
+Открытые вопросы — в разделе SPEC, решения D-01…D-10 — в CONTEXT.
+
+**Решили:**
+
+- Продление: +14 дней от текущего срока, не больше 2 раз. Просроченную выдачу и выдачу должника не продлить.
+- Пеня: 10 ₽ за каждые начатые сутки просрочки, не больше 300 ₽ на выдачу. Считается в целых копейках.
+- Читатель с неоплаченной пеней не может взять новую книгу. Пеню можно отметить оплаченной только целиком
+  и только после возврата книги.
+- Ставка, потолок и лимит продлений хранятся в `LoanPolicy`. Правила пеней — в `src/domain/fines.ts`.
+- Формат хранилища v1→v2 мигрирует при чтении файла. Повреждённый файл отклоняется целиком. Выдачи из v1
+  освобождены от пени (`fineExempt`), задним числом ничего не начисляется.
+
+**Отложили:**
+
+- Реализацию (домен, API, UI, миграция) — на следующую веху (LOAN-01).
+- Очередь и бронь, уведомления, кассу и частичную оплату, прощение пени, роли.
+- Резервную копию файла перед миграцией и перенос миграций на SQLite.
+
 ## Что не воспроизводится из git
 
 Эти части среды живут вне репозитория или в `.gitignore`. После клонирования их нужно поставить
 заново, команды запускать в своём терминале.
+
+| Что                              | Где лежит                                                | Как восстановить                                        |
+| -------------------------------- | -------------------------------------------------------- | ------------------------------------------------------- |
+| claude-mem: плагин, worker, база | `~/.claude/plugins/`, `~/.claude-mem/`                   | установка ниже; база личная, переносить не нужно        |
+| GSD Core: команды, агенты, hooks | `.claude/gsd-*`, `.claude/{agents,commands,hooks}/gsd-*` | `npx @opengsd/gsd-core@1.18.0 --claude --local`         |
+| Hooks GSD и statusline           | `.claude/settings.local.json`                            | hooks пишет установщик GSD; statusline — фрагмент ниже  |
+| Auto memory Claude Code          | `~/.claude/projects/<проект>/memory/`                    | личная, создаётся сама; общий журнал — `docs/memory.md` |
+| Чек-пойнты сжатия                | `.local/checkpoints/last.md`                             | создаёт hook `PreCompact` при первом сжатии             |
+| Служебный файл GSD               | `.planning/state.json`                                   | создаёт GSD, в git не берётся                           |
 
 **Память claude-mem 15.0.1.** Плагин, worker и база наблюдений лежат в `~/.claude/plugins/` и
 `~/.claude-mem/`, база личная и в git не попадает.
@@ -111,6 +159,22 @@ npx -y claude-mem@15.0.1 doctor   # ожидается «All required checks pas
 npx @opengsd/gsd-core@1.18.0 --claude --local
 ```
 
+GSD закреплён на версии 1.18.0, подсказку `/gsd-update` в statusline не выполнять.
+
+**Statusline и монитор контекста.** Установщик GSD регистрирует монитор `gsd-context-monitor.js`,
+но statusline не включает, а без файла метрик statusline монитор молчит. Добавить в
+`.claude/settings.local.json`:
+
+```json
+"statusLine": {
+  "type": "command",
+  "command": "node \"${CLAUDE_PROJECT_DIR:-$PWD}\"/.claude/hooks/gsd-statusline.js"
+}
+```
+
+Шкала появляется после первого ответа в сессии. WARNING монитора приходит при остатке ≤35% до порога
+сжатия, CRITICAL — при ≤25%.
+
 Если npm ходит через локальный прокси и падает с `ECONNRESET`, все команды выше запускать через
 `env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY`.
 
@@ -121,7 +185,9 @@ src/domain/   бизнес-правила: чистые функции без I/
 src/server/   Express: маршруты, валидация zod, хранилище
 src/client/   React UI
 tests/unit/   Vitest; tests/e2e/ — Playwright
-docs/         about.md (отчёт), plan.md (план), memory.md (журнал), screenshots/
+docs/         about.md (отчёт ДЗ-1), architecture.md (среда агента), memory.md (журнал),
+              context-usage.md, security-checklist.md, screenshots/
+.planning/    GSD: ROADMAP, REQUIREMENTS, STATE, фазы, карта кода
 .claude/      rules, skills, agents, hooks, settings.json
 .mcp.json     Playwright MCP для проверки UI агентом
 ```
