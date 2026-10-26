@@ -5,11 +5,11 @@ milestone_name: "ДЗ-2: агентно-ориентированный пайп�
 current_phase: 2
 current_phase_name: Память агента, быстрые команды и auto hooks
 status: planning
-stopped_at: context exhaustion at 79% (2026-10-26)
-last_updated: "2026-10-26T17:54:59.357Z"
+stopped_at: фаза 4 — CONTEXT записан
+last_updated: "2026-10-26T18:06:47.428Z"
 last_activity: 2026-10-26
 last_activity_desc: Phase 01 complete, transitioned to Phase 2
-state_head: 93df82a118dfe486948d337c8cc1c19031fa7443
+state_head: 418b73f4b2deb4d439469431a921a53583e34160
 progress:
   total_phases: 5
   completed_phases: 3
@@ -30,8 +30,8 @@ See: .planning/PROJECT.md (updated 2026-10-22)
 
 Phase: 4 — Discovery «продление и пени»
 Plan: через команды GSD (`/gsd-explore` → `/gsd-spec-phase` → `/gsd-discuss-phase`)
-Status: In progress — `/gsd-spec-phase 4` пройден (ambiguity 0.17), следующий шаг `/gsd-discuss-phase 4`
-Last activity: 2026-10-26 — `04-SPEC.md`: 8 требований, edge/prohibition probe, открытые вопросы DISC-02
+Status: In progress — `/gsd-discuss-phase 4` пройден (`04-CONTEXT.md`, D-01…D-10); осталось итог «решили / отложили» для README «Модуль 2» (критерий 4)
+Last activity: 2026-10-26 — `04-CONTEXT.md`: политика в `LoanPolicy`, миграция в `load()`, выдачи v1 `fineExempt`, имена; критерий 3 — diff от `ca429d0`
 
 Progress: [██████░░░░] 60%
 
@@ -109,7 +109,7 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-26T17:54:59.235Z
-Stopped at: фаза 4 — SPEC записан (`.planning/phases/04-discovery-prodlenie-i-peni/04-SPEC.md`, `2e18653`), discuss-phase не начат
-Resume file: None
-Next: `/gsd-discuss-phase 4` (CONTEXT с отложенными идеями); сначала согласовать с автором критерий «`git diff --stat main -- src tests` пуст» — на ветке он не пуст из-за тестов фаз 1–3; подробности — верхняя запись `docs/memory.md`
+Last session: 2026-10-26T18:06:47.365Z
+Stopped at: фаза 4 — CONTEXT записан (`.planning/phases/04-discovery-prodlenie-i-peni/04-CONTEXT.md`)
+Resume file: .planning/phases/04-discovery-prodlenie-i-peni/04-CONTEXT.md
+Next: итог Discovery «решили / отложили» для README «Модуль 2» (критерий 4 фазы 4) и проверка критериев 1–3; затем закрыть фазу 4
