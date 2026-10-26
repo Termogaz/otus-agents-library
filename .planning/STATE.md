@@ -25,16 +25,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-10-22)
 
 **Core value:** Проверяющий по README и репозиторию видит, что каждый пункт текущего ДЗ выполнен и воспроизводим: настройка есть в git, есть доказательство работы (команда, скриншот, коммит).
-**Current focus:** Phase 02 — Память агента, быстрые команды и auto hooks (шаг 8: HOOK-04 — все hooks покрыты тестами, закрытие фазы; без агентов GSD)
+**Current focus:** Phase 03 — Управление контекстом (порог автосжатия, восстановление позиции после сжатия, statusline, снимки «после»)
 
 ## Current Position
 
-Phase: 2 — Память агента, быстрые команды и auto hooks
-Plan: без PLAN.md — шаги по схеме AGENTS.md (режим фазы 2 в ROADMAP)
-Status: In progress — MEM-01…04, HOOK-01…03 выполнены
-Last activity: 2026-10-26 — быстрые команды `/lib-*` вызваны в сессии (HOOK-01, `48aa49e`)
+Phase: 3 — Управление контекстом
+Plan: режим фазы не выбран (GSD или шаги по AGENTS.md — решить с автором)
+Status: Not started — фаза 2 закрыта 2026-10-26 (MEM-01…04, HOOK-01…04)
+Last activity: 2026-10-26 — HOOK-04: тесты запуска скриптов hooks (`542b311`), фаза 2 закрыта
 
-Progress: [██░░░░░░░░] 20%
+Progress: [████░░░░░░] 40%
 
 ## Performance Metrics
 
@@ -111,6 +111,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 ## Session Continuity
 
 Last session: 2026-10-26
-Stopped at: HOOK-01 закрыт (skills lib-*, тест lib-skills, скриншоты hw2-hook01-*)
+Stopped at: фаза 2 закрыта (HOOK-04 — тесты запуска скриптов hooks, 557 тестов)
 Resume file: None
-Next: HOOK-04 — сверить покрытие тестами всех hooks, затем закрыть фазу 2 и перейти к фазе 3; подробности — верхние записи `docs/memory.md`
+Next: фаза 3 — подтвердить `autoCompactWindow` в установленной версии Claude Code, выбрать порог (CTX-01); подробности — верхние записи `docs/memory.md`

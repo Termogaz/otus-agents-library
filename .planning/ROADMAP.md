@@ -24,7 +24,7 @@
 Дробные фазы выполняются между соседними целыми по порядку номеров.
 
 - [x] **Phase 1: Базовая линия, единый план и гигиена безопасности** - снимки «до», план в GSD, security-checklist, закрытые обходы `.env` и правок `.claude/` (completed 2026-10-25)
-- [ ] **Phase 2: Память агента, быстрые команды и auto hooks** - claude-mem с канарейкой и запасным вариантом, skills `/lib-*`, hooks `SessionStart` и `PreCompact` с тестами
+- [x] **Phase 2: Память агента, быстрые команды и auto hooks** - claude-mem с канарейкой и запасным вариантом, skills `/lib-*`, hooks `SessionStart` и `PreCompact` с тестами (completed 2026-10-26)
 - [ ] **Phase 3: Управление контекстом** - порог автосжатия, восстановление позиции после сжатия, statusline, снимки «после» и политика контекста
 - [ ] **Phase 4: Discovery «продление и пени»** - `/gsd-explore` → SPEC → CONTEXT с открытыми вопросами, без кода
 - [ ] **Phase 5: Архитектура, README и сдача** - `docs/architecture.md`, README «Модуль 2», PR в `main`, тег `hw2-submitted`
@@ -79,7 +79,7 @@ Plans:
 
 **Режим работы**: без агентов GSD — шаги по схеме `AGENTS.md` (ветка, TDD, `npm run check`, коммит, `docs/memory.md`); прогресс отмечается в `.planning/` вручную.
 
-**Plans**: TBD
+**Plans**: без PLAN.md — 8 шагов по схеме `AGENTS.md`, итоги в `docs/memory.md` (шаги 1–8)
 
 ### Phase 3: Управление контекстом
 
@@ -130,7 +130,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Базовая линия, единый план и гигиена безопасности | 9/9 | Complete    | 2026-10-25 |
-| 2. Память агента, быстрые команды и auto hooks | 0/TBD | Not started | - |
+| 2. Память агента, быстрые команды и auto hooks | -/- (без планов) | Complete | 2026-10-26 |
 | 3. Управление контекстом | 0/TBD | Not started | - |
 | 4. Discovery «продление и пени» | 0/TBD | Not started | - |
 | 5. Архитектура, README и сдача | 0/TBD | Not started | - |
