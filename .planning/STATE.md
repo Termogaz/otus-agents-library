@@ -30,8 +30,8 @@ See: .planning/PROJECT.md (updated 2026-10-22)
 
 Phase: 6 — Продуктовая аналитика и визуальная концепция
 Plan: TBD
-Status: In progress — решения в `06-CONTEXT.md`, дальше `docs/handoff/ux-patterns.md`
-Last activity: 2026-10-31 — `/gsd-discuss-phase 6` завершён, CONTEXT записан
+Status: In progress — `docs/handoff/ux-patterns.md` готов, дальше `DESIGN.md`
+Last activity: 2026-10-31 — шаг 5: UX-паттерны записаны
 
 Progress: [██████████] 100%
 
@@ -116,4 +116,4 @@ Items acknowledged and deferred at milestone close, most recent first:
 Last session: 2026-10-31T08:13:04.631Z
 Stopped at: context exhaustion at 84% (2026-10-31)
 Resume file: None
-Next: ДЗ-3, ветка `feat/design-md`: шаг 4 готов, дальше шаг 5 — `docs/handoff/ux-patterns.md`; план в `docs/memory.md`
+Next: ДЗ-3, ветка `feat/design-md`: шаг 5 готов, дальше шаг 6 — `DESIGN.md`; план в `docs/memory.md`

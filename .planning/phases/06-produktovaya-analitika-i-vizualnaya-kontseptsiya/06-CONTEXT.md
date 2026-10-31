@@ -45,7 +45,7 @@
 - `docs/handoff/user-stories.md` — истории, критерии приёмки, таблица ошибок
 - `docs/handoff/prd-review.md` — возражения, решения автора, реализуемость
 - `docs/research/competitors.md` — аналоги, «берём / не берём»
-- `docs/handoff/ux-patterns.md` — состояния и переходы (создаётся на шаге 5)
+- `docs/handoff/ux-patterns.md` — состояния и переходы
 - `DESIGN.md` — визуальная система (создаётся на шаге 6)
 
 </canonical_refs>
