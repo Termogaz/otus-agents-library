@@ -18,33 +18,37 @@
     <style>
       :root {
         /* Цвет: поверхности */
-        --color-bg: #f6f1e7;
+        --color-bg: #f2f9fb;
         --color-surface: #ffffff;
-        --color-surface-muted: #f1ebdf;
+        --color-surface-muted: #a8d5e2;
 
         /* Цвет: текст */
-        --color-text: #2a2620;
-        --color-text-muted: #655d52;
+        --color-text: #1c2b1d;
+        --color-text-muted: #3f5244;
 
         /* Цвет: границы */
-        --color-border: #e0d8c9;
-        --color-border-control: #8a8172;
+        --color-border: #cfe3ea;
+        --color-border-control: #548c2f;
 
         /* Цвет: акцент */
-        --color-accent: #1f5c43;
-        --color-accent-hover: #184a36;
-        --color-accent-active: #123a2a;
-        --color-accent-tint: #e6f0ea;
+        --color-accent: #104911;
+        --color-accent-hover: #0c3a0d;
+        --color-accent-active: #082b09;
+        --color-accent-tint: #e9f2e2;
         --color-on-accent: #ffffff;
 
         /* Цвет: проблема */
-        --color-danger: #a32a1f;
-        --color-danger-bg: #fbebe7;
-        --color-danger-border: #e9b9af;
+        --color-danger: #7a4100;
+        --color-danger-bg: #fef0d9;
+        --color-danger-border: #f9a620;
+
+        /* Цвет: предупреждение */
+        --color-warn-bg: #ffd449;
+        --color-warn-border: #f9a620;
 
         /* Цвет: недоступно */
-        --color-disabled-bg: #ece6da;
-        --color-disabled-text: #6b6458;
+        --color-disabled-bg: #e4ebe6;
+        --color-disabled-text: #566a5a;
 
         /* Типографика */
         --font-sans:
@@ -277,9 +281,9 @@
       }
 
       .message--saved {
-        background: var(--color-surface-muted);
+        background: var(--color-warn-bg);
         color: var(--color-text);
-        border-color: var(--color-border-control);
+        border-color: var(--color-warn-border);
       }
 
       /* Таблицы */
