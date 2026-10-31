@@ -4,11 +4,11 @@ milestone: v1.0
 current_phase: 5
 current_phase_name: Архитектура, README и сдача
 status: complete
-stopped_at: context exhaustion at 84% (2026-10-31)
-last_updated: "2026-10-31T08:13:04.689Z"
+stopped_at: context exhaustion at 78% (2026-10-31)
+last_updated: "2026-10-31T09:01:00.596Z"
 last_activity: 2026-10-31
 last_activity_desc: PR
-state_head: a3f08344973ba8c88337553fac1567fe565a08be
+state_head: 2ca2bd036b6b5e8d6f9054eb1a9505d6e9fea66b
 progress:
   total_phases: 6
   completed_phases: 5
@@ -30,8 +30,8 @@ See: .planning/PROJECT.md (updated 2026-10-22)
 
 Phase: 6 — Продуктовая аналитика и визуальная концепция
 Plan: TBD
-Status: In progress — `DESIGN.md` готов, дальше статичный макет
-Last activity: 2026-10-31 — шаг 6: `DESIGN.md` записан
+Status: In progress — макет готов, дальше `/gsd-plan-phase 6`
+Last activity: 2026-10-31 — шаг 7: статичный макет и снимки
 
 Progress: [██████████] 100%
 
@@ -113,7 +113,7 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-31T08:13:04.631Z
-Stopped at: context exhaustion at 84% (2026-10-31)
+Last session: 2026-10-31T09:01:00.540Z
+Stopped at: context exhaustion at 78% (2026-10-31)
 Resume file: None
-Next: ДЗ-3, ветка `feat/design-md`: шаг 6 готов, дальше шаг 7 — статичный макет; план в `docs/memory.md`
+Next: ДЗ-3, ветка `feat/design-md`: шаг 7 готов, дальше шаг 8 — `/gsd-plan-phase 6 --skip-ui --skip-research`; план в `docs/memory.md`
