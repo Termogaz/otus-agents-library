@@ -386,6 +386,75 @@
           grid-row: auto;
           grid-column: auto;
         }
+
+        .card {
+          padding: var(--space-4);
+        }
+
+        /* D-14: «Статус» и «Вернуть» видны без прокрутки, порядок разметки прежний */
+        .table-wrap--loans {
+          container-type: inline-size;
+        }
+
+        .table--loans,
+        .table--loans thead,
+        .table--loans tbody {
+          display: block;
+        }
+
+        .table--loans {
+          width: max-content;
+        }
+
+        .table--loans tr {
+          display: grid;
+          grid-template-columns: calc(100cqw - 12.5rem) 6.5rem 6rem 9rem 7rem;
+        }
+
+        .table--loans tr[hidden] {
+          display: none;
+        }
+
+        .table--loans th,
+        .table--loans td {
+          display: flex;
+          align-items: center;
+          height: auto;
+          min-height: var(--row-height);
+          padding: var(--space-1) var(--space-2);
+        }
+
+        .table--loans .status {
+          white-space: normal;
+        }
+
+        .table--loans td:first-child {
+          overflow-wrap: anywhere;
+        }
+
+        .table--loans button {
+          padding: 0 var(--space-2);
+        }
+
+        .table--loans th:nth-child(4),
+        .table--loans td:nth-child(4) {
+          order: 1;
+        }
+
+        .table--loans th:nth-child(5),
+        .table--loans td:nth-child(5) {
+          order: 2;
+        }
+
+        .table--loans th:nth-child(2),
+        .table--loans td:nth-child(2) {
+          order: 3;
+        }
+
+        .table--loans th:nth-child(3),
+        .table--loans td:nth-child(3) {
+          order: 4;
+        }
       }
     </style>
   </head>
@@ -453,76 +522,80 @@
           </p>
           <p class="note" data-only="failed">Данные не загружены</p>
 
-          <div class="table-wrap" tabindex="0" data-only="work refusal issued returned">
-            <table>
+          <div
+            class="table-wrap table-wrap--loans"
+            tabindex="0"
+            data-only="work refusal issued returned"
+          >
+            <table class="table--loans" role="table">
               <caption>
                 Выдачи
               </caption>
-              <thead>
-                <tr>
-                  <th>Книга</th>
-                  <th>Читатель</th>
-                  <th>Вернуть до</th>
-                  <th>Статус</th>
-                  <th>Действие</th>
+              <thead role="rowgroup">
+                <tr role="row">
+                  <th role="columnheader">Книга</th>
+                  <th role="columnheader">Читатель</th>
+                  <th role="columnheader">Вернуть до</th>
+                  <th role="columnheader">Статус</th>
+                  <th role="columnheader">Действие</th>
                 </tr>
               </thead>
-              <tbody>
-                <tr class="is-overdue">
-                  <td>Преступление и наказание</td>
-                  <td>Иван Соколов</td>
-                  <td class="num">24.10.2026</td>
-                  <td class="status">Просрочена</td>
-                  <td><button class="secondary" type="button">Вернуть</button></td>
+              <tbody role="rowgroup">
+                <tr role="row" class="is-overdue">
+                  <td role="cell">Преступление и наказание</td>
+                  <td role="cell">Иван Соколов</td>
+                  <td role="cell" class="num">24.10.2026</td>
+                  <td role="cell" class="status">Просрочена</td>
+                  <td role="cell"><button class="secondary" type="button">Вернуть</button></td>
                 </tr>
-                <tr class="is-overdue">
-                  <td>Евгений Онегин</td>
-                  <td>Мария Орлова</td>
-                  <td class="num">29.10.2026</td>
-                  <td class="status">Просрочена</td>
-                  <td><button class="secondary" type="button">Вернуть</button></td>
+                <tr role="row" class="is-overdue">
+                  <td role="cell">Евгений Онегин</td>
+                  <td role="cell">Мария Орлова</td>
+                  <td role="cell" class="num">29.10.2026</td>
+                  <td role="cell" class="status">Просрочена</td>
+                  <td role="cell"><button class="secondary" type="button">Вернуть</button></td>
                 </tr>
-                <tr>
-                  <td>Мастер и Маргарита</td>
-                  <td>Анна Петрова</td>
-                  <td class="num">07.11.2026</td>
-                  <td class="status">На руках</td>
-                  <td><button class="secondary" type="button">Вернуть</button></td>
+                <tr role="row">
+                  <td role="cell">Мастер и Маргарита</td>
+                  <td role="cell">Анна Петрова</td>
+                  <td role="cell" class="num">07.11.2026</td>
+                  <td role="cell" class="status">На руках</td>
+                  <td role="cell"><button class="secondary" type="button">Вернуть</button></td>
                 </tr>
-                <tr data-only="work refusal issued">
-                  <td>Анна Каренина</td>
-                  <td>Иван Соколов</td>
-                  <td class="num">12.11.2026</td>
-                  <td class="status">На руках</td>
-                  <td><button class="secondary" type="button">Вернуть</button></td>
+                <tr role="row" data-only="work refusal issued">
+                  <td role="cell">Анна Каренина</td>
+                  <td role="cell">Иван Соколов</td>
+                  <td role="cell" class="num">12.11.2026</td>
+                  <td role="cell" class="status">На руках</td>
+                  <td role="cell"><button class="secondary" type="button">Вернуть</button></td>
                 </tr>
-                <tr data-only="issued">
-                  <td>Тихий Дон</td>
-                  <td>Анна Петрова</td>
-                  <td class="num">14.11.2026</td>
-                  <td class="status">На руках</td>
-                  <td><button class="secondary" type="button">Вернуть</button></td>
+                <tr role="row" data-only="issued">
+                  <td role="cell">Тихий Дон</td>
+                  <td role="cell">Анна Петрова</td>
+                  <td role="cell" class="num">14.11.2026</td>
+                  <td role="cell" class="status">На руках</td>
+                  <td role="cell"><button class="secondary" type="button">Вернуть</button></td>
                 </tr>
-                <tr class="is-returned" data-only="returned">
-                  <td>Анна Каренина</td>
-                  <td>Иван Соколов</td>
-                  <td class="num">12.11.2026</td>
-                  <td class="status">Возвращена 31.10.2026</td>
-                  <td></td>
+                <tr role="row" class="is-returned" data-only="returned">
+                  <td role="cell">Анна Каренина</td>
+                  <td role="cell">Иван Соколов</td>
+                  <td role="cell" class="num">12.11.2026</td>
+                  <td role="cell" class="status">Возвращена 31.10.2026</td>
+                  <td role="cell"></td>
                 </tr>
-                <tr class="is-returned">
-                  <td>Мёртвые души</td>
-                  <td>Анна Петрова</td>
-                  <td class="num">20.10.2026</td>
-                  <td class="status">Возвращена 18.10.2026</td>
-                  <td></td>
+                <tr role="row" class="is-returned">
+                  <td role="cell">Мёртвые души</td>
+                  <td role="cell">Анна Петрова</td>
+                  <td role="cell" class="num">20.10.2026</td>
+                  <td role="cell" class="status">Возвращена 18.10.2026</td>
+                  <td role="cell"></td>
                 </tr>
-                <tr class="is-returned">
-                  <td>Война и мир</td>
-                  <td>Мария Орлова</td>
-                  <td class="num">15.10.2026</td>
-                  <td class="status">Возвращена 11.10.2026</td>
-                  <td></td>
+                <tr role="row" class="is-returned">
+                  <td role="cell">Война и мир</td>
+                  <td role="cell">Мария Орлова</td>
+                  <td role="cell" class="num">15.10.2026</td>
+                  <td role="cell" class="status">Возвращена 11.10.2026</td>
+                  <td role="cell"></td>
                 </tr>
               </tbody>
             </table>
