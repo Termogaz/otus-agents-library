@@ -46,7 +46,7 @@
 - `docs/handoff/prd-review.md` — возражения, решения автора, реализуемость
 - `docs/research/competitors.md` — аналоги, «берём / не берём»
 - `docs/handoff/ux-patterns.md` — состояния и переходы
-- `DESIGN.md` — визуальная система (создаётся на шаге 6)
+- `DESIGN.md` — визуальная система
 
 </canonical_refs>
 
