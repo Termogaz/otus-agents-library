@@ -4,11 +4,11 @@ milestone: v1.0
 current_phase: 5
 current_phase_name: Архитектура, README и сдача
 status: complete
-stopped_at: context exhaustion at 76% (2026-10-31)
-last_updated: "2026-10-31T07:37:47.860Z"
+stopped_at: context exhaustion at 81% (2026-10-31)
+last_updated: "2026-10-31T08:01:45.746Z"
 last_activity: 2026-10-26
 last_activity_desc: PR
-state_head: f611ed2ff8585cb9633d4c48cc0bb73c2d308434
+state_head: bc892ed91ae356f78e378c96a7cb7d2e0676883e
 progress:
   total_phases: 5
   completed_phases: 5
@@ -109,7 +109,7 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-31T07:37:47.805Z
-Stopped at: context exhaustion at 76% (2026-10-31)
+Last session: 2026-10-31T08:01:45.694Z
+Stopped at: context exhaustion at 81% (2026-10-31)
 Resume file: None
-Next: ДЗ-3 (без GSD), ветка `feat/design-md`: новый план ДЗ-3 согласован, дальше шаг 0 — `docs/homework-3.md`; план в верхней записи `docs/memory.md`
+Next: ДЗ-3, ветка `feat/design-md`: шаг 2 принят автором, дальше шаг 3 — `docs/handoff/context.md` и фаза 6; план в `docs/memory.md`
