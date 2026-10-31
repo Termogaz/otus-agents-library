@@ -30,8 +30,8 @@ See: .planning/PROJECT.md (updated 2026-10-22)
 
 Phase: 6 — Продуктовая аналитика и визуальная концепция
 Plan: TBD
-Status: Planned — 4 плана в 4 волнах, plan-phase закрыт; `/gsd-execute-phase` в ДЗ-3 не запускается
-Last activity: 2026-10-31 — шаг 8: plan-phase закрыт
+Status: Planned — ДЗ-3 сдаётся через PR; планы не выполнялись, `/gsd-execute-phase` в ДЗ-3 не запускался
+Last activity: 2026-10-31 — шаг 9: README и PR
 
 Progress: [██████████] 100%
 
@@ -114,6 +114,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 ## Session Continuity
 
 Last session: 2026-10-31T11:05:23.309Z
-Stopped at: шаг 8 завершён, ждёт коммита по слову автора
+Stopped at: шаг 9 завершён, PR ждёт вливания автором
 Resume file: None
-Next: ДЗ-3, ветка `feat/design-md`: шаг 9 — `npm run check`, раздел «Модуль 3» в README, ручной коммит `.planning/phases/` (`git add -f`), запись в `docs/memory.md`, PR (вливает автор); файлы отклонённого варианта 2 в коммиты не добавлять
+Next: автор вливает PR ветки `feat/design-md`; планы фазы 6 выполняются отдельно и только по его решению
