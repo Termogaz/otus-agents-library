@@ -1,20 +1,20 @@
 ---
 gsd_state_version: "1.0"
 milestone: v1.0
-milestone_name: "ДЗ-2: агентно-ориентированный пайплайн"
 current_phase: 5
 current_phase_name: Архитектура, README и сдача
 status: complete
-stopped_at: веха модуля 2 сдана (PR #15 влит, тег `hw2-submitted`)
-last_updated: "2026-10-26T18:07:26.430Z"
+stopped_at: context exhaustion at 76% (2026-10-31)
+last_updated: "2026-10-31T07:37:47.860Z"
 last_activity: 2026-10-26
-last_activity_desc: PR #15 влит, тег hw2-submitted, статус приведён к факту
-state_head: c74ef93a8b2fb724042070d5031ce42f376eb5a0
+last_activity_desc: PR
+state_head: f611ed2ff8585cb9633d4c48cc0bb73c2d308434
 progress:
   total_phases: 5
   completed_phases: 5
   total_plans: 9
   completed_plans: 9
+milestone_name: "ДЗ-2: агентно-ориентированный пайплайн"
 ---
 
 # Project State
@@ -109,7 +109,7 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-26T18:07:26.371Z
-Stopped at: веха модуля 2 сдана (PR #15 влит, тег `hw2-submitted`)
+Last session: 2026-10-31T07:37:47.805Z
+Stopped at: context exhaustion at 76% (2026-10-31)
 Resume file: None
-Next: `/clear` и новая веха (модуль 3)
+Next: ДЗ-3 (без GSD), ветка `feat/design-md`: новый план ДЗ-3 согласован, дальше шаг 0 — `docs/homework-3.md`; план в верхней записи `docs/memory.md`
