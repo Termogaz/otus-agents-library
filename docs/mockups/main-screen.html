@@ -1,0 +1,782 @@
+<!doctype html>
+<!--
+  Статичный макет главного экрана (ДЗ-3). Не код приложения: данные выдуманы, запросов к API нет.
+  Токены и компоненты — из DESIGN.md, состояния и тексты — из docs/handoff/ux-patterns.md.
+  Состояние выбирается адресом: #work, #waiting, #refusal, #issued, #saved, #returned, #first, #failed.
+-->
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Библиотека — макет</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        /* Цвет: поверхности */
+        --color-bg: #f2f9fb;
+        --color-surface: #ffffff;
+        --color-surface-muted: #a8d5e2;
+
+        /* Цвет: текст */
+        --color-text: #1c2b1d;
+        --color-text-muted: #3f5244;
+
+        /* Цвет: границы */
+        --color-border: #cfe3ea;
+        --color-border-control: #548c2f;
+
+        /* Цвет: акцент */
+        --color-accent: #104911;
+        --color-accent-hover: #0c3a0d;
+        --color-accent-active: #082b09;
+        --color-accent-tint: #e9f2e2;
+        --color-on-accent: #ffffff;
+
+        /* Цвет: проблема */
+        --color-danger: #7a4100;
+        --color-danger-bg: #fef0d9;
+        --color-danger-border: #f9a620;
+
+        /* Цвет: предупреждение */
+        --color-warn-bg: #ffd449;
+        --color-warn-border: #f9a620;
+
+        /* Цвет: недоступно */
+        --color-disabled-bg: #e4ebe6;
+        --color-disabled-text: #566a5a;
+
+        /* Типографика */
+        --font-sans:
+          'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+        --text-sm: 0.875rem;
+        --text-base: 1rem;
+        --text-lg: 1.25rem;
+        --text-xl: 1.75rem;
+
+        /* Отступы */
+        --space-1: 4px;
+        --space-2: 8px;
+        --space-3: 12px;
+        --space-4: 16px;
+        --space-6: 24px;
+        --space-8: 32px;
+
+        /* Размеры */
+        --radius-control: 6px;
+        --radius-card: 10px;
+        --control-height: 40px;
+        --button-compact-height: 32px;
+        --row-height: 44px;
+        --content-width: 1120px;
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--color-bg);
+        color: var(--color-text);
+        font-family: var(--font-sans);
+        font-size: var(--text-base);
+        line-height: 1.5;
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+
+      .page {
+        max-width: var(--content-width);
+        margin: 0 auto;
+        padding: var(--space-6);
+      }
+
+      h1 {
+        margin: 0 0 var(--space-6);
+        font-size: var(--text-xl);
+        font-weight: 600;
+        line-height: 1.2;
+      }
+
+      h2 {
+        margin: 0 0 var(--space-4);
+        font-size: var(--text-lg);
+        font-weight: 600;
+        line-height: 1.3;
+      }
+
+      .sections {
+        display: grid;
+        grid-template-columns: minmax(0, 5fr) minmax(0, 3fr);
+        gap: var(--space-6);
+        align-items: start;
+      }
+
+      .card {
+        min-width: 0;
+        padding: var(--space-6);
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-card);
+      }
+
+      .card--wide {
+        grid-column: 1 / -1;
+      }
+
+      /* Формы */
+      .form {
+        display: grid;
+        gap: var(--space-4);
+      }
+
+      .form > button {
+        justify-self: start;
+      }
+
+      .form--loan {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+        grid-template-rows: auto auto auto;
+        column-gap: var(--space-4);
+        row-gap: var(--space-1);
+      }
+
+      .form--loan .field {
+        display: grid;
+        grid-row: span 3;
+        grid-template-rows: subgrid;
+      }
+
+      .form--loan button {
+        grid-row: 2;
+        grid-column: 3;
+      }
+
+      .field {
+        display: grid;
+        gap: var(--space-1);
+      }
+
+      .field label {
+        font-weight: 500;
+      }
+
+      input,
+      select {
+        width: 100%;
+        height: var(--control-height);
+        padding: 0 var(--space-3);
+        background: var(--color-surface);
+        color: var(--color-text);
+        border: 1px solid var(--color-border-control);
+        border-radius: var(--radius-control);
+        font: inherit;
+      }
+
+      input:hover,
+      select:hover {
+        border-color: var(--color-text-muted);
+      }
+
+      input:active,
+      select:active {
+        border-color: var(--color-accent);
+      }
+
+      input:user-invalid,
+      select:user-invalid {
+        border-color: var(--color-danger);
+      }
+
+      .hint {
+        min-height: calc(var(--text-sm) * 1.4);
+        color: var(--color-text-muted);
+        font-size: var(--text-sm);
+        line-height: 1.4;
+      }
+
+      /* Кнопки */
+      button {
+        height: var(--control-height);
+        padding: 0 var(--space-4);
+        background: var(--color-accent);
+        color: var(--color-on-accent);
+        border: 1px solid var(--color-accent);
+        border-radius: var(--radius-control);
+        font: inherit;
+        font-weight: 500;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background: var(--color-accent-hover);
+        border-color: var(--color-accent-hover);
+      }
+
+      button:active {
+        background: var(--color-accent-active);
+        border-color: var(--color-accent-active);
+      }
+
+      /* block: у строчной кнопки базовая линия увеличивает строку таблицы сверх 44 px */
+      button.secondary {
+        display: block;
+        height: var(--button-compact-height);
+        background: var(--color-surface);
+        color: var(--color-accent);
+        border-color: var(--color-accent);
+      }
+
+      button.secondary:hover {
+        background: var(--color-accent-tint);
+      }
+
+      button.secondary:active {
+        color: var(--color-accent-hover);
+      }
+
+      button:disabled {
+        background: var(--color-disabled-bg);
+        color: var(--color-disabled-text);
+        border-color: var(--color-disabled-bg);
+        cursor: not-allowed;
+      }
+
+      :focus-visible {
+        outline: 2px solid var(--color-accent);
+        outline-offset: 2px;
+      }
+
+      /* Сообщения */
+      .message {
+        margin-top: var(--space-4);
+        padding: var(--space-3);
+        border: 1px solid;
+        border-radius: var(--radius-control);
+      }
+
+      .message--page {
+        margin: 0 0 var(--space-6);
+      }
+
+      .message--error {
+        background: var(--color-danger-bg);
+        color: var(--color-danger);
+        border-color: var(--color-danger-border);
+      }
+
+      .message--success {
+        background: var(--color-accent-tint);
+        color: var(--color-accent);
+        border-color: var(--color-accent);
+      }
+
+      .message--saved {
+        background: var(--color-warn-bg);
+        color: var(--color-text);
+        border-color: var(--color-warn-border);
+      }
+
+      /* Таблицы */
+      .table-wrap {
+        margin-top: var(--space-4);
+        overflow-x: auto;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      caption {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+      }
+
+      th,
+      td {
+        height: var(--row-height);
+        padding: 0 var(--space-3);
+        border-bottom: 1px solid var(--color-border);
+        text-align: left;
+      }
+
+      th {
+        background: var(--color-surface-muted);
+        color: var(--color-text-muted);
+        font-size: var(--text-sm);
+        font-weight: 500;
+        line-height: 1.4;
+      }
+
+      .num {
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+
+      tr.is-overdue td {
+        background: var(--color-danger-bg);
+      }
+
+      tr.is-overdue .status {
+        color: var(--color-danger);
+        font-weight: 600;
+      }
+
+      tr.is-returned td {
+        color: var(--color-text-muted);
+      }
+
+      .status {
+        white-space: nowrap;
+      }
+
+      .note {
+        margin: var(--space-4) 0 0;
+        padding: var(--space-4) 0;
+        color: var(--color-text-muted);
+      }
+
+      .footer {
+        margin-top: var(--space-6);
+        color: var(--color-text-muted);
+        font-size: var(--text-sm);
+        line-height: 1.4;
+      }
+
+      @media (max-width: 767px) {
+        .form > button {
+          justify-self: stretch;
+        }
+
+        .page {
+          padding: var(--space-4);
+        }
+
+        .sections {
+          grid-template-columns: minmax(0, 1fr);
+        }
+
+        .form--loan {
+          grid-template-columns: minmax(0, 1fr);
+          grid-template-rows: none;
+          row-gap: var(--space-4);
+        }
+
+        .form--loan .field {
+          display: grid;
+          grid-row: auto;
+          grid-template-rows: none;
+        }
+
+        .form--loan button {
+          grid-row: auto;
+          grid-column: auto;
+        }
+
+        .card {
+          padding: var(--space-4);
+        }
+
+        /* D-14: «Статус» и «Вернуть» видны без прокрутки, порядок разметки прежний */
+        .table-wrap--loans {
+          container-type: inline-size;
+        }
+
+        .table--loans,
+        .table--loans thead,
+        .table--loans tbody {
+          display: block;
+        }
+
+        .table--loans {
+          width: max-content;
+        }
+
+        .table--loans tr {
+          display: grid;
+          grid-template-columns: calc(100cqw - 12.5rem) 6.5rem 6rem 9rem 7rem;
+        }
+
+        .table--loans tr[hidden] {
+          display: none;
+        }
+
+        .table--loans th,
+        .table--loans td {
+          display: flex;
+          align-items: center;
+          height: auto;
+          min-height: var(--row-height);
+          padding: var(--space-1) var(--space-2);
+        }
+
+        .table--loans .status {
+          white-space: normal;
+        }
+
+        .table--loans td:first-child {
+          overflow-wrap: anywhere;
+        }
+
+        .table--loans button {
+          padding: 0 var(--space-2);
+        }
+
+        .table--loans th:nth-child(4),
+        .table--loans td:nth-child(4) {
+          order: 1;
+        }
+
+        .table--loans th:nth-child(5),
+        .table--loans td:nth-child(5) {
+          order: 2;
+        }
+
+        .table--loans th:nth-child(2),
+        .table--loans td:nth-child(2) {
+          order: 3;
+        }
+
+        .table--loans th:nth-child(3),
+        .table--loans td:nth-child(3) {
+          order: 4;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <h1>Библиотека</h1>
+
+      <p class="message message--error message--page" role="alert" data-only="failed">
+        Сервер недоступен
+      </p>
+
+      <div class="sections">
+        <section class="card card--wide" aria-labelledby="loans-title">
+          <h2 id="loans-title">Выдачи</h2>
+
+          <form class="form form--loan" aria-label="Выдать книгу" onsubmit="return false;">
+            <div class="field">
+              <label for="loan-book">Книга</label>
+              <select id="loan-book" aria-describedby="loan-book-hint">
+                <option data-only="first failed" value="">Выберите книгу</option>
+                <option data-only="work issued returned">Тихий Дон</option>
+                <option data-only="refusal">Мастер и Маргарита</option>
+              </select>
+              <div class="hint" id="loan-book-hint">
+                <span data-only="work">Свободно: 2 из 2</span>
+                <span data-only="refusal">Свободно: 0 из 1</span>
+                <span data-only="issued">Свободно: 1 из 2</span>
+                <span data-only="returned">Свободно: 2 из 2</span>
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="loan-reader">Читатель</label>
+              <select id="loan-reader" aria-describedby="loan-reader-hint">
+                <option data-only="first failed" value="">Выберите читателя</option>
+                <option data-only="work issued returned">Анна Петрова</option>
+                <option data-only="refusal">Мария Орлова</option>
+              </select>
+              <div class="hint" id="loan-reader-hint">
+                <span data-only="work">На руках: 1</span>
+                <span data-only="refusal">На руках: 1</span>
+                <span data-only="issued">На руках: 2</span>
+                <span data-only="returned">На руках: 1</span>
+              </div>
+            </div>
+
+            <button id="loan-submit" type="submit">Выдать</button>
+          </form>
+
+          <p class="message message--error" role="alert" data-only="refusal">
+            Нет свободных экземпляров
+          </p>
+          <p class="message message--success" role="status" data-only="issued">
+            Выдано: «Тихий Дон», Анна Петрова. Срок: 14.11.2026
+          </p>
+          <p class="message message--saved" role="status" data-only="saved">
+            Сохранено, но список не обновился. Обновите страницу
+          </p>
+          <p class="message message--success" role="status" tabindex="-1" data-only="returned">
+            Принято: «Анна Каренина», Иван Соколов
+          </p>
+
+          <p class="note" data-only="first">
+            Чтобы выдать книгу, сначала добавьте книгу и читателя ниже.
+          </p>
+          <p class="note" data-only="failed">Данные не загружены</p>
+
+          <div
+            class="table-wrap table-wrap--loans"
+            tabindex="0"
+            data-only="work refusal issued returned"
+          >
+            <table class="table--loans" role="table">
+              <caption>
+                Выдачи
+              </caption>
+              <thead role="rowgroup">
+                <tr role="row">
+                  <th role="columnheader">Книга</th>
+                  <th role="columnheader">Читатель</th>
+                  <th role="columnheader">Вернуть до</th>
+                  <th role="columnheader">Статус</th>
+                  <th role="columnheader">Действие</th>
+                </tr>
+              </thead>
+              <tbody role="rowgroup">
+                <tr role="row" class="is-overdue">
+                  <td role="cell">Преступление и наказание</td>
+                  <td role="cell">Иван Соколов</td>
+                  <td role="cell" class="num">24.10.2026</td>
+                  <td role="cell" class="status">Просрочена</td>
+                  <td role="cell"><button class="secondary" type="button">Вернуть</button></td>
+                </tr>
+                <tr role="row" class="is-overdue">
+                  <td role="cell">Евгений Онегин</td>
+                  <td role="cell">Мария Орлова</td>
+                  <td role="cell" class="num">29.10.2026</td>
+                  <td role="cell" class="status">Просрочена</td>
+                  <td role="cell"><button class="secondary" type="button">Вернуть</button></td>
+                </tr>
+                <tr role="row">
+                  <td role="cell">Мастер и Маргарита</td>
+                  <td role="cell">Анна Петрова</td>
+                  <td role="cell" class="num">07.11.2026</td>
+                  <td role="cell" class="status">На руках</td>
+                  <td role="cell"><button class="secondary" type="button">Вернуть</button></td>
+                </tr>
+                <tr role="row" data-only="work refusal issued">
+                  <td role="cell">Анна Каренина</td>
+                  <td role="cell">Иван Соколов</td>
+                  <td role="cell" class="num">12.11.2026</td>
+                  <td role="cell" class="status">На руках</td>
+                  <td role="cell"><button class="secondary" type="button">Вернуть</button></td>
+                </tr>
+                <tr role="row" data-only="issued">
+                  <td role="cell">Тихий Дон</td>
+                  <td role="cell">Анна Петрова</td>
+                  <td role="cell" class="num">14.11.2026</td>
+                  <td role="cell" class="status">На руках</td>
+                  <td role="cell"><button class="secondary" type="button">Вернуть</button></td>
+                </tr>
+                <tr role="row" class="is-returned" data-only="returned">
+                  <td role="cell">Анна Каренина</td>
+                  <td role="cell">Иван Соколов</td>
+                  <td role="cell" class="num">12.11.2026</td>
+                  <td role="cell" class="status">Возвращена 31.10.2026</td>
+                  <td role="cell"></td>
+                </tr>
+                <tr role="row" class="is-returned">
+                  <td role="cell">Мёртвые души</td>
+                  <td role="cell">Анна Петрова</td>
+                  <td role="cell" class="num">20.10.2026</td>
+                  <td role="cell" class="status">Возвращена 18.10.2026</td>
+                  <td role="cell"></td>
+                </tr>
+                <tr role="row" class="is-returned">
+                  <td role="cell">Война и мир</td>
+                  <td role="cell">Мария Орлова</td>
+                  <td role="cell" class="num">15.10.2026</td>
+                  <td role="cell" class="status">Возвращена 11.10.2026</td>
+                  <td role="cell"></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="card" aria-labelledby="books-title">
+          <h2 id="books-title">Книги</h2>
+
+          <form class="form" aria-label="Добавить книгу" onsubmit="return false;">
+            <div class="field">
+              <label for="book-title">Название</label>
+              <input id="book-title" type="text" />
+            </div>
+            <div class="field">
+              <label for="book-author">Автор</label>
+              <input id="book-author" type="text" />
+            </div>
+            <div class="field">
+              <label for="book-isbn">ISBN</label>
+              <input id="book-isbn" type="text" />
+            </div>
+            <div class="field">
+              <label for="book-copies">Экземпляров</label>
+              <input id="book-copies" type="number" min="1" value="1" />
+            </div>
+            <button type="submit">Добавить</button>
+          </form>
+
+          <p class="note" data-only="first">Каталог пуст. Добавьте первую книгу.</p>
+          <p class="note" data-only="failed">Данные не загружены</p>
+
+          <div class="table-wrap" tabindex="0" data-only="work refusal issued returned">
+            <table>
+              <caption>
+                Книги
+              </caption>
+              <thead>
+                <tr>
+                  <th>Название</th>
+                  <th>Автор</th>
+                  <th>ISBN</th>
+                  <th>Свободно</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Анна Каренина</td>
+                  <td>Л. Толстой</td>
+                  <td class="num">978-5-00-000001-1</td>
+                  <td class="num">
+                    <span data-only="work refusal issued">0 из 1</span>
+                    <span data-only="returned">1 из 1</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td>Война и мир</td>
+                  <td>Л. Толстой</td>
+                  <td class="num">978-5-00-000002-8</td>
+                  <td class="num">2 из 2</td>
+                </tr>
+                <tr>
+                  <td>Евгений Онегин</td>
+                  <td>А. Пушкин</td>
+                  <td class="num">978-5-00-000003-5</td>
+                  <td class="num">1 из 2</td>
+                </tr>
+                <tr>
+                  <td>Мастер и Маргарита</td>
+                  <td>М. Булгаков</td>
+                  <td class="num">978-5-00-000004-2</td>
+                  <td class="num">0 из 1</td>
+                </tr>
+                <tr>
+                  <td>Мёртвые души</td>
+                  <td>Н. Гоголь</td>
+                  <td class="num">978-5-00-000005-9</td>
+                  <td class="num">1 из 1</td>
+                </tr>
+                <tr>
+                  <td>Преступление и наказание</td>
+                  <td>Ф. Достоевский</td>
+                  <td class="num">978-5-00-000006-6</td>
+                  <td class="num">0 из 1</td>
+                </tr>
+                <tr>
+                  <td>Тихий Дон</td>
+                  <td>М. Шолохов</td>
+                  <td class="num">978-5-00-000007-3</td>
+                  <td class="num">
+                    <span data-only="work refusal returned">2 из 2</span>
+                    <span data-only="issued">1 из 2</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="card" aria-labelledby="readers-title">
+          <h2 id="readers-title">Читатели</h2>
+
+          <form class="form" aria-label="Добавить читателя" onsubmit="return false;">
+            <div class="field">
+              <label for="reader-name">Имя</label>
+              <input id="reader-name" type="text" />
+            </div>
+            <div class="field">
+              <label for="reader-contact">Контакт</label>
+              <input id="reader-contact" type="text" />
+            </div>
+            <button type="submit">Добавить</button>
+          </form>
+
+          <p class="note" data-only="first">Читателей пока нет. Добавьте первого читателя.</p>
+          <p class="note" data-only="failed">Данные не загружены</p>
+
+          <div class="table-wrap" tabindex="0" data-only="work refusal issued returned">
+            <table>
+              <caption>
+                Читатели
+              </caption>
+              <thead>
+                <tr>
+                  <th>Имя</th>
+                  <th>Контакт</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Анна Петрова</td>
+                  <td>anna@example.com</td>
+                </tr>
+                <tr>
+                  <td>Иван Соколов</td>
+                  <td>ivan@example.com</td>
+                </tr>
+                <tr>
+                  <td>Мария Орлова</td>
+                  <td>maria@example.com</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <footer class="footer">
+        <span data-only="work refusal issued returned first">API: ok</span>
+        <span data-only="failed">API: недоступен</span>
+      </footer>
+    </main>
+    <script>
+      // Только для макета: состояние экрана из адреса страницы
+      const STATES = {
+        work: ['work'],
+        refusal: ['refusal'],
+        issued: ['issued'],
+        returned: ['returned'],
+        first: ['first'],
+        failed: ['failed'],
+        // Э-6 и Э-9 показывают те же данные, что рабочий экран
+        waiting: ['work'],
+        saved: ['work', 'saved'],
+      };
+
+      function applyState() {
+        const state = location.hash.slice(1);
+        const shown = STATES[state] ?? STATES.work;
+        for (const el of document.querySelectorAll('[data-only]')) {
+          el.hidden = !el.dataset.only.split(' ').some((name) => shown.includes(name));
+        }
+        // Скрытый вариант списка остался бы выбранным, поэтому выбираем первый видимый
+        for (const select of document.querySelectorAll('select')) {
+          select.selectedIndex = [...select.options].findIndex((option) => !option.hidden);
+        }
+        document.querySelector('#loan-submit').disabled = state === 'waiting';
+      }
+
+      applyState();
+      addEventListener('hashchange', applyState);
+    </script>
+  </body>
+</html>

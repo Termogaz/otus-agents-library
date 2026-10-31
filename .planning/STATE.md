@@ -1,20 +1,20 @@
 ---
 gsd_state_version: "1.0"
 milestone: v1.0
-milestone_name: "ДЗ-2: агентно-ориентированный пайплайн"
-current_phase: 5
-current_phase_name: Архитектура, README и сдача
-status: complete
-stopped_at: веха модуля 2 сдана (PR #15 влит, тег `hw2-submitted`)
-last_updated: "2026-10-26T18:07:26.430Z"
-last_activity: 2026-10-26
-last_activity_desc: PR #15 влит, тег hw2-submitted, статус приведён к факту
-state_head: c74ef93a8b2fb724042070d5031ce42f376eb5a0
+current_phase: 6
+current_phase_name: Продуктовая аналитика и визуальная концепция
+status: planned
+stopped_at: "фаза 6 спланирована, 0/4, планы в ДЗ-3 не выполняются"
+last_updated: "2026-10-31T12:00:42.842Z"
+last_activity: 2026-10-31
+last_activity_desc: правки по отчёту ревьюера
+state_head: 3e85f15e0b5f26e6c318e44c71362c50b017a926
 progress:
-  total_phases: 5
+  total_phases: 6
   completed_phases: 5
-  total_plans: 9
+  total_plans: 13
   completed_plans: 9
+milestone_name: "ДЗ-2: агентно-ориентированный пайплайн"
 ---
 
 # Project State
@@ -24,16 +24,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-10-22)
 
 **Core value:** Проверяющий по README и репозиторию видит, что каждый пункт текущего ДЗ выполнен и воспроизводим: настройка есть в git, есть доказательство работы (команда, скриншот, коммит).
-**Current focus:** Веха модуля 2 сдана — PR #15 влит в `main`, тег `hw2-submitted` на коммите merge `a69df22`
+**Current focus:** ДЗ-3 — контекст и визуальная концепция, фаза 6, ветка `feat/design-md`
 
 ## Current Position
 
-Phase: 5 — Архитектура, README и сдача
-Plan: TBD
-Status: Complete — PLAN-03, DOC-01, DOC-02 выполнены; PR #15 влит, тег `hw2-submitted` поставлен
-Last activity: 2026-10-26 — PR #15 влит в `main`, тег `hw2-submitted` запушен; статус и `.gitignore` приведены к факту
+Phase: 6 — Продуктовая аналитика и визуальная концепция
+Plan: 0 из 4
+Status: Planned — ДЗ-3 сдаётся через PR; планы не выполнялись, `/gsd-execute-phase` в ДЗ-3 не запускался
+Last activity: 2026-10-31 — правки по отчёту ревьюера, PR #19
 
-Progress: [██████████] 100%
+Progress: [░░░░░░░░░░] 0% (фаза 6, 0/4)
 
 ## Performance Metrics
 
@@ -88,6 +88,10 @@ Recent decisions affecting current work:
 - [Phase 01]: 01-08: protect-files снимает префиксы команды (stripCommandPrefixes, WRAPPER_PROGRAMS) перед program; писатели dd/curl/wget и цель -t; git add -f учитывает глобальные опции и путь без точки как широкий pathspec; reviewer-readonly проверяет git read-операнды через isSecretOperand и запрещает --no-index
 - [Phase 01]: 01-09: checklist без новых строк (предел D-13): WR-05, WR-07, IN-03 в строке Fail-open hooks, WR-06 с отказами fail-closed в строке чтения секретов, остаток WR-01 в строке записи; IN-01 только в memory; статус закрыт определён как воспроизведённые обходы закрыты и закреплены тестом
 
+### Roadmap Evolution
+
+- Phase 6 added: Продуктовая аналитика и визуальная концепция
+
 ### Pending Todos
 
 None yet.
@@ -109,7 +113,7 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-26T18:07:26.371Z
-Stopped at: веха модуля 2 сдана (PR #15 влит, тег `hw2-submitted`)
+Last session: 2026-10-31T12:00:42.774Z
+Stopped at: фаза 6 спланирована, 0/4, планы в ДЗ-3 не выполняются
 Resume file: None
-Next: `/clear` и новая веха (модуль 3)
+Next: ДЗ-3, ветка `feat/design-md`: правки ревьюера в PR #19, PR вливает автор
