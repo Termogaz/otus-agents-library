@@ -2,17 +2,17 @@
 gsd_state_version: "1.0"
 milestone: v1.0
 current_phase: 5
-current_phase_name: Архитектура, README и сдача
+current_phase_name: Продуктовая аналитика и визуальная концепция
 status: complete
-stopped_at: context exhaustion at 75% (2026-10-31)
-last_updated: "2026-10-31T09:19:07.960Z"
+stopped_at: context exhaustion at 76% (2026-10-31)
+last_updated: "2026-10-31T11:08:18.484Z"
 last_activity: 2026-10-31
 last_activity_desc: PR
-state_head: d588c68f666fd864c0088bd6cd03705031e8a60a
+state_head: 90bde6cf079916e2f2e33be9244a517a69ba4243
 progress:
   total_phases: 6
   completed_phases: 5
-  total_plans: 9
+  total_plans: 13
   completed_plans: 9
 milestone_name: "ДЗ-2: агентно-ориентированный пайплайн"
 ---
@@ -30,8 +30,8 @@ See: .planning/PROJECT.md (updated 2026-10-22)
 
 Phase: 6 — Продуктовая аналитика и визуальная концепция
 Plan: TBD
-Status: In progress — палитра автора применена, дальше `/gsd-plan-phase 6`
-Last activity: 2026-10-31 — шаг 7: статичный макет и снимки
+Status: Planned — 4 плана в 4 волнах, plan-phase закрыт; `/gsd-execute-phase` в ДЗ-3 не запускается
+Last activity: 2026-10-31 — шаг 8: plan-phase закрыт
 
 Progress: [██████████] 100%
 
@@ -113,7 +113,7 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-31T09:19:07.897Z
-Stopped at: context exhaustion at 75% (2026-10-31)
+Last session: 2026-10-31T11:05:23.309Z
+Stopped at: шаг 8 завершён, ждёт коммита по слову автора
 Resume file: None
-Next: ДЗ-3, ветка `feat/design-md`: дальше шаг 8 — `/gsd-plan-phase 6 --skip-ui --skip-research`; план в `docs/memory.md`
+Next: ДЗ-3, ветка `feat/design-md`: шаг 9 — `npm run check`, раздел «Модуль 3» в README, ручной коммит `.planning/phases/` (`git add -f`), запись в `docs/memory.md`, PR (вливает автор); файлы отклонённого варианта 2 в коммиты не добавлять
