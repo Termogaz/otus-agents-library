@@ -1,8 +1,17 @@
+import path from 'node:path';
+import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), tailwindcss()],
+  // mpa: без этого dev-сервер отдаёт корневую страницу на любой путь, в том числе на /v2/ и /prototype/
+  appType: 'mpa',
+  resolve: {
+    alias: {
+      '@': path.resolve(import.meta.dirname, 'src/client-v2'),
+    },
+  },
   server: {
     port: 5173,
     strictPort: true,
@@ -12,6 +21,14 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist/client',
+    // Три страницы из одного проекта: старый фронт, вариант 2 и прототип
+    rolldownOptions: {
+      input: {
+        main: 'index.html',
+        v2: 'v2/index.html',
+        prototype: 'prototype/index.html',
+      },
+    },
   },
   test: {
     include: ['tests/unit/**/*.test.ts'],

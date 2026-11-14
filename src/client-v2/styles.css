@@ -1,0 +1,71 @@
+@import 'tailwindcss';
+
+/* Тёмной темы нет (D-08): вариант никогда не совпадает, утилиты dark: не включаются по настройке ОС */
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Токены DESIGN.md. Палитра Tailwind отключена первой строкой: доступны только цвета ниже.
+ * Отступы: шаги Tailwind 1, 2, 3, 4, 6, 8 при --spacing 0.25rem равны --space-1..8 из DESIGN.md
+ * (4, 8, 12, 16, 24, 32 px). Высоты: h-10, h-8, h-11 равны --control-height, --button-compact-height
+ * и --row-height (40, 32 и 44 px).
+ */
+@theme {
+  --color-*: initial;
+
+  /* Цвет: поверхности */
+  --color-bg: #f2f9fb;
+  --color-surface: #ffffff;
+  --color-surface-muted: #a8d5e2;
+
+  /* Цвет: текст */
+  --color-text: #1c2b1d;
+  --color-text-muted: #3f5244;
+
+  /* Цвет: границы */
+  --color-border: #cfe3ea;
+  --color-border-control: #548c2f;
+
+  /* Цвет: акцент */
+  --color-accent: #104911;
+  --color-accent-hover: #0c3a0d;
+  --color-accent-active: #082b09;
+  --color-accent-tint: #e9f2e2;
+  --color-on-accent: #ffffff;
+
+  /* Цвет: проблема */
+  --color-danger: #7a4100;
+  --color-danger-bg: #fef0d9;
+  --color-danger-border: #f9a620;
+
+  /* Цвет: предупреждение */
+  --color-warn-bg: #ffd449;
+  --color-warn-border: #f9a620;
+
+  /* Цвет: недоступно */
+  --color-disabled-bg: #e4ebe6;
+  --color-disabled-text: #566a5a;
+
+  /* Типографика */
+  --font-sans: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.4;
+  --text-base: 1rem;
+  --text-base--line-height: 1.5;
+  --text-lg: 1.25rem;
+  --text-lg--line-height: 1.3;
+  --text-xl: 1.75rem;
+  --text-xl--line-height: 1.2;
+
+  /* Размеры */
+  --radius-control: 6px;
+  --radius-card: 10px;
+  --container-content: 70rem;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-sans);
+  }
+}

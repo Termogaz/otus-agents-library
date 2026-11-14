@@ -14,7 +14,8 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "types": ["node"]
+    "types": ["node"],
+    "paths": { "@/*": ["./src/client-v2/*"] }
   },
   "include": ["src", "tests", "*.ts", ".claude/hooks"]
 }
