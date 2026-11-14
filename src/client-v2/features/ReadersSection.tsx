@@ -1,19 +1,30 @@
 import { useId, useRef, type FormEvent } from 'react';
 import type { ReaderView } from '../../client/api';
+import { ListState, type LoadState } from '@/components/ListState';
 import { StatusMessage, type Outcome } from '@/components/StatusMessage';
 import { useBusy } from '../use-busy';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
 type Props = {
+  readers: ReaderView[];
+  load: LoadState;
   outcome: Outcome | null;
   onAdd: (reader: Omit<ReaderView, 'id'>) => Promise<boolean>;
 };
 
-// Таблица читателей и тексты пустого списка добавляются в плане 07-05
-export function ReadersSection({ outcome, onAdd }: Props) {
+export function ReadersSection({ readers, load, outcome, onAdd }: Props) {
   const headingId = useId();
   const { busy, guarded } = useBusy();
   const nameRef = useRef<HTMLInputElement>(null);
@@ -72,6 +83,29 @@ export function ReadersSection({ outcome, onAdd }: Props) {
           </div>
           {outcome?.place === 'readers' && <StatusMessage outcome={outcome} />}
         </form>
+
+        <ListState
+          load={load}
+          empty={readers.length === 0 ? 'Читателей пока нет. Добавьте первого читателя.' : null}
+        >
+          <Table containerLabel="Таблица читателей">
+            <TableCaption>Читатели</TableCaption>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Имя</TableHead>
+                <TableHead>Контакт</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {readers.map((reader) => (
+                <TableRow key={reader.id}>
+                  <TableCell>{reader.name}</TableCell>
+                  <TableCell>{reader.contact}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </ListState>
       </Card>
     </section>
   );

@@ -1,5 +1,6 @@
 import { useId, useRef, type FormEvent } from 'react';
 import type { BookView } from '../../client/api';
+import { ListState, type LoadState } from '@/components/ListState';
 import { StatusMessage, type Outcome } from '@/components/StatusMessage';
 import { useBusy } from '../use-busy';
 import { Button } from '@/components/ui/button';
@@ -18,11 +19,12 @@ import {
 
 type Props = {
   books: BookView[];
+  load: LoadState;
   outcome: Outcome | null;
   onAdd: (book: Omit<BookView, 'id' | 'available'>) => Promise<boolean>;
 };
 
-export function BooksSection({ books, outcome, onAdd }: Props) {
+export function BooksSection({ books, load, outcome, onAdd }: Props) {
   const headingId = useId();
   const { busy, guarded } = useBusy();
   const titleRef = useRef<HTMLInputElement>(null);
@@ -94,29 +96,34 @@ export function BooksSection({ books, outcome, onAdd }: Props) {
           {outcome?.place === 'books' && <StatusMessage outcome={outcome} />}
         </form>
 
-        <Table containerLabel="Таблица книг">
-          <TableCaption>Книги</TableCaption>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Название</TableHead>
-              <TableHead>Автор</TableHead>
-              <TableHead>ISBN</TableHead>
-              <TableHead>Свободно</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {books.map((book) => (
-              <TableRow key={book.id}>
-                <TableCell>{book.title}</TableCell>
-                <TableCell>{book.author}</TableCell>
-                <TableCell>{book.isbn}</TableCell>
-                <TableCell>
-                  {book.available} из {book.copies}
-                </TableCell>
+        <ListState
+          load={load}
+          empty={books.length === 0 ? 'Каталог пуст. Добавьте первую книгу.' : null}
+        >
+          <Table containerLabel="Таблица книг">
+            <TableCaption>Книги</TableCaption>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Название</TableHead>
+                <TableHead>Автор</TableHead>
+                <TableHead>ISBN</TableHead>
+                <TableHead>Свободно</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {books.map((book) => (
+                <TableRow key={book.id}>
+                  <TableCell>{book.title}</TableCell>
+                  <TableCell>{book.author}</TableCell>
+                  <TableCell>{book.isbn}</TableCell>
+                  <TableCell>
+                    {book.available} из {book.copies}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </ListState>
       </Card>
     </section>
   );

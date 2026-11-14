@@ -1,5 +1,6 @@
 import { useId, useRef, useState, type FormEvent } from 'react';
 import type { BookView, LoanView, ReaderView } from '../../client/api';
+import { ListState, type LoadState } from '@/components/ListState';
 import { StatusMessage, type Outcome } from '@/components/StatusMessage';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -21,12 +22,21 @@ type Props = {
   books: BookView[];
   readers: ReaderView[];
   loans: LoanView[];
+  load: LoadState;
   outcome: Outcome | null;
   onCheckout: (bookId: string, readerId: string) => Promise<boolean>;
   onReturn: (loanId: string) => Promise<boolean>;
 };
 
-export function LoansSection({ books, readers, loans, outcome, onCheckout, onReturn }: Props) {
+export function LoansSection({
+  books,
+  readers,
+  loans,
+  load,
+  outcome,
+  onCheckout,
+  onReturn,
+}: Props) {
   // Выбор не сбрасывается после выдачи: удобно выдать ещё раз или увидеть отказ (FR-5)
   const [bookId, setBookId] = useState('');
   const [readerId, setReaderId] = useState('');
@@ -103,36 +113,55 @@ export function LoansSection({ books, readers, loans, outcome, onCheckout, onRet
 
         {outcome?.place === 'return' && <StatusMessage outcome={outcome} takeFocus />}
 
-        <Table containerLabel="Таблица выдач">
-          <TableCaption>Выдачи</TableCaption>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Книга</TableHead>
-              <TableHead>Читатель</TableHead>
-              <TableHead>Выдана</TableHead>
-              <TableHead>Срок</TableHead>
-              <TableHead>Статус</TableHead>
-              <TableHead>Действие</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {orderLoans(loans).map((loan) => (
-              <TableRow key={loan.id} className={loan.overdue ? 'bg-danger-bg' : undefined}>
-                <TableCell>{titles.get(loan.bookId) ?? loan.bookId}</TableCell>
-                <TableCell>{names.get(loan.readerId) ?? loan.readerId}</TableCell>
-                <TableCell>{formatDate(loan.issuedAt)}</TableCell>
-                <TableCell>{formatDate(loan.dueAt)}</TableCell>
-                <TableCell className={statusClass(loan)}>{loanStatus(loan)}</TableCell>
-                <TableCell>
-                  {loan.returnedAt === null && <ReturnButton onReturn={() => onReturn(loan.id)} />}
-                </TableCell>
+        <ListState load={load} empty={loansEmptyText(books, readers, loans)}>
+          <Table containerLabel="Таблица выдач">
+            <TableCaption>Выдачи</TableCaption>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Книга</TableHead>
+                <TableHead>Читатель</TableHead>
+                <TableHead>Выдана</TableHead>
+                <TableHead>Срок</TableHead>
+                <TableHead>Статус</TableHead>
+                <TableHead>Действие</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {orderLoans(loans).map((loan) => (
+                <TableRow key={loan.id} className={loan.overdue ? 'bg-danger-bg' : undefined}>
+                  <TableCell>{titles.get(loan.bookId) ?? loan.bookId}</TableCell>
+                  <TableCell>{names.get(loan.readerId) ?? loan.readerId}</TableCell>
+                  <TableCell>{formatDate(loan.issuedAt)}</TableCell>
+                  <TableCell>{formatDate(loan.dueAt)}</TableCell>
+                  <TableCell className={statusClass(loan)}>{loanStatus(loan)}</TableCell>
+                  <TableCell>
+                    {loan.returnedAt === null && (
+                      <ReturnButton onReturn={() => onReturn(loan.id)} />
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </ListState>
       </Card>
     </section>
   );
+}
+
+// Текст пустого списка выдач по тому, чего не хватает для первой выдачи (ux-patterns.md)
+function loansEmptyText(
+  books: BookView[],
+  readers: ReaderView[],
+  loans: LoanView[],
+): string | null {
+  if (loans.length > 0) return null;
+  if (books.length === 0 && readers.length === 0) {
+    return 'Чтобы выдать книгу, сначала добавьте книгу и читателя ниже.';
+  }
+  if (books.length === 0) return 'Чтобы выдать книгу, сначала добавьте её в каталог ниже.';
+  if (readers.length === 0) return 'Чтобы выдать книгу, сначала добавьте читателя ниже.';
+  return 'Выдач пока нет. Выберите книгу и читателя выше.';
 }
 
 // Цвет статуса: просрочена — danger, возвращена — text-muted; текст статуса остаётся главным признаком

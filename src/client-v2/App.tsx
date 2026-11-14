@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { errorMessage, type api as ApiClient } from '../client/api';
 import type { BookView, LoanView, ReaderView } from '../client/api';
+import type { LoadState } from '@/components/ListState';
 import { StatusMessage, type Outcome, type OutcomePlace } from '@/components/StatusMessage';
 import { BooksSection } from '@/features/BooksSection';
 import { LoansSection } from '@/features/LoansSection';
@@ -24,6 +25,8 @@ export function App({ api, mode }: Props) {
   const [loans, setLoans] = useState<LoanView[]>([]);
   const [outcome, setOutcome] = useState<Outcome | null>(null);
   const [apiStatus, setApiStatus] = useState('проверка...');
+  // Состояние первой загрузки: после неё раздел в «Загрузку» не возвращается (FR-1)
+  const [load, setLoad] = useState<LoadState>('loading');
 
   const refresh = useCallback(async () => {
     const [b, r, l] = await Promise.all([api.listBooks(), api.listReaders(), api.listLoans()]);
@@ -35,8 +38,12 @@ export function App({ api, mode }: Props) {
   // Первая загрузка: ошибка идёт единым итогом вверху страницы (FR-2)
   useEffect(() => {
     refresh()
-      .then(() => setApiStatus(mode === 'demo' ? 'демо-данные' : 'ok'))
+      .then(() => {
+        setLoad('ready');
+        setApiStatus(mode === 'demo' ? 'демо-данные' : 'ok');
+      })
       .catch((e: unknown) => {
+        setLoad('failed');
         setApiStatus(mode === 'demo' ? 'демо-данные' : 'недоступен');
         setOutcome({ kind: 'error', place: 'page', text: errorMessage(e) });
       });
@@ -58,6 +65,9 @@ export function App({ api, mode }: Props) {
     }
     try {
       await refresh();
+      // Если первая загрузка сорвалась, а теперь списки прочитаны, таблицы показываются как обычно
+      setLoad('ready');
+      setApiStatus(mode === 'demo' ? 'демо-данные' : 'ok');
       setOutcome({ kind: 'success', place, text: successText(result) });
     } catch {
       setOutcome({ kind: 'saved', place, text: SAVED_TEXT });
@@ -99,6 +109,7 @@ export function App({ api, mode }: Props) {
         books={books}
         readers={readers}
         loans={loans}
+        load={load}
         outcome={outcome}
         onCheckout={checkout}
         onReturn={returnLoan}
@@ -106,6 +117,7 @@ export function App({ api, mode }: Props) {
 
       <BooksSection
         books={books}
+        load={load}
         outcome={outcome}
         onAdd={(book) =>
           run(
@@ -117,6 +129,8 @@ export function App({ api, mode }: Props) {
       />
 
       <ReadersSection
+        readers={readers}
+        load={load}
         outcome={outcome}
         onAdd={(reader) =>
           run(
