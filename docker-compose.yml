@@ -1,0 +1,26 @@
+# Два контейнера: api (Node, порт наружу не публикуется) и web (nginx, порт 8080).
+# Данные лежат на именованном томе, а не в bind-mount: на Windows с правами файлов это ненадёжно.
+services:
+  api:
+    build:
+      context: .
+      target: api
+    volumes:
+      - library-data:/app/data
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://localhost:3000/api/health']
+      interval: 10s
+      retries: 5
+
+  web:
+    build:
+      context: .
+      target: web
+    ports:
+      - '8080:80'
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  library-data:
