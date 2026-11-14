@@ -73,6 +73,32 @@
 }
 ```
 
+## Соответствие токенам shadcn/ui
+
+Компоненты shadcn/ui используют свои семантические имена. Здесь каждое имя привязано к токену из блока «Токены»; в `src/client-v2/styles.css` пары записаны в `@theme inline`.
+
+| Имя shadcn           | Токен DESIGN.md          | Значение  |
+| -------------------- | ------------------------ | --------- |
+| `background`         | `--color-bg`             | `#f2f9fb` |
+| `foreground`         | `--color-text`           | `#1c2b1d` |
+| `card`               | `--color-surface`        | `#ffffff` |
+| `card-foreground`    | `--color-text`           | `#1c2b1d` |
+| `primary`            | `--color-accent`         | `#104911` |
+| `primary-foreground` | `--color-on-accent`      | `#ffffff` |
+| `muted`              | `--color-surface-muted`  | `#a8d5e2` |
+| `muted-foreground`   | `--color-text-muted`     | `#3f5244` |
+| `destructive`        | `--color-danger`         | `#7a4100` |
+| `input`              | `--color-border-control` | `#548c2f` |
+| `ring`               | `--color-accent`         | `#104911` |
+| `border`             | `--color-border`         | `#cfe3ea` |
+| `radius-lg`          | `--radius-control`       | `6px`     |
+| `radius-xl`          | `--radius-card`          | `10px`    |
+
+- Тёмной темы нет, шрифт Geist не используется.
+- Шаги Tailwind 1, 2, 3, 4, 6, 8 равны `--space-1..8`.
+- `--content-width` в коде записан как `--container-content: 70rem`.
+- Токены живут в `src/client-v2/styles.css`.
+
 ## Цвета и роли
 
 | Токен                    | Роль                                                  |
@@ -240,3 +266,7 @@
 Из неё прямо взяты `#A8D5E2`, `#F9A620`, `#FFD449`, `#548C2F`, `#104911`. Остальные цвета — светлые и тёмные оттенки этих пяти
 и почти чёрный текст, подобраны вручную; контраст рассчитан по формуле WCAG, встроенная проверка Coolors не использовалась.
 Firecrawl и view-page-source не использовались: готовых описаний Refero хватило.
+
+## История изменений
+
+- 2026-11 — ДЗ-4: таблица соответствия токенам shadcn/ui, токены перенесены в `src/client-v2/styles.css`.
