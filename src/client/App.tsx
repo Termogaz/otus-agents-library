@@ -54,6 +54,12 @@ export function App() {
         onCheckout={(bookId, readerId) => run(() => api.checkout(bookId, readerId))}
         onReturn={(loanId) => run(() => api.returnLoan(loanId))}
       />
+
+      <footer>
+        <nav aria-label="Варианты интерфейса">
+          <a href="/v2/">MVP</a> <a href="/prototype/">Прототип</a>
+        </nav>
+      </footer>
     </main>
   );
 }

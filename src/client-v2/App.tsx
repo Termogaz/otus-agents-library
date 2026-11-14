@@ -9,6 +9,7 @@ import {
   type OutcomeKind,
   type OutcomePlace,
 } from '@/components/StatusMessage';
+import { VariantFooter, type Variant } from '@/components/VariantFooter';
 import { BooksSection } from '@/features/BooksSection';
 import { LoansSection } from '@/features/LoansSection';
 import { ReadersSection } from '@/features/ReadersSection';
@@ -23,9 +24,11 @@ type Props = {
   api: Api;
   // `server` — настоящий API (страница /v2/), `demo` — адаптер в памяти (страница /prototype/)
   mode: 'server' | 'demo';
+  // Текущий вариант: его ссылка в подвале помечается как текущая
+  variant: Variant;
 };
 
-export function App({ api, mode }: Props) {
+export function App({ api, mode, variant }: Props) {
   const [books, setBooks] = useState<BookView[]>([]);
   const [readers, setReaders] = useState<ReaderView[]>([]);
   const [loans, setLoans] = useState<LoanView[]>([]);
@@ -160,7 +163,10 @@ export function App({ api, mode }: Props) {
             />
           </div>
 
-          <footer className="text-sm text-text-muted">API: {apiStatus}</footer>
+          <footer className="flex flex-col gap-2 text-sm text-text-muted">
+            <p>API: {apiStatus}</p>
+            <VariantFooter current={variant} />
+          </footer>
         </main>
       </LazyMotion>
     </MotionConfig>

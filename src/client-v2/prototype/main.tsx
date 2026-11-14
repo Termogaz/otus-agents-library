@@ -1,5 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { VariantFooter } from '@/components/VariantFooter';
 import '../styles.css';
 
 const root = document.getElementById('root');
@@ -11,6 +12,9 @@ createRoot(root).render(
     <main>
       <h1 className="text-xl font-semibold">Библиотека</h1>
       <p>Прототип на демо-данных</p>
+      <footer>
+        <VariantFooter current="prototype" />
+      </footer>
     </main>
   </StrictMode>,
 );
