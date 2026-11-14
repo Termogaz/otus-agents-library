@@ -2,7 +2,13 @@ import { useCallback, useEffect, useState } from 'react';
 import { errorMessage, type api as ApiClient } from '../client/api';
 import type { BookView, LoanView, ReaderView } from '../client/api';
 import { StatusMessage, type Outcome, type OutcomePlace } from '@/components/StatusMessage';
+import { BooksSection } from '@/features/BooksSection';
 import { LoansSection } from '@/features/LoansSection';
+import { ReadersSection } from '@/features/ReadersSection';
+import { formatDate, readDueAt } from './loan-view';
+
+// Запись прошла, но списки не перечитались: это не отказ, страницу нужно обновить
+const SAVED_TEXT = 'Сохранено, но список не обновился. Обновите страницу';
 
 type Api = typeof ApiClient;
 
@@ -36,17 +42,52 @@ export function App({ api, mode }: Props) {
       });
   }, [refresh, mode]);
 
-  // Действие пользователя: при отказе итог-ошибка на месте действия, старый итог виден до конца запроса
-  async function run(place: OutcomePlace, action: () => Promise<unknown>): Promise<boolean> {
+  // Действие пользователя. Старый итог виден до конца запроса, новый заменяет его целиком (FR-2).
+  // Действие и обновление списков в разных try: сбой чтения после успешной записи — не отказ (FR-5)
+  async function run(
+    place: OutcomePlace,
+    action: () => Promise<unknown>,
+    successText: (result: unknown) => string,
+  ): Promise<boolean> {
+    let result: unknown;
     try {
-      await action();
+      result = await action();
     } catch (e) {
       setOutcome({ kind: 'error', place, text: errorMessage(e) });
       return false;
     }
-    await refresh();
-    setOutcome(null);
+    try {
+      await refresh();
+      setOutcome({ kind: 'success', place, text: successText(result) });
+    } catch {
+      setOutcome({ kind: 'saved', place, text: SAVED_TEXT });
+    }
     return true;
+  }
+
+  function checkout(bookId: string, readerId: string) {
+    const title = books.find((b) => b.id === bookId)?.title ?? bookId;
+    const name = readers.find((r) => r.id === readerId)?.name ?? readerId;
+    return run(
+      'checkout',
+      () => api.checkout(bookId, readerId),
+      (result) => {
+        const dueAt = readDueAt(result);
+        const term = dueAt === null ? '' : `. Срок: ${formatDate(dueAt)}`;
+        return `Выдано: «${title}», ${name}${term}`;
+      },
+    );
+  }
+
+  function returnLoan(loanId: string) {
+    const loan = loans.find((l) => l.id === loanId);
+    const title = books.find((b) => b.id === loan?.bookId)?.title ?? '';
+    const name = readers.find((r) => r.id === loan?.readerId)?.name ?? '';
+    return run(
+      'return',
+      () => api.returnLoan(loanId),
+      () => `Принято: «${title}», ${name}`,
+    );
   }
 
   return (
@@ -59,7 +100,31 @@ export function App({ api, mode }: Props) {
         readers={readers}
         loans={loans}
         outcome={outcome}
-        onCheckout={(bookId, readerId) => run('checkout', () => api.checkout(bookId, readerId))}
+        onCheckout={checkout}
+        onReturn={returnLoan}
+      />
+
+      <BooksSection
+        books={books}
+        outcome={outcome}
+        onAdd={(book) =>
+          run(
+            'books',
+            () => api.addBook(book),
+            () => `Книга «${book.title}» добавлена`,
+          )
+        }
+      />
+
+      <ReadersSection
+        outcome={outcome}
+        onAdd={(reader) =>
+          run(
+            'readers',
+            () => api.addReader(reader),
+            () => `Читатель ${reader.name} добавлен`,
+          )
+        }
       />
 
       <footer className="text-sm text-text-muted">API: {apiStatus}</footer>

@@ -1,4 +1,4 @@
-import { useId, useState, type FormEvent } from 'react';
+import { useId, useRef, useState, type FormEvent } from 'react';
 import type { BookView, LoanView, ReaderView } from '../../client/api';
 import { StatusMessage, type Outcome } from '@/components/StatusMessage';
 import { Button } from '@/components/ui/button';
@@ -21,12 +21,14 @@ type Props = {
   loans: LoanView[];
   outcome: Outcome | null;
   onCheckout: (bookId: string, readerId: string) => Promise<boolean>;
+  onReturn: (loanId: string) => Promise<boolean>;
 };
 
-export function LoansSection({ books, readers, loans, outcome, onCheckout }: Props) {
+export function LoansSection({ books, readers, loans, outcome, onCheckout, onReturn }: Props) {
   // Выбор не сбрасывается после выдачи: удобно выдать ещё раз или увидеть отказ (FR-5)
   const [bookId, setBookId] = useState('');
   const [readerId, setReaderId] = useState('');
+  const checkoutRef = useRef<HTMLButtonElement>(null);
   const headingId = useId();
   const bookFieldId = useId();
   const readerFieldId = useId();
@@ -34,9 +36,11 @@ export function LoansSection({ books, readers, loans, outcome, onCheckout }: Pro
   const titles = new Map(books.map((b) => [b.id, b.title]));
   const names = new Map(readers.map((r) => [r.id, r.name]));
 
-  function submit(event: FormEvent<HTMLFormElement>) {
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    void onCheckout(bookId, readerId);
+    await onCheckout(bookId, readerId);
+    // И после выдачи, и после отказа фокус на кнопке: итог рядом с ней (ux-patterns)
+    checkoutRef.current?.focus();
   }
 
   return (
@@ -45,7 +49,11 @@ export function LoansSection({ books, readers, loans, outcome, onCheckout }: Pro
         <h2 id={headingId} className="text-lg font-semibold">
           Выдачи
         </h2>
-        <form aria-label="Выдать книгу" onSubmit={submit} className="flex flex-col gap-4">
+        <form
+          aria-label="Выдать книгу"
+          onSubmit={(e) => void submit(e)}
+          className="flex flex-col gap-4"
+        >
           <div className="grid gap-4 md:grid-cols-2">
             <div className="flex flex-col gap-2">
               <Label htmlFor={bookFieldId}>Книга</Label>
@@ -81,10 +89,14 @@ export function LoansSection({ books, readers, loans, outcome, onCheckout }: Pro
             </div>
           </div>
           <div>
-            <Button type="submit">Выдать</Button>
+            <Button ref={checkoutRef} type="submit">
+              Выдать
+            </Button>
           </div>
           {outcome?.place === 'checkout' && <StatusMessage outcome={outcome} />}
         </form>
+
+        {outcome?.place === 'return' && <StatusMessage outcome={outcome} takeFocus />}
 
         <Table aria-label="Таблица выдач">
           <TableHeader>
@@ -93,6 +105,7 @@ export function LoansSection({ books, readers, loans, outcome, onCheckout }: Pro
               <TableHead>Читатель</TableHead>
               <TableHead>Выдана</TableHead>
               <TableHead>Срок</TableHead>
+              <TableHead>Действие</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -102,6 +115,13 @@ export function LoansSection({ books, readers, loans, outcome, onCheckout }: Pro
                 <TableCell>{names.get(loan.readerId) ?? loan.readerId}</TableCell>
                 <TableCell>{formatDate(loan.issuedAt)}</TableCell>
                 <TableCell>{formatDate(loan.dueAt)}</TableCell>
+                <TableCell>
+                  {loan.returnedAt === null && (
+                    <Button type="button" variant="outline" onClick={() => void onReturn(loan.id)}>
+                      Вернуть
+                    </Button>
+                  )}
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
