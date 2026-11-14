@@ -60,71 +60,69 @@ export function BooksSection({ books, load, outcome, onAdd }: Props) {
   }
 
   return (
-    <section aria-labelledby={headingId}>
-      <Card>
-        <h2 id={headingId} className="text-lg font-semibold">
-          Книги
-        </h2>
-        <form
-          aria-label="Добавить книгу"
-          onSubmit={(e) => void submit(e)}
-          className="flex flex-col gap-4"
-        >
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor={titleId}>Название</Label>
-              <Input id={titleId} ref={titleRef} name="title" required />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor={authorId}>Автор</Label>
-              <Input id={authorId} name="author" required />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor={isbnId}>ISBN</Label>
-              <Input id={isbnId} name="isbn" required />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor={copiesId}>Экземпляров</Label>
-              <Input id={copiesId} name="copies" type="number" min={1} defaultValue={1} required />
-            </div>
+    <Card role="region" aria-labelledby={headingId} className="p-4 md:p-6">
+      <h2 id={headingId} className="text-lg font-semibold">
+        Книги
+      </h2>
+      <form
+        aria-label="Добавить книгу"
+        onSubmit={(e) => void submit(e)}
+        className="flex flex-col gap-4"
+      >
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-2">
+            <Label htmlFor={titleId}>Название</Label>
+            <Input id={titleId} ref={titleRef} name="title" required />
           </div>
-          <div>
-            <Button ref={buttonRef} type="submit" disabled={busy}>
-              Добавить
-            </Button>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor={authorId}>Автор</Label>
+            <Input id={authorId} name="author" required />
           </div>
-          {outcome?.place === 'books' && <StatusMessage outcome={outcome} />}
-        </form>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor={isbnId}>ISBN</Label>
+            <Input id={isbnId} name="isbn" required />
+          </div>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor={copiesId}>Экземпляров</Label>
+            <Input id={copiesId} name="copies" type="number" min={1} defaultValue={1} required />
+          </div>
+        </div>
+        <div>
+          <Button ref={buttonRef} type="submit" disabled={busy} className="max-md:w-full">
+            Добавить
+          </Button>
+        </div>
+        {outcome?.place === 'books' && <StatusMessage outcome={outcome} />}
+      </form>
 
-        <ListState
-          load={load}
-          empty={books.length === 0 ? 'Каталог пуст. Добавьте первую книгу.' : null}
-        >
-          <Table containerLabel="Таблица книг">
-            <TableCaption>Книги</TableCaption>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Название</TableHead>
-                <TableHead>Автор</TableHead>
-                <TableHead>ISBN</TableHead>
-                <TableHead>Свободно</TableHead>
+      <ListState
+        load={load}
+        empty={books.length === 0 ? 'Каталог пуст. Добавьте первую книгу.' : null}
+      >
+        <Table containerLabel="Таблица книг">
+          <TableCaption>Книги</TableCaption>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Название</TableHead>
+              <TableHead>Автор</TableHead>
+              <TableHead>ISBN</TableHead>
+              <TableHead>Свободно</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {books.map((book) => (
+              <TableRow key={book.id}>
+                <TableCell>{book.title}</TableCell>
+                <TableCell>{book.author}</TableCell>
+                <TableCell>{book.isbn}</TableCell>
+                <TableCell>
+                  {book.available} из {book.copies}
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {books.map((book) => (
-                <TableRow key={book.id}>
-                  <TableCell>{book.title}</TableCell>
-                  <TableCell>{book.author}</TableCell>
-                  <TableCell>{book.isbn}</TableCell>
-                  <TableCell>
-                    {book.available} из {book.copies}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </ListState>
-      </Card>
-    </section>
+            ))}
+          </TableBody>
+        </Table>
+      </ListState>
+    </Card>
   );
 }

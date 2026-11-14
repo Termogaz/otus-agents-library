@@ -15,6 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { cn } from '@/lib/utils';
 import { activeLoanCount, formatDate, loanStatus, orderLoans } from '../loan-view';
 import { useBusy } from '../use-busy';
 
@@ -67,97 +68,115 @@ export function LoansSection({
   }
 
   return (
-    <section aria-labelledby={headingId}>
-      <Card>
-        <h2 id={headingId} className="text-lg font-semibold">
-          Выдачи
-        </h2>
-        <form
-          aria-label="Выдать книгу"
-          onSubmit={(e) => void submit(e)}
-          className="flex flex-col gap-4"
-        >
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="loan-book">Книга</Label>
-              <NativeSelect
-                id="loan-book"
-                aria-describedby="loan-book-hint"
-                value={bookId}
-                onChange={(e) => setBookId(e.target.value)}
-                required
-              >
-                <option value="">Выберите книгу</option>
-                {books.map((book) => (
-                  <option key={book.id} value={book.id}>
-                    {book.title}
-                  </option>
-                ))}
-              </NativeSelect>
-              <FieldHint id="loan-book-hint">{bookHint}</FieldHint>
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="loan-reader">Читатель</Label>
-              <NativeSelect
-                id="loan-reader"
-                aria-describedby="loan-reader-hint"
-                value={readerId}
-                onChange={(e) => setReaderId(e.target.value)}
-                required
-              >
-                <option value="">Выберите читателя</option>
-                {readers.map((reader) => (
-                  <option key={reader.id} value={reader.id}>
-                    {reader.name}
-                  </option>
-                ))}
-              </NativeSelect>
-              <FieldHint id="loan-reader-hint">{readerHint}</FieldHint>
-            </div>
+    <Card role="region" aria-labelledby={headingId} className="p-4 md:p-6">
+      <h2 id={headingId} className="text-lg font-semibold">
+        Выдачи
+      </h2>
+      <form
+        aria-label="Выдать книгу"
+        onSubmit={(e) => void submit(e)}
+        className="flex flex-col gap-4"
+      >
+        <div className="flex flex-col gap-4 md:flex-row md:items-start">
+          <div className="flex min-w-0 flex-col gap-2 md:flex-1">
+            <Label htmlFor="loan-book">Книга</Label>
+            <NativeSelect
+              id="loan-book"
+              aria-describedby="loan-book-hint"
+              value={bookId}
+              onChange={(e) => setBookId(e.target.value)}
+              required
+            >
+              <option value="">Выберите книгу</option>
+              {books.map((book) => (
+                <option key={book.id} value={book.id}>
+                  {book.title}
+                </option>
+              ))}
+            </NativeSelect>
+            <FieldHint id="loan-book-hint">{bookHint}</FieldHint>
           </div>
-          <div>
-            <Button ref={checkoutRef} type="submit" disabled={busy}>
-              Выдать
-            </Button>
+          <div className="flex min-w-0 flex-col gap-2 md:flex-1">
+            <Label htmlFor="loan-reader">Читатель</Label>
+            <NativeSelect
+              id="loan-reader"
+              aria-describedby="loan-reader-hint"
+              value={readerId}
+              onChange={(e) => setReaderId(e.target.value)}
+              required
+            >
+              <option value="">Выберите читателя</option>
+              {readers.map((reader) => (
+                <option key={reader.id} value={reader.id}>
+                  {reader.name}
+                </option>
+              ))}
+            </NativeSelect>
+            <FieldHint id="loan-reader-hint">{readerHint}</FieldHint>
           </div>
-          {outcome?.place === 'checkout' && <StatusMessage outcome={outcome} />}
-        </form>
+          {/* Отступ сверху равен высоте подписи с зазором (24 + 8 px): кнопка на уровне полей */}
+          <Button ref={checkoutRef} type="submit" disabled={busy} className="max-md:w-full md:mt-8">
+            Выдать
+          </Button>
+        </div>
+        {outcome?.place === 'checkout' && <StatusMessage outcome={outcome} />}
+      </form>
 
-        {outcome?.place === 'return' && <StatusMessage outcome={outcome} takeFocus />}
+      {outcome?.place === 'return' && <StatusMessage outcome={outcome} takeFocus />}
 
-        <ListState load={load} empty={loansEmptyText(books, readers, loans)}>
-          <Table containerLabel="Таблица выдач">
+      <ListState load={load} empty={loansEmptyText(books, readers, loans)}>
+        {/* @container: ширина блока для колонок узкой таблицы, см. styles.css */}
+        <div className="@container">
+          <Table containerLabel="Таблица выдач" role="table" className="loans-table">
             <TableCaption>Выдачи</TableCaption>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Книга</TableHead>
-                <TableHead>Читатель</TableHead>
-                <TableHead>Выдана</TableHead>
-                <TableHead>Срок</TableHead>
-                <TableHead>Статус</TableHead>
-                <TableHead>Действие</TableHead>
+            <TableHeader role="rowgroup">
+              <TableRow role="row">
+                <TableHead role="columnheader">Книга</TableHead>
+                <TableHead role="columnheader">Читатель</TableHead>
+                <TableHead role="columnheader">Выдана</TableHead>
+                <TableHead role="columnheader">Вернуть до</TableHead>
+                <TableHead role="columnheader">Статус</TableHead>
+                <TableHead role="columnheader">Действие</TableHead>
               </TableRow>
             </TableHeader>
-            <TableBody>
-              {orderLoans(loans).map((loan) => (
-                <TableRow key={loan.id} className={loan.overdue ? 'bg-danger-bg' : undefined}>
-                  <TableCell>{titles.get(loan.bookId) ?? loan.bookId}</TableCell>
-                  <TableCell>{names.get(loan.readerId) ?? loan.readerId}</TableCell>
-                  <TableCell>{formatDate(loan.issuedAt)}</TableCell>
-                  <TableCell>{formatDate(loan.dueAt)}</TableCell>
-                  <TableCell className={statusClass(loan)}>{loanStatus(loan)}</TableCell>
-                  <TableCell>
-                    {loan.returnedAt === null && (
-                      <ReturnButton onReturn={() => onReturn(loan.id)} />
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
+            <TableBody role="rowgroup">
+              {orderLoans(loans).map((loan) => {
+                // Фон у строки и у каждой ячейки: просроченная закрашена целиком, остальные на surface (DESIGN.md «Статусы выдачи»)
+                const tint = loan.overdue ? 'bg-danger-bg' : 'bg-surface';
+                return (
+                  <TableRow
+                    key={loan.id}
+                    role="row"
+                    className={cn(tint, loan.returnedAt !== null && 'text-text-muted')}
+                  >
+                    <TableCell role="cell" className={cn('min-w-0', tint)}>
+                      {titles.get(loan.bookId) ?? loan.bookId}
+                    </TableCell>
+                    <TableCell role="cell" className={tint}>
+                      {names.get(loan.readerId) ?? loan.readerId}
+                    </TableCell>
+                    <TableCell role="cell" className={cn('tabular-nums whitespace-nowrap', tint)}>
+                      {formatDate(loan.issuedAt)}
+                    </TableCell>
+                    <TableCell role="cell" className={cn('tabular-nums whitespace-nowrap', tint)}>
+                      {formatDate(loan.dueAt)}
+                    </TableCell>
+                    <TableCell role="cell" className={cn(statusClass(loan), tint)}>
+                      {loanStatus(loan)}
+                    </TableCell>
+                    <TableCell role="cell" className={tint}>
+                      {loan.returnedAt === null && (
+                        <ReturnButton onReturn={() => onReturn(loan.id)} />
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
-        </ListState>
-      </Card>
-    </section>
+        </div>
+      </ListState>
+    </Card>
   );
 }
 
@@ -189,14 +208,21 @@ function loansEmptyText(
 // Цвет статуса: просрочена — danger, возвращена — text-muted; текст статуса остаётся главным признаком
 function statusClass(loan: LoanView): string | undefined {
   if (loan.returnedAt !== null) return 'text-text-muted';
-  return loan.overdue ? 'font-medium text-danger' : undefined;
+  return loan.overdue ? 'font-semibold text-danger' : undefined;
 }
 
 // У каждой строки своя блокировка: соседнее «Вернуть» остаётся доступным (FR-3)
 function ReturnButton({ onReturn }: { onReturn: () => Promise<boolean> }) {
   const { busy, guarded } = useBusy();
   return (
-    <Button type="button" variant="outline" disabled={busy} onClick={() => void guarded(onReturn)}>
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      disabled={busy}
+      onClick={() => void guarded(onReturn)}
+      className="flex max-md:px-2"
+    >
       Вернуть
     </Button>
   );

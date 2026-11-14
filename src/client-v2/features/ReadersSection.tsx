@@ -56,57 +56,55 @@ export function ReadersSection({ readers, load, outcome, onAdd }: Props) {
   }
 
   return (
-    <section aria-labelledby={headingId}>
-      <Card>
-        <h2 id={headingId} className="text-lg font-semibold">
-          Читатели
-        </h2>
-        <form
-          aria-label="Добавить читателя"
-          onSubmit={(e) => void submit(e)}
-          className="flex flex-col gap-4"
-        >
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor={nameId}>Имя</Label>
-              <Input id={nameId} ref={nameRef} name="name" required />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor={contactId}>Контакт</Label>
-              <Input id={contactId} name="contact" required />
-            </div>
+    <Card role="region" aria-labelledby={headingId} className="p-4 md:p-6">
+      <h2 id={headingId} className="text-lg font-semibold">
+        Читатели
+      </h2>
+      <form
+        aria-label="Добавить читателя"
+        onSubmit={(e) => void submit(e)}
+        className="flex flex-col gap-4"
+      >
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-2">
+            <Label htmlFor={nameId}>Имя</Label>
+            <Input id={nameId} ref={nameRef} name="name" required />
           </div>
-          <div>
-            <Button ref={buttonRef} type="submit" disabled={busy}>
-              Добавить
-            </Button>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor={contactId}>Контакт</Label>
+            <Input id={contactId} name="contact" required />
           </div>
-          {outcome?.place === 'readers' && <StatusMessage outcome={outcome} />}
-        </form>
+        </div>
+        <div>
+          <Button ref={buttonRef} type="submit" disabled={busy} className="max-md:w-full">
+            Добавить
+          </Button>
+        </div>
+        {outcome?.place === 'readers' && <StatusMessage outcome={outcome} />}
+      </form>
 
-        <ListState
-          load={load}
-          empty={readers.length === 0 ? 'Читателей пока нет. Добавьте первого читателя.' : null}
-        >
-          <Table containerLabel="Таблица читателей">
-            <TableCaption>Читатели</TableCaption>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Имя</TableHead>
-                <TableHead>Контакт</TableHead>
+      <ListState
+        load={load}
+        empty={readers.length === 0 ? 'Читателей пока нет. Добавьте первого читателя.' : null}
+      >
+        <Table containerLabel="Таблица читателей">
+          <TableCaption>Читатели</TableCaption>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Имя</TableHead>
+              <TableHead>Контакт</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {readers.map((reader) => (
+              <TableRow key={reader.id}>
+                <TableCell>{reader.name}</TableCell>
+                <TableCell>{reader.contact}</TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {readers.map((reader) => (
-                <TableRow key={reader.id}>
-                  <TableCell>{reader.name}</TableCell>
-                  <TableCell>{reader.contact}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </ListState>
-      </Card>
-    </section>
+            ))}
+          </TableBody>
+        </Table>
+      </ListState>
+    </Card>
   );
 }

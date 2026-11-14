@@ -115,31 +115,34 @@ export function App({ api, mode }: Props) {
         onReturn={returnLoan}
       />
 
-      <BooksSection
-        books={books}
-        load={load}
-        outcome={outcome}
-        onAdd={(book) =>
-          run(
-            'books',
-            () => api.addBook(book),
-            () => `Книга «${book.title}» добавлена`,
-          )
-        }
-      />
+      {/* Книги и читатели рядом 5:3 от 768 px, ниже — столбцом (DESIGN.md «Отступы и раскладка») */}
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-[minmax(0,5fr)_minmax(0,3fr)]">
+        <BooksSection
+          books={books}
+          load={load}
+          outcome={outcome}
+          onAdd={(book) =>
+            run(
+              'books',
+              () => api.addBook(book),
+              () => `Книга «${book.title}» добавлена`,
+            )
+          }
+        />
 
-      <ReadersSection
-        readers={readers}
-        load={load}
-        outcome={outcome}
-        onAdd={(reader) =>
-          run(
-            'readers',
-            () => api.addReader(reader),
-            () => `Читатель ${reader.name} добавлен`,
-          )
-        }
-      />
+        <ReadersSection
+          readers={readers}
+          load={load}
+          outcome={outcome}
+          onAdd={(reader) =>
+            run(
+              'readers',
+              () => api.addReader(reader),
+              () => `Читатель ${reader.name} добавлен`,
+            )
+          }
+        />
+      </div>
 
       <footer className="text-sm text-text-muted">API: {apiStatus}</footer>
     </main>

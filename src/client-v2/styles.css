@@ -95,3 +95,68 @@
     font-family: var(--font-sans);
   }
 }
+
+/*
+ * Таблица выдач ниже 768 px (D-14, DESIGN.md «Таблица выдач ниже 768 px»): видимый порядок колонок
+ * Книга, Статус, Действие, Читатель, Вернуть до, Выдана; порядок в разметке прежний.
+ * Первая колонка занимает остаток ширины блока (100cqw от контейнера `@container`), поэтому «Статус»
+ * и «Вернуть» видны без прокрутки, остальное открывает горизонтальная прокрутка блока таблицы.
+ * `display` снимает с элементов таблицы их роли, поэтому в разметке стоят явные `role`.
+ * Правила без слоя: они сильнее утилит Tailwind у тех же элементов (высота строки, поля ячеек).
+ */
+@media (width < 48rem) {
+  .loans-table,
+  .loans-table thead,
+  .loans-table tbody {
+    display: block;
+  }
+
+  .loans-table {
+    width: max-content;
+  }
+
+  .loans-table tr {
+    display: grid;
+    grid-template-columns: calc(100cqw - 12.5rem) 6.5rem 6rem 9rem 7rem 7rem;
+    height: auto;
+    min-height: 2.75rem;
+  }
+
+  .loans-table th,
+  .loans-table td {
+    @apply px-2 py-1;
+    display: flex;
+    align-items: center;
+    min-height: 2.75rem;
+  }
+
+  /* Длинное слово названия переносится внутри слова, а не растягивает колонку */
+  .loans-table td:first-child {
+    overflow-wrap: anywhere;
+  }
+
+  .loans-table th:nth-child(5),
+  .loans-table td:nth-child(5) {
+    order: 1;
+  }
+
+  .loans-table th:nth-child(6),
+  .loans-table td:nth-child(6) {
+    order: 2;
+  }
+
+  .loans-table th:nth-child(2),
+  .loans-table td:nth-child(2) {
+    order: 3;
+  }
+
+  .loans-table th:nth-child(4),
+  .loans-table td:nth-child(4) {
+    order: 4;
+  }
+
+  .loans-table th:nth-child(3),
+  .loans-table td:nth-child(3) {
+    order: 5;
+  }
+}
