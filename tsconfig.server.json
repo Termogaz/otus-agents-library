@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "outDir": "dist/api",
+    "rootDir": "src",
+    "declaration": false
+  },
+  "include": ["src/server", "src/domain"]
+}

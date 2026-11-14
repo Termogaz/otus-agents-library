@@ -1,0 +1,70 @@
+{
+  "version": 1,
+  "books": [
+    {
+      "id": "demo-book-1",
+      "title": "Демо-книга «Путь к реке»",
+      "author": "Демо-автор Иванов",
+      "isbn": "978-0-00-000001-1",
+      "copies": 3
+    },
+    {
+      "id": "demo-book-2",
+      "title": "Демо-книга «Тихий порт»",
+      "author": "Демо-автор Петрова",
+      "isbn": "978-0-00-000002-8",
+      "copies": 2
+    },
+    {
+      "id": "demo-book-3",
+      "title": "Демо-книга «Карта созвездий»",
+      "author": "Демо-автор Сидоров",
+      "isbn": "978-0-00-000003-5",
+      "copies": 1
+    },
+    {
+      "id": "demo-book-4",
+      "title": "Демо-книга «Сад на крыше»",
+      "author": "Демо-автор Кузнецова",
+      "isbn": "978-0-00-000004-2",
+      "copies": 4
+    },
+    {
+      "id": "demo-book-5",
+      "title": "Демо-книга «Лето без часов»",
+      "author": "Демо-автор Смирнов",
+      "isbn": "978-0-00-000005-9",
+      "copies": 2
+    },
+    {
+      "id": "demo-book-6",
+      "title": "Демо-книга «Заметки картографа»",
+      "author": "Демо-автор Орлова",
+      "isbn": "978-0-00-000006-6",
+      "copies": 1
+    }
+  ],
+  "readers": [
+    {
+      "id": "demo-reader-1",
+      "name": "Демо-читатель Аня",
+      "contact": "anya@example.test"
+    },
+    {
+      "id": "demo-reader-2",
+      "name": "Демо-читатель Борис",
+      "contact": "boris@example.test"
+    },
+    {
+      "id": "demo-reader-3",
+      "name": "Демо-читатель Вера",
+      "contact": "vera@example.test"
+    },
+    {
+      "id": "demo-reader-4",
+      "name": "Демо-читатель Глеб",
+      "contact": "gleb@example.test"
+    }
+  ],
+  "loans": []
+}
