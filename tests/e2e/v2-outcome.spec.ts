@@ -112,7 +112,7 @@ test('shows book added status, clears the form and focuses the first field', asy
   await expect(form.getByLabel('ISBN')).toHaveValue('');
   await expect(form.getByLabel('Название')).toBeFocused();
   await expect(
-    books.getByRole('table', { name: 'Таблица книг' }).getByRole('row', { name: title }),
+    books.getByRole('table', { name: 'Книги' }).getByRole('row', { name: title }),
   ).toContainText('2 из 2');
 });
 
@@ -159,7 +159,7 @@ test('shows return status above the table and moves focus to it', async ({ page,
   await page.goto('/v2/');
 
   const { loans } = regions(page);
-  const table = loans.getByRole('table', { name: 'Таблица выдач' });
+  const table = loans.getByRole('table', { name: 'Выдачи' });
   await table.getByRole('row', { name: title }).getByRole('button', { name: 'Вернуть' }).click();
 
   const status = loans.getByRole('status');
@@ -226,7 +226,7 @@ test('shows return refusal above the table', async ({ page, request }) => {
   await page.goto('/v2/');
 
   const { loans } = regions(page);
-  const table = loans.getByRole('table', { name: 'Таблица выдач' });
+  const table = loans.getByRole('table', { name: 'Выдачи' });
   await table.getByRole('row', { name: title }).getByRole('button', { name: 'Вернуть' }).click();
 
   const alert = loans.getByRole('alert');

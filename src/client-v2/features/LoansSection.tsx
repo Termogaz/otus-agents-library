@@ -8,12 +8,13 @@ import { NativeSelect } from '@/components/ui/native-select';
 import {
   Table,
   TableBody,
+  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { formatDate } from '../loan-view';
+import { formatDate, loanStatus, orderLoans } from '../loan-view';
 import { useBusy } from '../use-busy';
 
 type Props = {
@@ -102,23 +103,26 @@ export function LoansSection({ books, readers, loans, outcome, onCheckout, onRet
 
         {outcome?.place === 'return' && <StatusMessage outcome={outcome} takeFocus />}
 
-        <Table aria-label="Таблица выдач">
+        <Table containerLabel="Таблица выдач">
+          <TableCaption>Выдачи</TableCaption>
           <TableHeader>
             <TableRow>
               <TableHead>Книга</TableHead>
               <TableHead>Читатель</TableHead>
               <TableHead>Выдана</TableHead>
               <TableHead>Срок</TableHead>
+              <TableHead>Статус</TableHead>
               <TableHead>Действие</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loans.map((loan) => (
-              <TableRow key={loan.id}>
+            {orderLoans(loans).map((loan) => (
+              <TableRow key={loan.id} className={loan.overdue ? 'bg-danger-bg' : undefined}>
                 <TableCell>{titles.get(loan.bookId) ?? loan.bookId}</TableCell>
                 <TableCell>{names.get(loan.readerId) ?? loan.readerId}</TableCell>
                 <TableCell>{formatDate(loan.issuedAt)}</TableCell>
                 <TableCell>{formatDate(loan.dueAt)}</TableCell>
+                <TableCell className={statusClass(loan)}>{loanStatus(loan)}</TableCell>
                 <TableCell>
                   {loan.returnedAt === null && <ReturnButton onReturn={() => onReturn(loan.id)} />}
                 </TableCell>
@@ -129,6 +133,12 @@ export function LoansSection({ books, readers, loans, outcome, onCheckout, onRet
       </Card>
     </section>
   );
+}
+
+// Цвет статуса: просрочена — danger, возвращена — text-muted; текст статуса остаётся главным признаком
+function statusClass(loan: LoanView): string | undefined {
+  if (loan.returnedAt !== null) return 'text-text-muted';
+  return loan.overdue ? 'font-medium text-danger' : undefined;
 }
 
 // У каждой строки своя блокировка: соседнее «Вернуть» остаётся доступным (FR-3)

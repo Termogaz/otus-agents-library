@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import {
   Table,
   TableBody,
+  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
@@ -93,7 +94,8 @@ export function BooksSection({ books, outcome, onAdd }: Props) {
           {outcome?.place === 'books' && <StatusMessage outcome={outcome} />}
         </form>
 
-        <Table aria-label="Таблица книг">
+        <Table containerLabel="Таблица книг">
+          <TableCaption>Книги</TableCaption>
           <TableHeader>
             <TableRow>
               <TableHead>Название</TableHead>

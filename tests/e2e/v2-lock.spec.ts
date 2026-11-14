@@ -62,7 +62,7 @@ test('sends one request when the add book button is double clicked', async ({ pa
   await expect(books.getByRole('status')).toHaveText(`Книга «${title}» добавлена`);
   expect(posts).toBe(1);
   await expect(
-    books.getByRole('table', { name: 'Таблица книг' }).getByRole('row', { name: title }),
+    books.getByRole('table', { name: 'Книги' }).getByRole('row', { name: title }),
   ).toHaveCount(1);
 });
 
@@ -116,7 +116,7 @@ test('sends one request when the return button is double clicked and keeps the n
   });
 
   const { loans } = regions(page);
-  const table = loans.getByRole('table', { name: 'Таблица выдач' });
+  const table = loans.getByRole('table', { name: 'Выдачи' });
   const first = table
     .getByRole('row', { name: firstTitle })
     .getByRole('button', { name: 'Вернуть' });
