@@ -1,6 +1,7 @@
 import { useId, useRef, type FormEvent } from 'react';
 import type { ReaderView } from '../../client/api';
 import { StatusMessage, type Outcome } from '@/components/StatusMessage';
+import { useBusy } from '../use-busy';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -14,7 +15,9 @@ type Props = {
 // Таблица читателей и тексты пустого списка добавляются в плане 07-05
 export function ReadersSection({ outcome, onAdd }: Props) {
   const headingId = useId();
+  const { busy, guarded } = useBusy();
   const nameRef = useRef<HTMLInputElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const nameId = useId();
   const contactId = useId();
 
@@ -23,14 +26,21 @@ export function ReadersSection({ outcome, onAdd }: Props) {
     // currentTarget обнуляется после первого await, поэтому форма берётся заранее
     const form = event.currentTarget;
     const data = new FormData(form);
-    const added = await onAdd({
-      name: String(data.get('name')),
-      contact: String(data.get('contact')),
-    });
+    const added = await guarded(() =>
+      onAdd({
+        name: String(data.get('name')),
+        contact: String(data.get('contact')),
+      }),
+    );
+    // Повторный клик во время запроса отброшен: итог первого действия ещё впереди
+    if (added === undefined) return;
     if (added) {
       form.reset();
       // После успеха фокус на первом поле: можно сразу вносить следующего читателя
       nameRef.current?.focus();
+    } else {
+      // Отказ: фокус на кнопке, итог под ней
+      buttonRef.current?.focus();
     }
   }
 
@@ -56,7 +66,9 @@ export function ReadersSection({ outcome, onAdd }: Props) {
             </div>
           </div>
           <div>
-            <Button type="submit">Добавить</Button>
+            <Button ref={buttonRef} type="submit" disabled={busy}>
+              Добавить
+            </Button>
           </div>
           {outcome?.place === 'readers' && <StatusMessage outcome={outcome} />}
         </form>

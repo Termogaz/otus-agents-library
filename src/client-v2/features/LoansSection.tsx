@@ -14,6 +14,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { formatDate } from '../loan-view';
+import { useBusy } from '../use-busy';
 
 type Props = {
   books: BookView[];
@@ -28,6 +29,7 @@ export function LoansSection({ books, readers, loans, outcome, onCheckout, onRet
   // Выбор не сбрасывается после выдачи: удобно выдать ещё раз или увидеть отказ (FR-5)
   const [bookId, setBookId] = useState('');
   const [readerId, setReaderId] = useState('');
+  const { busy, guarded } = useBusy();
   const checkoutRef = useRef<HTMLButtonElement>(null);
   const headingId = useId();
   const bookFieldId = useId();
@@ -38,7 +40,9 @@ export function LoansSection({ books, readers, loans, outcome, onCheckout, onRet
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    await onCheckout(bookId, readerId);
+    const done = await guarded(() => onCheckout(bookId, readerId));
+    // Повторный клик во время запроса отброшен: фокус вернёт первое действие
+    if (done === undefined) return;
     // И после выдачи, и после отказа фокус на кнопке: итог рядом с ней (ux-patterns)
     checkoutRef.current?.focus();
   }
@@ -89,7 +93,7 @@ export function LoansSection({ books, readers, loans, outcome, onCheckout, onRet
             </div>
           </div>
           <div>
-            <Button ref={checkoutRef} type="submit">
+            <Button ref={checkoutRef} type="submit" disabled={busy}>
               Выдать
             </Button>
           </div>
@@ -116,11 +120,7 @@ export function LoansSection({ books, readers, loans, outcome, onCheckout, onRet
                 <TableCell>{formatDate(loan.issuedAt)}</TableCell>
                 <TableCell>{formatDate(loan.dueAt)}</TableCell>
                 <TableCell>
-                  {loan.returnedAt === null && (
-                    <Button type="button" variant="outline" onClick={() => void onReturn(loan.id)}>
-                      Вернуть
-                    </Button>
-                  )}
+                  {loan.returnedAt === null && <ReturnButton onReturn={() => onReturn(loan.id)} />}
                 </TableCell>
               </TableRow>
             ))}
@@ -128,5 +128,15 @@ export function LoansSection({ books, readers, loans, outcome, onCheckout, onRet
         </Table>
       </Card>
     </section>
+  );
+}
+
+// У каждой строки своя блокировка: соседнее «Вернуть» остаётся доступным (FR-3)
+function ReturnButton({ onReturn }: { onReturn: () => Promise<boolean> }) {
+  const { busy, guarded } = useBusy();
+  return (
+    <Button type="button" variant="outline" disabled={busy} onClick={() => void guarded(onReturn)}>
+      Вернуть
+    </Button>
   );
 }

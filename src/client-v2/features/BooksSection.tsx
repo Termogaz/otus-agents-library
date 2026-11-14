@@ -1,6 +1,7 @@
 import { useId, useRef, type FormEvent } from 'react';
 import type { BookView } from '../../client/api';
 import { StatusMessage, type Outcome } from '@/components/StatusMessage';
+import { useBusy } from '../use-busy';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -22,7 +23,9 @@ type Props = {
 
 export function BooksSection({ books, outcome, onAdd }: Props) {
   const headingId = useId();
+  const { busy, guarded } = useBusy();
   const titleRef = useRef<HTMLInputElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const titleId = useId();
   const authorId = useId();
   const isbnId = useId();
@@ -33,16 +36,23 @@ export function BooksSection({ books, outcome, onAdd }: Props) {
     // currentTarget обнуляется после первого await, поэтому форма берётся заранее
     const form = event.currentTarget;
     const data = new FormData(form);
-    const added = await onAdd({
-      title: String(data.get('title')),
-      author: String(data.get('author')),
-      isbn: String(data.get('isbn')),
-      copies: Number(data.get('copies')),
-    });
+    const added = await guarded(() =>
+      onAdd({
+        title: String(data.get('title')),
+        author: String(data.get('author')),
+        isbn: String(data.get('isbn')),
+        copies: Number(data.get('copies')),
+      }),
+    );
+    // Повторный клик во время запроса отброшен: итог первого действия ещё впереди
+    if (added === undefined) return;
     if (added) {
       form.reset();
       // После успеха фокус на первом поле: можно сразу вносить следующую книгу
       titleRef.current?.focus();
+    } else {
+      // Отказ: фокус на кнопке, итог под ней
+      buttonRef.current?.focus();
     }
   }
 
@@ -76,7 +86,9 @@ export function BooksSection({ books, outcome, onAdd }: Props) {
             </div>
           </div>
           <div>
-            <Button type="submit">Добавить</Button>
+            <Button ref={buttonRef} type="submit" disabled={busy}>
+              Добавить
+            </Button>
           </div>
           {outcome?.place === 'books' && <StatusMessage outcome={outcome} />}
         </form>
