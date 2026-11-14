@@ -1,4 +1,5 @@
 import { useId, useRef, useState, type FormEvent } from 'react';
+import { m, useReducedMotion } from 'motion/react';
 import type { BookView, LoanView, ReaderView } from '../../client/api';
 import { ListState, type LoadState } from '@/components/ListState';
 import { StatusMessage, type Outcome } from '@/components/StatusMessage';
@@ -18,6 +19,10 @@ import {
 import { cn } from '@/lib/utils';
 import { activeLoanCount, formatDate, loanStatus, orderLoans } from '../loan-view';
 import { useBusy } from '../use-busy';
+
+// Вход строки новой выдачи (D-07): проявление и сдвиг на 4 px за 200 мс
+const MotionRow = m.create(TableRow);
+const ROW_ENTRANCE_SECONDS = 0.2;
 
 type Props = {
   books: BookView[];
@@ -44,6 +49,12 @@ export function LoansSection({
   const { busy, guarded } = useBusy();
   const checkoutRef = useRef<HTMLButtonElement>(null);
   const headingId = useId();
+  const reduced = useReducedMotion();
+  // Выдачи первой загрузки: их строки появляются без анимации, анимируются только новые (D-07)
+  const [firstLoadIds, setFirstLoadIds] = useState<ReadonlySet<string> | null>(null);
+  if (load === 'ready' && firstLoadIds === null) {
+    setFirstLoadIds(new Set(loans.map((loan) => loan.id)));
+  }
 
   const titles = new Map(books.map((b) => [b.id, b.title]));
   const names = new Map(readers.map((r) => [r.id, r.name]));
@@ -144,9 +155,16 @@ export function LoansSection({
                 // Фон у строки и у каждой ячейки: просроченная закрашена целиком, остальные на surface (DESIGN.md «Статусы выдачи»)
                 const tint = loan.overdue ? 'bg-danger-bg' : 'bg-surface';
                 return (
-                  <TableRow
+                  <MotionRow
                     key={loan.id}
                     role="row"
+                    initial={
+                      reduced || firstLoadIds === null || firstLoadIds.has(loan.id)
+                        ? false
+                        : { opacity: 0, y: 4 }
+                    }
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: reduced ? 0 : ROW_ENTRANCE_SECONDS }}
                     className={cn(tint, loan.returnedAt !== null && 'text-text-muted')}
                   >
                     <TableCell role="cell" className={cn('min-w-0', tint)}>
@@ -169,7 +187,7 @@ export function LoansSection({
                         <ReturnButton onReturn={() => onReturn(loan.id)} />
                       )}
                     </TableCell>
-                  </TableRow>
+                  </MotionRow>
                 );
               })}
             </TableBody>

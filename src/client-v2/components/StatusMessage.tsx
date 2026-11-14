@@ -1,11 +1,17 @@
 import { useEffect, useRef } from 'react';
+import { m, useReducedMotion } from 'motion/react';
 import { Alert } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 
 // Итог действия: один на страницу, место задаёт `place` (ux-patterns.md, правила итога)
 export type OutcomeKind = 'error' | 'success' | 'saved';
 export type OutcomePlace = 'page' | 'books' | 'readers' | 'checkout' | 'return';
-export type Outcome = { kind: OutcomeKind; place: OutcomePlace; text: string };
+// id уникален у каждого итога: по нему новый итог входит заново, даже с тем же текстом
+export type Outcome = { id: number; kind: OutcomeKind; place: OutcomePlace; text: string };
+
+// Вход сообщения (D-07): проявление и сдвиг на 4 px за 200 мс, без анимации ухода
+const MotionAlert = m.create(Alert);
+const ENTRANCE_SECONDS = 0.2;
 
 // Цвета только токенами DESIGN.md; роль alert только у ошибки, остальное — status (D-12)
 const KIND_CLASSES: Record<OutcomeKind, string> = {
@@ -22,6 +28,8 @@ type Props = {
 
 export function StatusMessage({ outcome, takeFocus = false }: Props) {
   const ref = useRef<HTMLDivElement>(null);
+  // При prefers-reduced-motion итог сразу в конечном виде: reducedMotion="user" отключает только сдвиг
+  const reduced = useReducedMotion();
 
   // Эффект по объекту итога: каждый новый итог показывается, даже с тем же текстом
   useEffect(() => {
@@ -32,8 +40,12 @@ export function StatusMessage({ outcome, takeFocus = false }: Props) {
   }, [outcome, takeFocus]);
 
   return (
-    <Alert
+    <MotionAlert
+      key={outcome.id}
       ref={ref}
+      initial={reduced ? false : { opacity: 0, y: 4 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: reduced ? 0 : ENTRANCE_SECONDS }}
       role={outcome.kind === 'error' ? 'alert' : 'status'}
       tabIndex={takeFocus ? -1 : undefined}
       className={cn(
@@ -42,6 +54,6 @@ export function StatusMessage({ outcome, takeFocus = false }: Props) {
       )}
     >
       {outcome.text}
-    </Alert>
+    </MotionAlert>
   );
 }
