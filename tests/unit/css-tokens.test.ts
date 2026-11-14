@@ -303,3 +303,21 @@ describe('shadcn names in styles.css', () => {
     expect(css).toMatch(/@custom-variant\s+dark\s*\(&:is\(\.dark \*\)\)/);
   });
 });
+
+describe('client-v2 sources use no shadows', () => {
+  it('uses no shadows', () => {
+    // DESIGN.md «Форма и глубина»: теней нет. Допустима только отмена тени (`shadow-none`);
+    // кольцо `ring-<число>` рисуется через box-shadow, поэтому тоже считается тенью.
+    const pattern =
+      /(?<![\w-])(?:[\w[\]&:>*-]+:)*(?:(?:drop-|inset-|text-)?shadow(?!-none(?![\w-]))(?:-[\w[\]/.%-]+)?|ring(?:-\d+|-inset)?(?![\w-]))/g;
+    const problems: string[] = [];
+
+    for (const file of sourceFiles()) {
+      for (const match of classText(file).matchAll(pattern)) {
+        problems.push(`${file.path}: тень «${match[0]}»`);
+      }
+    }
+
+    expect(problems).toEqual([]);
+  });
+});
