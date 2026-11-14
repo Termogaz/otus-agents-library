@@ -15,7 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { formatDate, loanStatus, orderLoans } from '../loan-view';
+import { activeLoanCount, formatDate, loanStatus, orderLoans } from '../loan-view';
 import { useBusy } from '../use-busy';
 
 type Props = {
@@ -43,11 +43,19 @@ export function LoansSection({
   const { busy, guarded } = useBusy();
   const checkoutRef = useRef<HTMLButtonElement>(null);
   const headingId = useId();
-  const bookFieldId = useId();
-  const readerFieldId = useId();
 
   const titles = new Map(books.map((b) => [b.id, b.title]));
   const names = new Map(readers.map((r) => [r.id, r.name]));
+
+  // Подсказки FR-6 только показывают числа из уже загруженных данных и ничего не блокируют:
+  // можно ли выдать книгу, решает сервер
+  const selectedBook = books.find((b) => b.id === bookId);
+  const bookHint = selectedBook
+    ? `Свободно: ${selectedBook.available} из ${selectedBook.copies}`
+    : '';
+  const readerHint = readers.some((r) => r.id === readerId)
+    ? `На руках: ${activeLoanCount(loans, readerId)}`
+    : '';
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -71,36 +79,40 @@ export function LoansSection({
         >
           <div className="grid gap-4 md:grid-cols-2">
             <div className="flex flex-col gap-2">
-              <Label htmlFor={bookFieldId}>Книга</Label>
+              <Label htmlFor="loan-book">Книга</Label>
               <NativeSelect
-                id={bookFieldId}
+                id="loan-book"
+                aria-describedby="loan-book-hint"
                 value={bookId}
                 onChange={(e) => setBookId(e.target.value)}
                 required
               >
-                <option value="">— выберите —</option>
+                <option value="">Выберите книгу</option>
                 {books.map((book) => (
                   <option key={book.id} value={book.id}>
                     {book.title}
                   </option>
                 ))}
               </NativeSelect>
+              <FieldHint id="loan-book-hint">{bookHint}</FieldHint>
             </div>
             <div className="flex flex-col gap-2">
-              <Label htmlFor={readerFieldId}>Читатель</Label>
+              <Label htmlFor="loan-reader">Читатель</Label>
               <NativeSelect
-                id={readerFieldId}
+                id="loan-reader"
+                aria-describedby="loan-reader-hint"
                 value={readerId}
                 onChange={(e) => setReaderId(e.target.value)}
                 required
               >
-                <option value="">— выберите —</option>
+                <option value="">Выберите читателя</option>
                 {readers.map((reader) => (
                   <option key={reader.id} value={reader.id}>
                     {reader.name}
                   </option>
                 ))}
               </NativeSelect>
+              <FieldHint id="loan-reader-hint">{readerHint}</FieldHint>
             </div>
           </div>
           <div>
@@ -146,6 +158,16 @@ export function LoansSection({
         </ListState>
       </Card>
     </section>
+  );
+}
+
+// Подсказка под полем без живой роли. Строка зарезервирована и при пустом тексте,
+// чтобы кнопка и итог не сдвигались при выборе (ux-patterns.md)
+function FieldHint({ id, children }: { id: string; children: string }) {
+  return (
+    <p id={id} className="min-h-5 text-sm text-text-muted">
+      {children}
+    </p>
   );
 }
 
