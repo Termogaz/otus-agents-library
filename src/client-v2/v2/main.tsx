@@ -1,15 +1,15 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { api } from '../../client/api';
+import { App } from '../App';
 import '../styles.css';
 
 const root = document.getElementById('root');
 if (!root) throw new Error('#root not found');
 
-// Оболочка страницы: наполнение — план 07-04
+// Страница /v2/: настоящий API старого клиента и тот же App, что в прототипе
 createRoot(root).render(
   <StrictMode>
-    <main>
-      <h1 className="text-xl font-semibold">Библиотека</h1>
-    </main>
+    <App api={api} mode="server" />
   </StrictMode>,
 );
