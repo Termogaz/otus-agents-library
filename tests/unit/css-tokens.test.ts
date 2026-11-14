@@ -25,6 +25,12 @@ function themeBlocks(): string[] {
   return blocks.map((match) => match[1] ?? '');
 }
 
+// Только блоки `@theme` без `inline`: там токены DESIGN.md объявляются, а в `@theme inline` получают имена shadcn
+function plainThemeBlocks(): string[] {
+  const blocks = [...stripCssComments(stylesText).matchAll(/@theme\s*\{([^}]*)\}/g)];
+  return blocks.map((match) => match[1] ?? '');
+}
+
 // Объявления `--<prefix>-имя: значение;` без звёздочек вида `--color-*`
 function declarations(block: string, prefix: string): Map<string, string> {
   const result = new Map<string, string>();
@@ -72,7 +78,7 @@ describe('styles.css tokens from DESIGN.md', () => {
   it('defines exactly the DESIGN.md color tokens in styles.css', () => {
     const expected = declarations(designTokensBlock(), 'color');
     const actual = new Map<string, string>();
-    for (const block of themeBlocks()) {
+    for (const block of plainThemeBlocks()) {
       for (const [name, value] of declarations(block, 'color')) actual.set(name, value);
     }
     expect(expected.size).toBe(19);
@@ -231,5 +237,69 @@ describe('client-v2 sources use only tokens', () => {
     }
 
     expect(problems).toEqual([]);
+  });
+});
+
+// Имена shadcn, сопоставленные токенам DESIGN.md (D-08, HW4-1)
+const SHADCN_COLOR_MAP: Record<string, string> = {
+  background: 'bg',
+  foreground: 'text',
+  card: 'surface',
+  'card-foreground': 'text',
+  primary: 'accent',
+  'primary-foreground': 'on-accent',
+  muted: 'surface-muted',
+  'muted-foreground': 'text-muted',
+  destructive: 'danger',
+  input: 'border-control',
+  ring: 'accent',
+};
+const SHADCN_RADIUS_MAP: Record<string, string> = {
+  lg: 'radius-control',
+  xl: 'radius-card',
+};
+
+// Блок `@theme inline` из styles.css (вложенных скобок в нём нет)
+function themeInlineBlock(): string {
+  const match = /@theme\s+inline\s*\{([^}]*)\}/.exec(stripCssComments(stylesText));
+  return match?.[1] ?? '';
+}
+
+describe('shadcn names in styles.css', () => {
+  it('maps shadcn semantic names to DESIGN.md tokens', () => {
+    const inline = themeInlineBlock();
+    expect(inline, 'в styles.css нет блока @theme inline').not.toBe('');
+
+    const colors = declarations(inline, 'color');
+    for (const [shadcn, token] of Object.entries(SHADCN_COLOR_MAP)) {
+      expect(colors.get(shadcn), `--color-${shadcn}`).toBe(`var(--color-${token})`);
+    }
+    const radii = declarations(inline, 'radius');
+    for (const [shadcn, token] of Object.entries(SHADCN_RADIUS_MAP)) {
+      expect(radii.get(shadcn), `--radius-${shadcn}`).toBe(`var(--${token})`);
+    }
+
+    // Каждое правое имя есть в блоке «Токены» DESIGN.md или в @theme из styles.css
+    const known = designTokensBlock() + themeBlocks().join('\n');
+    const missing: string[] = [];
+    for (const match of inline.matchAll(/var\((--[a-z0-9-]+)\)/g)) {
+      const name = match[1];
+      if (name && !new RegExp(`${name}:`).test(known)) missing.push(name);
+    }
+    expect(missing).toEqual([]);
+  });
+
+  it('keeps no dark theme, extra stylesheet or extra font', () => {
+    const css = stripCssComments(stylesText);
+    expect(css).not.toMatch(/(^|[\s,}])\.dark\s*\{/);
+    expect(css).not.toMatch(/(^|[\s,}]):root\s*\{/);
+    expect(css).not.toMatch(/--sidebar/);
+    expect(css).not.toMatch(/--chart/);
+    expect(css).not.toMatch(/geist/i);
+
+    const imports = [...css.matchAll(/@import\s+['"]([^'"]+)['"]/g)].map((match) => match[1]);
+    expect(imports.sort()).toEqual(['tailwindcss', 'tw-animate-css']);
+    // Оставшийся @custom-variant делает dark: пустым вариантом, а не настройкой ОС
+    expect(css).toMatch(/@custom-variant\s+dark\s*\(&:is\(\.dark \*\)\)/);
   });
 });

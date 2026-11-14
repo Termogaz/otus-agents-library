@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@import 'tw-animate-css';
 
 /* Тёмной темы нет (D-08): вариант никогда не совпадает, утилиты dark: не включаются по настройке ОС */
 @custom-variant dark (&:is(.dark *));
@@ -62,7 +63,32 @@
   --container-content: 70rem;
 }
 
+/*
+ * Имена shadcn/ui поверх токенов DESIGN.md (D-08): компоненты берут цвета и радиусы только отсюда.
+ * Таблица соответствия — в DESIGN.md, раздел «Соответствие токенам shadcn/ui».
+ * У `border` имя совпадает с токеном DESIGN.md, пара не нужна.
+ */
+@theme inline {
+  --color-background: var(--color-bg);
+  --color-foreground: var(--color-text);
+  --color-card: var(--color-surface);
+  --color-card-foreground: var(--color-text);
+  --color-primary: var(--color-accent);
+  --color-primary-foreground: var(--color-on-accent);
+  --color-muted: var(--color-surface-muted);
+  --color-muted-foreground: var(--color-text-muted);
+  --color-destructive: var(--color-danger);
+  --color-input: var(--color-border-control);
+  --color-ring: var(--color-accent);
+  --radius-lg: var(--radius-control);
+  --radius-xl: var(--radius-card);
+}
+
 @layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
   body {
     background-color: var(--color-bg);
     color: var(--color-text);
