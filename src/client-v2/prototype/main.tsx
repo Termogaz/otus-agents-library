@@ -2,7 +2,8 @@ import { StrictMode, useMemo, useSyncExternalStore } from 'react';
 import { createRoot } from 'react-dom/client';
 import { createDemoApi } from '../demo/demo-api';
 import { App } from '../App';
-import { scenarioOptions } from './scenarios';
+import { PrototypeBar } from './PrototypeBar';
+import { SCENARIOS, scenarioOptions } from './scenarios';
 import '../styles.css';
 
 const root = document.getElementById('root');
@@ -31,7 +32,7 @@ function Prototype() {
 
   return (
     <>
-      <p>Прототип на демо-данных</p>
+      <PrototypeBar scenarios={SCENARIOS} current={scenario} />
       <App key={scenario.name} api={api} mode="demo" variant="prototype" />
     </>
   );
