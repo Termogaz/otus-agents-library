@@ -2,13 +2,15 @@ import { expect, test, type Page } from '@playwright/test';
 
 // Снимки MVP (/v2/) и прежнего интерфейса для README «Модуль 4».
 // Каталог test-results вне git; копии лежат в docs/screenshots/hw4-v2-*.png и hw4-old-links.png.
-// Запускать только на копии data/seed.json (T-07-21): перед каждым снимком все строки таблиц
-// книг, читателей и выдач содержат «Демо-», то есть в кадр попадают только данные seed и этого теста.
+// Тест создаёт свои демо-записи через API и показывает на страницах только их: GET-запросы списков
+// пропускают записи с id, полученными при создании. Поэтому он проходит на любом файле данных, а
+// в кадр не попадают настоящие данные (T-07-21). Перед каждым снимком все строки таблиц содержат
+// «Демо-» и контакты оканчиваются на @example.test.
 
 const OUT = 'test-results/hw4/final';
-const SINGLE_BOOK = 'Демо-единственный экземпляр';
 const BOOK_ONE = 'Демо-книга «Путь к реке»';
 const BOOK_TWO = 'Демо-книга «Тихий порт»';
+const SINGLE_BOOK = 'Демо-единственный экземпляр';
 const READER_ONE = 'Демо-читатель Аня';
 const READER_TWO = 'Демо-читатель Борис';
 
@@ -36,12 +38,60 @@ async function shoot(page: Page, name: string, fullPage: boolean) {
   await page.screenshot({ path: `${OUT}/${name}.png`, fullPage });
 }
 
+// Создаёт запись через API и запоминает её id
+async function create(
+  page: Page,
+  url: string,
+  data: Record<string, string | number>,
+  ids: Set<string>,
+) {
+  const response = await page.request.post(url, { data });
+  expect(response.status()).toBe(201);
+  const { id } = (await response.json()) as { id: string };
+  ids.add(id);
+}
+
 test('saves screenshots of v2 and links in the old interface', async ({ page }) => {
+  const bookIds = new Set<string>();
+  const readerIds = new Set<string>();
+
+  const books = [
+    { title: BOOK_ONE, author: 'Демо-автор Иванов', isbn: '978-0-00-000001-1', copies: 3 },
+    { title: BOOK_TWO, author: 'Демо-автор Петрова', isbn: '978-0-00-000002-8', copies: 2 },
+    { title: SINGLE_BOOK, author: 'Демо-автор Сидоров', isbn: '978-0-00-000003-5', copies: 1 },
+  ];
+  for (const book of books) await create(page, '/api/books', book, bookIds);
+  await create(page, '/api/readers', { name: READER_ONE, contact: 'anya@example.test' }, readerIds);
+  await create(
+    page,
+    '/api/readers',
+    { name: READER_TWO, contact: 'boris@example.test' },
+    readerIds,
+  );
+
+  await page.route('**/api/books', async (route) => {
+    if (route.request().method() !== 'GET') return route.fallback();
+    const response = await route.fetch();
+    const all = (await response.json()) as { id: string }[];
+    return route.fulfill({ json: all.filter((book) => bookIds.has(book.id)) });
+  });
+  await page.route('**/api/readers', async (route) => {
+    if (route.request().method() !== 'GET') return route.fallback();
+    const response = await route.fetch();
+    const all = (await response.json()) as { id: string }[];
+    return route.fulfill({ json: all.filter((reader) => readerIds.has(reader.id)) });
+  });
+  await page.route('**/api/loans', async (route) => {
+    if (route.request().method() !== 'GET') return route.fallback();
+    const response = await route.fetch();
+    const all = (await response.json()) as { bookId: string }[];
+    return route.fulfill({ json: all.filter((loan) => bookIds.has(loan.bookId)) });
+  });
+
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/v2/');
 
   const loans = page.getByRole('region', { name: 'Выдачи', exact: true });
-  const books = page.getByRole('region', { name: 'Книги', exact: true });
   const loansTable = loans.getByRole('table', { name: 'Выдачи' });
 
   async function checkout(book: string, reader: string) {
@@ -50,8 +100,8 @@ test('saves screenshots of v2 and links in the old interface', async ({ page }) 
     await loans.getByRole('button', { name: 'Выдать' }).click();
   }
 
-  // Работа: одна выдача из seed-данных; страница открыта заново, без сообщений действий
-  await expect(books.getByRole('table', { name: 'Книги' })).toContainText('Демо-');
+  // Работа: одна выдача; страница открыта заново, без сообщений действий
+  await expect(page.getByRole('table', { name: 'Книги' })).toContainText(BOOK_ONE);
   await checkout(BOOK_ONE, READER_ONE);
   await expect(loans.getByRole('status')).toContainText('Выдано:');
   await page.goto('/v2/');
@@ -66,14 +116,6 @@ test('saves screenshots of v2 and links in the old interface', async ({ page }) 
   await shoot(page, 'hw4-v2-issued', true);
 
   // Отказ: единственный экземпляр уже на руках
-  const bookForm = books.getByRole('form', { name: 'Добавить книгу' });
-  await bookForm.getByLabel('Название').fill(SINGLE_BOOK);
-  await bookForm.getByLabel('Автор').fill('Демо-автор');
-  await bookForm.getByLabel('ISBN').fill('978-0-00-000098-4');
-  await bookForm.getByLabel('Экземпляров').fill('1');
-  await bookForm.getByRole('button', { name: 'Добавить' }).click();
-  await expect(books.getByRole('status')).toHaveText(`Книга «${SINGLE_BOOK}» добавлена`);
-
   await checkout(SINGLE_BOOK, READER_ONE);
   await expect(loans.getByRole('status')).toContainText(`Выдано: «${SINGLE_BOOK}»`);
   await checkout(SINGLE_BOOK, READER_TWO);
