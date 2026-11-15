@@ -170,3 +170,106 @@ test('switches state through the panel links without a page reload', async ({ pa
   expect(await page.evaluate(() => 'reloadMarker' in window)).toBe(true);
   expect(apiRequests()).toBe(0);
 });
+
+test('completes main scenario on demo data', async ({ page }) => {
+  const apiRequests = await openScenario(page, 'first');
+  const title = 'Демо-книга сценария';
+  const name = 'Демо-читатель сценария';
+
+  const { loans, books, readers } = regions(page);
+  const bookForm = books.getByRole('form', { name: 'Добавить книгу' });
+  await bookForm.getByLabel('Название').fill(title);
+  await bookForm.getByLabel('Автор').fill('Демо-автор сценария');
+  await bookForm.getByLabel('ISBN').fill('000-0-00-000099-0');
+  await bookForm.getByLabel('Экземпляров').fill('1');
+  await bookForm.getByRole('button', { name: 'Добавить' }).click();
+  await expect(books.getByRole('status')).toHaveText(`Книга «${title}» добавлена`);
+
+  const readerForm = readers.getByRole('form', { name: 'Добавить читателя' });
+  await readerForm.getByLabel('Имя').fill(name);
+  await readerForm.getByLabel('Контакт').fill('demo-scenario@example.test');
+  await readerForm.getByRole('button', { name: 'Добавить' }).click();
+  await expect(readers.getByRole('status')).toHaveText(`Читатель ${name} добавлен`);
+
+  await checkout(page, title, name);
+  await expect(loans.getByRole('status')).toHaveText(
+    new RegExp(`^Выдано: «${title}», ${name}\\. Срок: \\d\\d\\.\\d\\d\\.\\d{4}$`),
+  );
+
+  const table = loans.getByRole('table', { name: 'Выдачи' });
+  await table.getByRole('row', { name: title }).getByRole('button', { name: 'Вернуть' }).click();
+  await expect(loans.getByRole('status')).toHaveText(`Принято: «${title}», ${name}`);
+  await expect(page.getByRole('alert')).toHaveCount(0);
+  expect(apiRequests()).toBe(0);
+});
+
+// Снимки восьми состояний для README «Модуль 4»: копии лежат в docs/screenshots/hw4-prototype-*.png.
+// Каталог test-results вне git. Перед снимком каждая строка таблиц содержит «Демо-» (T-07-19).
+test('saves screenshots of eight states', async ({ page }) => {
+  const apiRequests = await countApiRequests(page);
+  const { loans } = regions(page);
+
+  // Состояние готово к снимку: сообщение полностью проявилось, строки таблиц только демо
+  async function shoot(name: string) {
+    for (const message of await page.getByRole('alert').all()) {
+      await expect(message).toHaveCSS('opacity', '1');
+    }
+    for (const message of await loans.getByRole('status').all()) {
+      await expect(message).toHaveCSS('opacity', '1');
+    }
+    const rows = page.getByRole('row').filter({ hasNot: page.getByRole('columnheader') });
+    for (const row of await rows.all()) {
+      await expect(row).toContainText('Демо-');
+    }
+    await page.screenshot({ path: `test-results/hw4/prototype-${name}.png`, fullPage: true });
+  }
+
+  // Состояние открыто, когда ссылка панели с его подписью стала текущей
+  async function open(name: string, label: string) {
+    await page.goto(`/prototype/#${name}`);
+    await expect(page.getByRole('link', { name: label, exact: true })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+  }
+
+  await open('work', 'Работа');
+  await expect(loans.getByRole('table', { name: 'Выдачи' })).toBeVisible();
+  await shoot('work');
+
+  await open('first', 'Первый запуск');
+  await expect(page.getByText('Каталог пуст. Добавьте первую книгу.')).toBeVisible();
+  await shoot('first');
+
+  await open('failed', 'Сбой загрузки');
+  await expect(page.getByRole('alert')).toHaveCount(1);
+  await shoot('failed');
+
+  await open('waiting', 'Ожидание ответа');
+  await checkout(page, BOOK, READER);
+  await expect(loans.getByRole('button', { name: 'Выдать' })).toBeDisabled();
+  await shoot('waiting');
+
+  await open('saved', 'Сохранено без списка');
+  await checkout(page, BOOK, READER);
+  await expect(loans.getByRole('status')).toHaveText(/^Сохранено, но список не обновился/);
+  await shoot('saved');
+
+  await open('issued', 'Выдано');
+  await checkout(page, BOOK, READER);
+  await expect(loans.getByRole('status')).toContainText('Выдано:');
+  await shoot('issued');
+
+  await open('refusal', 'Отказ');
+  await checkout(page, SINGLE_BOOK, READER);
+  await expect(loans.getByRole('alert')).toHaveText('Нет свободных экземпляров');
+  await shoot('refusal');
+
+  await open('returned', 'Возвращено');
+  const table = loans.getByRole('table', { name: 'Выдачи' });
+  await table.getByRole('row', { name: BOOK }).getByRole('button', { name: 'Вернуть' }).click();
+  await expect(loans.getByRole('status')).toContainText('Принято:');
+  await shoot('returned');
+
+  expect(apiRequests()).toBe(0);
+});
