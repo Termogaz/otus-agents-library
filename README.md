@@ -178,7 +178,7 @@ D-06 в `06-CONTEXT.md` и `DESIGN.md`. Контраст пересчитан п
 `docker compose up --build -d`, затем `http://localhost:8080` (nginx отдаёт статику и проксирует `/api` в Node,
 данные на томе, пустой том получает [`data/seed.json`](data/seed.json), D-14).
 
-Публичные ссылки (собственный VPS, HTTPS):
+Публичные ссылки (собственный VPS у [Play2Go](https://play2go.cloud/), HTTPS):
 
 - MVP: https://otus-ai.silentharbor.ru/v2/
 - Прототип: https://otus-ai.silentharbor.ru/prototype/
@@ -222,7 +222,7 @@ D-06 в `06-CONTEXT.md` и `DESIGN.md`. Контраст пересчитан п
 ### Принятый риск
 
 - **Собственный VPS вместо Vercel или TimeWeb Cloud.** Пункт 4 называет эти площадки; приложение размещено на собственном
-  VPS (Ubuntu, Docker Compose, Caddy с HTTPS). Причина: MVP пишет данные в файл на томе (D-14), ему нужен сервер с
+  VPS у провайдера [Play2Go](https://play2go.cloud/) (Ubuntu, Docker Compose, Caddy с HTTPS). Причина: MVP пишет данные в файл на томе (D-14), ему нужен сервер с
   постоянным диском, а статический хостинг для `/v2/` не подходит; выбор площадки оставлен автору (D-15). Один домен
   для трёх страниц — ссылки между вариантами работают без `VITE_APP_ORIGIN`. Порт `web` опубликован только на
   `127.0.0.1` хоста: Docker обходит ufw, снаружи открыт только HTTPS через Caddy.
