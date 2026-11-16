@@ -11,7 +11,7 @@
 
 **Дальше.** Верификация фазы 7 (`/gsd-verify-work 7`), затем PR `feat/mvp-prototype` → `main` с подтверждения автора. В конце фазы предложить вернуть гейт `workflow.ui_safety_gate`.
 
-**Ловушки.** Git Bash превращает аргумент `--grep "/prototype/"` в путь Windows, и Playwright отвечает «No tests found»: запускать с `MSYS_NO_PATHCONV=1`. Адреса без косой черты (`/v2`, `/prototype`) отвечают 301 на адрес с косой чертой, `http://` — 308 на `https://` (Caddy). Провайдер VPS автор не назвал — в README «собственный VPS».
+**Ловушки.** Git Bash превращает аргумент `--grep "/prototype/"` в путь Windows, и Playwright отвечает «No tests found»: запускать с `MSYS_NO_PATHCONV=1`. Адреса без косой черты (`/v2`, `/prototype`) отвечают 301 на адрес с косой чертой, `http://` — 308 на `https://` (Caddy). Провайдер VPS — Play2Go (README, da856a3); отклонение от Vercel/TimeWeb принято автором, причина для обеих площадок — в README «Принятый риск».
 
 ## 2026-11-15 — ДЗ-4: план 07-08, чек-лист перед показом, основной сценарий `/v2/` и снимки (ветка `feat/mvp-prototype`)
 
