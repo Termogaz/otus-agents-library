@@ -162,6 +162,80 @@ D-06 в `06-CONTEXT.md` и `DESIGN.md`. Контраст пересчитан п
 - Сами планы не выполнялись, снимков «после» нет: вместо них показан статичный макет. После ручных правок
   по итогам второй проверки планы прошли только автоматические проверки структуры и покрытия решений.
 
+## Модуль 4: быстрое прототипирование и MVP
+
+Задание — [`docs/homework-4.md`](docs/homework-4.md). Работа сделана в ветке `feat/mvp-prototype` как
+[фаза 7](.planning/phases/07-bystroe-prototipirovanie-i-sborka-mvp/): решения D-01…D-16 — в
+[`07-CONTEXT.md`](.planning/phases/07-bystroe-prototipirovanie-i-sborka-mvp/07-CONTEXT.md), 10 планов с отчётами
+`07-NN-SUMMARY.md`. Домен, API и формат `data/library.json` не менялись. Рядом работают три варианта интерфейса,
+между ними переключают ссылки в подвале:
+
+- `/` — прежний интерфейс, «до»; заморожен, добавлены только ссылки на варианты (D-01, D-03);
+- `/prototype/` — кликабельный прототип на демо-данных в памяти браузера, без сервера, восемь состояний макета (D-10);
+- `/v2/` — MVP на тех же компонентах и настоящем API (D-11).
+
+Запуск: `npm run dev`, затем `http://localhost:5173/v2/` и `http://localhost:5173/prototype/`. В Docker:
+`docker compose up --build -d`, затем `http://localhost:8080` (nginx отдаёт статику и проксирует `/api` в Node,
+данные на томе, пустой том получает [`data/seed.json`](data/seed.json), D-14).
+
+Публичные ссылки (собственный VPS, HTTPS):
+
+- MVP: https://otus-ai.silentharbor.ru/v2/
+- Прототип: https://otus-ai.silentharbor.ru/prototype/
+- Прежний интерфейс: https://otus-ai.silentharbor.ru/
+
+| Пункт ДЗ    | Артефакты                                                                                                                                                                                                                                              | Команда проверки                                                                                                                                                                                                                                                                     | Скриншоты                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Ссылка                                                      |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| 1. UX, UI   | [`DESIGN.md`](DESIGN.md): разделы «Соответствие токенам shadcn/ui», «Форма и глубина» (исключение про анимации, D-07), «История изменений»; [`ux-patterns.md`](docs/handoff/ux-patterns.md), макет [`main-screen.html`](docs/mockups/main-screen.html) | `npx vitest run tests/unit/css-tokens.test.ts` — цвета и отступы `/v2/` и `/prototype/` только из токенов `DESIGN.md`                                                                                                                                                                | [рабочий вид `/v2/`](docs/screenshots/hw4-v2-work.png), [375 px](docs/screenshots/hw4-v2-narrow-375.png)                                                                                                                                                                                                                                                                                                                                                       | —                                                           |
+| 2. Прототип | [`src/client-v2/prototype/`](src/client-v2/prototype/) (сценарии по хешу адреса), [`src/client-v2/demo/`](src/client-v2/demo/) (адаптер API в памяти, вызывает функции `src/domain`)                                                                   | `npx playwright test tests/e2e/prototype.spec.ts`                                                                                                                                                                                                                                    | [работа](docs/screenshots/hw4-prototype-work.png), [первый запуск](docs/screenshots/hw4-prototype-first.png), [сбой](docs/screenshots/hw4-prototype-failed.png), [ожидание](docs/screenshots/hw4-prototype-waiting.png), [сохранено без списка](docs/screenshots/hw4-prototype-saved.png), [выдано](docs/screenshots/hw4-prototype-issued.png), [отказ](docs/screenshots/hw4-prototype-refusal.png), [возвращено](docs/screenshots/hw4-prototype-returned.png) | [прототип](https://otus-ai.silentharbor.ru/prototype/)      |
+| 3. MVP      | [`src/client-v2/`](src/client-v2/): `App.tsx`, `features/`, компоненты shadcn в `components/ui/`; библиотеки — ниже                                                                                                                                    | `npx playwright test tests/e2e/v2-shell.spec.ts tests/e2e/v2-outcome.spec.ts tests/e2e/v2-lock.spec.ts tests/e2e/v2-lists.spec.ts tests/e2e/v2-hints.spec.ts tests/e2e/v2-layout.spec.ts tests/e2e/v2-motion.spec.ts tests/e2e/v2-main-flow.spec.ts tests/e2e/variant-links.spec.ts` | [рабочий вид](docs/screenshots/hw4-v2-work.png), [выдано](docs/screenshots/hw4-v2-issued.png), [отказ](docs/screenshots/hw4-v2-refusal.png), [375 px](docs/screenshots/hw4-v2-narrow-375.png), [ссылки на `/`](docs/screenshots/hw4-old-links.png)                                                                                                                                                                                                             | [MVP](https://otus-ai.silentharbor.ru/v2/)                  |
+| 4. Хостинг  | [`Dockerfile`](Dockerfile), [`docker-compose.yml`](docker-compose.yml), [`docker/nginx.conf`](docker/nginx.conf), [`data/seed.json`](data/seed.json); собственный VPS с Docker Compose и Caddy (HTTPS, `reverse_proxy` на `127.0.0.1:8080`)            | `E2E_BASE_URL=https://otus-ai.silentharbor.ru E2E_REAL_FONT=1 npx playwright test -c playwright.docker.config.ts tests/e2e/release-checklist.spec.ts` — чек-лист перед показом (D-13), 5 passed                                                                                      | [`/v2/` на 375 px](docs/screenshots/hw4-public-v2-375.png), [`/prototype/`](docs/screenshots/hw4-public-prototype.png)                                                                                                                                                                                                                                                                                                                                         | [otus-ai.silentharbor.ru](https://otus-ai.silentharbor.ru/) |
+
+Чек-лист перед показом (D-13) — [`release-checklist.spec.ts`](tests/e2e/release-checklist.spec.ts): каждый тест в новом
+контексте браузера (аналог окна инкогнито), заголовок вкладки, консоль без ошибок, ни одного ответа с кодом 400 и выше,
+375 px без горизонтальной прокрутки на `/v2/` и `/prototype/`. С `E2E_REAL_FONT=1` настоящий шрифт IBM Plex Sans
+грузится из Google Fonts и тоже проверяется. На публичном адресе 2026-11-16: 5 passed. Адреса без косой черты
+(`/v2`, `/prototype`) отвечают 301 на адрес с косой чертой, `http://` — 308 на `https://`.
+
+### Библиотеки с урока
+
+Взяты:
+
+- **Tailwind CSS 4** (4.3.5, плагин `@tailwindcss/vite`): все стили `/v2/` и `/prototype/`, токены `DESIGN.md` в
+  `@theme` файла [`src/client-v2/styles.css`](src/client-v2/styles.css).
+- **shadcn/ui** (пресет `radix-nova` на Radix): компоненты `button`, `input`, `label`, `card`, `table`, `alert`,
+  `native-select` в `src/client-v2/components/ui/`, переписаны без теней и цветов вне токенов. Список выбора —
+  нативный `<select>`; для подтверждений своя обёртка с `role="status"` (D-12).
+- **lucide-react**: единственный набор иконок (стрелка списка выбора в `native-select`).
+- **Motion** (14.14.0): вход сообщения, новой строки выдачи и таблицы после пустого текста, 150–300 мс, при
+  `prefers-reduced-motion` без движения (D-07).
+- **21st.dev**: только просмотрены образцы Table, Empty State и Alert (`DESIGN.md`, «Откуда взято»); код не взят —
+  компоненты сделаны на shadcn/ui.
+
+Не взяты (D-06):
+
+- **TailArk** — набор секций лендинга, а лендинг не делаем.
+- **GSAP** — анимации закрывает Motion (D-05, D-07), второй движок анимаций не нужен.
+- **Design OS** — видение, сущности, токены и экраны уже есть после ДЗ-3 (`docs/handoff/`, `DESIGN.md`, макет).
+- **UI/UX Pro Max** — направление, палитра и шрифт уже выбраны автором в ДЗ-3.
+
+### Принятый риск
+
+- **Собственный VPS вместо Vercel или TimeWeb Cloud.** Пункт 4 называет эти площадки; приложение размещено на собственном
+  VPS (Ubuntu, Docker Compose, Caddy с HTTPS). Причина: MVP пишет данные в файл на томе (D-14), ему нужен сервер с
+  постоянным диском, а статический хостинг для `/v2/` не подходит; выбор площадки оставлен автору (D-15). Один домен
+  для трёх страниц — ссылки между вариантами работают без `VITE_APP_ORIGIN`. Порт `web` опубликован только на
+  `127.0.0.1` хоста: Docker обходит ufw, снаружи открыт только HTTPS через Caddy.
+- **Запись без входа.** Публичное демо принимает изменения от любого посетителя (ASVS V4 вне учебного объёма). Данные
+  только демо (`Демо-…`, `@example.test`); сброс — `docker compose down -v` и запуск: пустой том снова получает seed.
+
+### Что не подтверждено
+
+- Настоящие телефоны: ширина 375 px проверена только эмуляцией в Chromium.
+- Другие браузеры: e2e и чек-лист идут только в Chromium.
+- Vercel и TimeWeb Cloud: не использовались, сборка на них не проверялась.
+- Сброс тома на сервере (`docker compose down -v`): выполнялся ли он на VPS, автор не сообщал.
+
 ## Что не воспроизводится из git
 
 Эти части среды живут вне репозитория или в `.gitignore`. После клонирования их нужно поставить
@@ -224,8 +298,13 @@ GSD закреплён на версии 1.18.0, подсказку `/gsd-update
 ```text
 src/domain/   бизнес-правила: чистые функции без I/O
 src/server/   Express: маршруты, валидация zod, хранилище
-src/client/   React UI
+src/client/   React UI, прежний вариант на /
+src/client-v2/
+              прототип и MVP: компоненты shadcn, Tailwind, демо-адаптер (demo/), сценарии прототипа
+v2/           страница Vite для /v2/; prototype/ — для /prototype/
 tests/unit/   Vitest; tests/e2e/ — Playwright
+docker/       nginx.conf; вместе с Dockerfile и docker-compose.yml — сборка и запуск в контейнерах
+data/         seed.json — демо-данные для пустого тома
 docs/         about.md (отчёт ДЗ-1), architecture.md (среда агента), memory.md (журнал),
               context-usage.md, security-checklist.md, screenshots/,
               handoff/ (PRD, истории, UX), research/ (аналоги), mockups/ (макет)
