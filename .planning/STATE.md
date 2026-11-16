@@ -3,17 +3,17 @@ gsd_state_version: "1.0"
 milestone: v1.0
 current_phase: 07
 current_phase_name: Быстрое прототипирование и сборка MVP
-status: executing
-stopped_at: Completed 07-08-PLAN.md
-last_updated: "2026-11-15T15:19:18.623Z"
-last_activity: 2026-11-15
+status: verifying
+stopped_at: Completed 07-09-PLAN.md
+last_updated: "2026-11-16T17:03:10.764Z"
+last_activity: 2026-11-16
 last_activity_desc: Phase 07 execution started
-state_head: 7499838ac5b1f99b5c6d50409f9c187655dd64d2
+state_head: 30b1d1be00e7e939244a1554571628253ce890e6
 progress:
   total_phases: 7
   completed_phases: 5
   total_plans: 23
-  completed_plans: 18
+  completed_plans: 19
 milestone_name: "ДЗ-2: агентно-ориентированный пайплайн"
 ---
 
@@ -30,10 +30,10 @@ See: .planning/PROJECT.md (updated 2026-10-22)
 
 Phase: 07 (Быстрое прототипирование и сборка MVP) — EXECUTING
 Plan: 10 of 10
-Status: Ready to execute
-Last activity: 2026-11-15 — план 07-08 выполнен (чек-лист перед показом, основной сценарий /v2/, снимки hw4-v2-*, проверка Docker автором: «docker ok»)
+Status: Phase complete — ready for verification
+Last activity: 2026-11-16 — план 07-09 выполнен (публикация автором на собственном VPS https://otus-ai.silentharbor.ru/, чек-лист D-13 на публичном адресе 5 passed, README «Модуль 4»)
 
-Progress: [█████████░] 90% (фаза 7, 9/10)
+Progress: [██████████] 100% (фаза 7, 10/10)
 
 ## Performance Metrics
 
@@ -75,6 +75,7 @@ Progress: [█████████░] 90% (фаза 7, 9/10)
 | Phase 07 P06 | 70 min | 3 tasks | 17 files |
 | Phase 07 P07 | 25 min | 3 tasks | 14 files |
 | Phase 07 P08 | 20 min | 3 tasks | 9 files |
+| Phase 07 P09 | 15 min | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -107,6 +108,9 @@ Recent decisions affecting current work:
 - [Phase 07]: [07-06] Ссылки между вариантами в подвале (VariantFooter, aria-current); VITE_APP_ORIGIN для / и /v2/, /prototype/ относительная; в src/client/App.tsx только добавленный подвал
 - [Phase 07]: [07-07] Прототип: восемь состояний по хешу без роутера, три видны сразу и пять одним кликом; подсказка панели без role=alert (D-12) и без дословных текстов интерфейса (strict mode getByText); снимки копируются из test-results сразу после зелёного прогона
 - [Phase 07]: [07-08] Чек-лист D-13 запускается против любого E2E_BASE_URL; запросы к Google Fonts прерываются, E2E_REAL_FONT=1 включает настоящий шрифт; тест снимков создаёт свои демо-записи и не зависит от seed; Docker подтверждён автором («docker ok», вывод шагов 2, 3, 4, 6 не прислан, шаг 7 не упомянут)
+- [Phase 07]: [07-09] Хостинг выбран автором: собственный VPS с Docker Compose и Caddy (HTTPS, reverse_proxy на 127.0.0.1:8080) вместо Vercel и TimeWeb Cloud; в README принятый риск: MVP пишет в файл на томе (D-14)
+- [Phase 07]: [07-09] Один домен https://otus-ai.silentharbor.ru/ для /, /v2/, /prototype/; VITE_APP_ORIGIN не задаётся; чек-лист D-13 на публичном адресе с E2E_REAL_FONT=1: 5 passed
+- [Phase 07]: [07-09] 21st.dev в README: только просмотренные образцы, код не брался (DESIGN.md «Откуда взято»)
 
 ### Roadmap Evolution
 
@@ -134,7 +138,7 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-15T15:19:18.505Z
-Stopped at: Completed 07-08-PLAN.md
+Last session: 2026-11-16T17:03:10.647Z
+Stopped at: Completed 07-09-PLAN.md
 Resume file: None
-Next: ДЗ-4, ветка `feat/mvp-prototype`: `/gsd-execute-phase 7` — следующий план 07-09 (хостинг и публикация)
+Next: ДЗ-4, ветка `feat/mvp-prototype`: все 10 планов фазы 7 выполнены — верификация фазы 7 (`/gsd-verify-work 7`), затем PR в `main` с подтверждения автора
