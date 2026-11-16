@@ -1,4 +1,4 @@
-# Два контейнера: api (Node, порт наружу не публикуется) и web (nginx, порт 8080).
+# Два контейнера: api (Node, порт наружу не публикуется) и web (nginx, порт 8080 только на localhost).
 # Данные лежат на именованном томе, а не в bind-mount: на Windows с правами файлов это ненадёжно.
 services:
   api:
@@ -16,8 +16,10 @@ services:
     build:
       context: .
       target: web
+    # Только localhost: Docker обходит ufw и iptables INPUT, поэтому порт на всех адресах
+    # был бы открыт в интернет. Снаружи сайт доступен через HTTPS-прокси на хосте (Caddy).
     ports:
-      - '8080:80'
+      - '127.0.0.1:8080:80'
     depends_on:
       api:
         condition: service_healthy
