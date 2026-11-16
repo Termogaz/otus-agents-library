@@ -1,10 +1,10 @@
 ---
 phase: 07-bystroe-prototipirovanie-i-sborka-mvp
 verified: 2026-11-16T17:15:00Z
-status: human_needed
+status: passed
 score: 3/7 must-haves verified
 covered_files: [".dockerignore",".planning/phases/07-bystroe-prototipirovanie-i-sborka-mvp/07-01-PLAN.md",".planning/phases/07-bystroe-prototipirovanie-i-sborka-mvp/07-01-SUMMARY.md",".planning/phases/07-bystroe-prototipirovanie-i-sborka-mvp/07-02-PLAN.md",".planning/phases/07-bystroe-prototipirovanie-i-sborka-mvp/07-02-SUMMARY.md",".planning/phases/07-bystroe-prototipirovanie-i-sborka-mvp/07-03-PLAN.md",".planning/phases/07-bystroe-prototipirovanie-i-sborka-mvp/07-03-SUMMARY.md",".planning/phases/07-bystroe-prototipirovanie-i-sborka-mvp/07-04-PLAN.md",".planning/phases/07-bystroe-prototipirovanie-i-sborka-mvp/07-04-SUMMARY.md",".planning/phases/07-bystroe-prototipirovanie-i-sborka-mvp/07-05-PLAN.md",".planning/phases/07-bystroe-prototipirovanie-i-sborka-mvp/07-05-SUMMARY.md",".planning/phases/07-bystroe-prototipirovanie-i-sborka-mvp/07-06-PLAN.md",".planning/phases/07-bystroe-prototipirovanie-i-sborka-mvp/07-06-SUMMARY.md",".planning/phases/07-bystroe-prototipirovanie-i-sborka-mvp/07-07-PLAN.md",".planning/phases/07-bystroe-prototipirovanie-i-sborka-mvp/07-07-SUMMARY.md",".planning/phases/07-bystroe-prototipirovanie-i-sborka-mvp/07-08-PLAN.md",".planning/phases/07-bystroe-prototipirovanie-i-sborka-mvp/07-08-SUMMARY.md",".planning/phases/07-bystroe-prototipirovanie-i-sborka-mvp/07-09-PLAN.md",".planning/phases/07-bystroe-prototipirovanie-i-sborka-mvp/07-09-SUMMARY.md",".planning/phases/07-bystroe-prototipirovanie-i-sborka-mvp/07-10-PLAN.md",".planning/phases/07-bystroe-prototipirovanie-i-sborka-mvp/07-10-SUMMARY.md","DESIGN.md","Dockerfile","README.md","components.json","data/seed.json","docker-compose.yml","docker/nginx.conf","package-lock.json","package.json","playwright.config.ts","playwright.docker.config.ts","prototype/index.html","src/client-v2/App.tsx","src/client-v2/components/ListState.tsx","src/client-v2/components/StatusMessage.tsx","src/client-v2/components/VariantFooter.tsx","src/client-v2/components/ui/alert.tsx","src/client-v2/components/ui/button.tsx","src/client-v2/components/ui/card.tsx","src/client-v2/components/ui/input.tsx","src/client-v2/components/ui/label.tsx","src/client-v2/components/ui/native-select.tsx","src/client-v2/components/ui/table.tsx","src/client-v2/demo/demo-api.ts","src/client-v2/demo/demo-data.ts","src/client-v2/features/BooksSection.tsx","src/client-v2/features/LoansSection.tsx","src/client-v2/features/ReadersSection.tsx","src/client-v2/lib/utils.ts","src/client-v2/loan-view.ts","src/client-v2/prototype/PrototypeBar.tsx","src/client-v2/prototype/main.tsx","src/client-v2/prototype/scenarios.ts","src/client-v2/styles.css","src/client-v2/use-busy.ts","src/client-v2/v2/main.tsx","src/client-v2/vite-env.d.ts","src/client/App.tsx","tests/e2e/fake-api.ts","tests/e2e/hw4-screenshots.spec.ts","tests/e2e/prototype.spec.ts","tests/e2e/release-checklist.spec.ts","tests/e2e/v2-hints.spec.ts","tests/e2e/v2-layout.spec.ts","tests/e2e/v2-lists.spec.ts","tests/e2e/v2-lock.spec.ts","tests/e2e/v2-main-flow.spec.ts","tests/e2e/v2-motion.spec.ts","tests/e2e/v2-outcome.spec.ts","tests/e2e/v2-shell.spec.ts","tests/e2e/variant-links.spec.ts","tests/unit/client-v2-layers.test.ts","tests/unit/css-tokens.test.ts","tests/unit/demo-api.test.ts","tests/unit/loan-view.test.ts","tests/unit/prototype-scenarios.test.ts","tests/unit/seed.test.ts","tsconfig.json","tsconfig.server.json","v2/index.html","vite.config.ts"]
-covered_digest: "v3:sha256:8be439ffcef544761e3c900db204f01d1a2bf90dbf729e98003ebe3d95e3d0db"
+covered_digest: "v3:sha256:0fcc3a36be2cb47c1df3d5b80104729a7e59f552610b51e01f7177a096a63701"
 behavior_unverified: 0
 overrides_applied: 1
 overrides:
@@ -207,7 +207,8 @@ overrides:
 - Override SC-6 принят автором (frontmatter `overrides`); в README «Принятый риск» добавлена причина для TimeWeb Cloud.
 - `npm run test:e2e` на рабочей копии (HEAD da856a3 + правка README): **66 passed** (31.8 s) — SC-3, SC-4, SC-7 подтверждены.
 - Docker локально и VPS — человеческие проверки, выполнены автором («docker ok», «сайт развернут, все ок»).
-- Остаётся: автор подтверждает вердикт «соблюдён» по judgment-запретам (раздел «Prohibitions»).
+- Отпечаток covered_digest пересчитан после правок README (причина для TimeWeb) и 07-09-SUMMARY (провайдер); код не менялся, e2e после правок — 66 passed.
+- Автор подтвердил вердикт «соблюдён» по judgment-запретам («Confirm, complete»). Статус: passed.
 
 ---
 
