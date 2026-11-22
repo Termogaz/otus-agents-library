@@ -12,6 +12,8 @@ import {
 } from '../domain/index.js';
 import { ApiError } from './api-error.js';
 import { createAuthRouter, requireRole, type AuthDeps } from './auth/auth.js';
+import { corsMiddleware } from './cors.js';
+import { originCheck } from './origin-check.js';
 import { httpErrorFromDatabase } from './postgres/pg-errors.js';
 import { StorageError, type LibraryRepository } from './repository.js';
 import { SerialStorage, SYSTEM_LIBRARIAN, type RequestContext, type Storage } from './storage.js';
@@ -25,6 +27,8 @@ export type AppDeps = (
   newId?: () => string;
   // Вход по логину и паролю (режим Postgres). Без него все запросы идут от системного библиотекаря
   auth?: AuthDeps;
+  // Разрешённые источники для CORS и проверки Origin на записи; по умолчанию пусто
+  cors?: { allowedOrigins: ReadonlySet<string> };
 };
 
 const text = z.string().trim().min(1);
@@ -72,8 +76,14 @@ export function createApp({
   now = () => new Date(),
   newId = randomUUID,
   auth,
+  cors,
 }: AppDeps) {
   const app = express();
+  // CORS и проверка Origin — первыми, до express.json и authenticate: preflight не должен
+  // получать 401, а запись с чужого сайта не должна доходить до разбора тела
+  const allowedOrigins = cors?.allowedOrigins ?? new Set<string>();
+  app.use(corsMiddleware(allowedOrigins));
+  app.use(originCheck(allowedOrigins));
   app.use(express.json());
 
   // Каждый маршрут работает внутри storage.run: в режиме JSON это общая очередь (выдача и
