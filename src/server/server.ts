@@ -13,24 +13,31 @@ export function buildApp(config: AppConfig): {
   app: express.Express;
   close: () => Promise<void>;
 } {
+  const cors = { allowedOrigins: config.corsAllowedOrigins };
+
   if (config.storage === 'postgres') {
     const pool = new pg.Pool({ connectionString: config.databaseUrl });
     // Без обработчика ошибка на простаивающем соединении роняет процесс
     pool.on('error', (error) => {
       console.error('Ошибка соединения пула Postgres:', error.message);
     });
-    return {
-      // В режиме Postgres вход обязателен; в режиме JSON входа нет
-      app: createApp({
-        storage: new PostgresStorage(pool),
-        auth: { store: new PgAuthStore(pool), limiter: new LoginLimiter() },
-      }),
-      close: () => pool.end(),
-    };
+    // В режиме Postgres вход обязателен; в режиме JSON входа нет
+    const app = createApp({
+      storage: new PostgresStorage(pool),
+      auth: { store: new PgAuthStore(pool), limiter: new LoginLimiter() },
+      cors,
+    });
+    trustProxies(app, config);
+    return { app, close: () => pool.end() };
   }
 
-  return {
-    app: createApp({ repo: new JsonFileRepository(config.dataFile) }),
-    close: () => Promise.resolve(),
-  };
+  const app = createApp({ repo: new JsonFileRepository(config.dataFile), cors });
+  trustProxies(app, config);
+  return { app, close: () => Promise.resolve() };
+}
+
+// За Caddy и nginx Express должен видеть HTTPS (req.secure, Secure-cookie): число доверенных
+// прокси задаёт TRUST_PROXY. По умолчанию 0: заголовки X-Forwarded-* от клиента не принимаются.
+function trustProxies(app: express.Express, config: AppConfig): void {
+  app.set('trust proxy', config.trustProxy);
 }

@@ -7,7 +7,38 @@ export type AppConfig = {
   port: number;
   dataFile: string;
   nodeEnv?: string;
+  // Разрешённые источники CORS и записи (D-10): только origin без пути, звёздочки нет
+  corsAllowedOrigins: ReadonlySet<string>;
+  // Число доверенных прокси перед Express (0 — прокси нет); от него зависят req.secure и req.ip
+  trustProxy: number;
 };
+
+// Список origin через запятую. Каждый элемент обязан быть ровно origin (схема, хост, порт):
+// путь, слэш в конце и звёздочка отклоняются. Значения в сообщение не попадают.
+const originList = z
+  .string()
+  .default('')
+  .transform((value, ctx) => {
+    const origins = new Set<string>();
+    for (const item of value.split(',').map((part) => part.trim())) {
+      if (item === '') continue;
+      let normalized: string | undefined;
+      try {
+        normalized = new URL(item).origin;
+      } catch {
+        normalized = undefined;
+      }
+      if (normalized !== item) {
+        ctx.addIssue({
+          code: 'custom',
+          message: 'каждый элемент — origin вида https://host[:порт] без пути и без звёздочки',
+        });
+        return z.NEVER;
+      }
+      origins.add(item);
+    }
+    return origins;
+  });
 
 const envSchema = z
   .object({
@@ -16,6 +47,8 @@ const envSchema = z
     PORT: z.coerce.number().int().min(1).max(65535).default(3000),
     LIBRARY_DATA_FILE: z.string().min(1).default('data/library.json'),
     NODE_ENV: z.string().optional(),
+    CORS_ALLOWED_ORIGINS: originList,
+    TRUST_PROXY: z.coerce.number().int().min(0).default(0),
   })
   .superRefine((env, ctx) => {
     if (env.STORAGE === 'postgres' && !env.DATABASE_URL) {
@@ -50,6 +83,8 @@ export function loadConfig(env: NodeJS.ProcessEnv): AppConfig {
     ...(data.STORAGE === 'postgres' && data.DATABASE_URL ? { databaseUrl: data.DATABASE_URL } : {}),
     port: data.PORT,
     dataFile: data.LIBRARY_DATA_FILE,
+    corsAllowedOrigins: data.CORS_ALLOWED_ORIGINS,
+    trustProxy: data.TRUST_PROXY,
     ...(data.NODE_ENV === undefined ? {} : { nodeEnv: data.NODE_ENV }),
   };
 }

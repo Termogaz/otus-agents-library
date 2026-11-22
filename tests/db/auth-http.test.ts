@@ -257,6 +257,8 @@ describe('login protection', () => {
       databaseUrl: requireTestUrls().apiUrl,
       port: 3000,
       dataFile: 'unused.json',
+      corsAllowedOrigins: new Set(),
+      trustProxy: 0,
     });
     try {
       const res = await request(app).get('/api/books');
