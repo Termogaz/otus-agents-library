@@ -23,12 +23,13 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist/client',
-    // Три страницы из одного проекта: старый фронт, вариант 2 и прототип
+    // Четыре страницы из одного проекта: старый фронт, вариант 2, прототип и вход
     rolldownOptions: {
       input: {
         main: 'index.html',
         v2: 'v2/index.html',
         prototype: 'prototype/index.html',
+        login: 'login/index.html',
       },
     },
   },
