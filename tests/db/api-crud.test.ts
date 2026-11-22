@@ -226,3 +226,92 @@ describe('deletion', () => {
     expect(reader.body.code).toBe('READER_NOT_FOUND');
   });
 });
+
+describe('readers by id', () => {
+  it('creates a reader over HTTP and stores it in Postgres', async () => {
+    const app = makeApp();
+
+    const created = await request(app)
+      .post('/api/readers')
+      .send({ name: 'Анна', contact: 'anna@example.com' });
+
+    expect(created.status).toBe(201);
+    const id = created.body.id as string;
+    const got = await request(app).get(`/api/readers/${id}`);
+    expect(got.status).toBe(200);
+    expect(got.body).toEqual({ id, name: 'Анна', contact: 'anna@example.com' });
+    const { rows } = await owner.query('select name, contact from readers where id = $1', [id]);
+    expect(rows).toEqual([{ name: 'Анна', contact: 'anna@example.com' }]);
+  });
+
+  it('gets a reader by id', async () => {
+    await insertReader('r1');
+
+    const res = await request(makeApp()).get('/api/readers/r1');
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ id: 'r1', name: 'Читатель r1', contact: 'r1@example.com' });
+  });
+
+  it('updates reader contact', async () => {
+    await insertReader('r1');
+
+    const res = await request(makeApp())
+      .patch('/api/readers/r1')
+      .send({ contact: 'new@example.com' });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ id: 'r1', name: 'Читатель r1', contact: 'new@example.com' });
+    const { rows } = await owner.query('select name, contact from readers where id = $1', ['r1']);
+    expect(rows).toEqual([{ name: 'Читатель r1', contact: 'new@example.com' }]);
+  });
+
+  it('rejects an empty reader patch', async () => {
+    await insertReader('r1');
+
+    const res = await request(makeApp()).patch('/api/readers/r1').send({});
+
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe('VALIDATION_ERROR');
+  });
+
+  it('answers 404 READER_NOT_FOUND for unknown reader', async () => {
+    const app = makeApp();
+
+    const got = await request(app).get('/api/readers/nope');
+    const patched = await request(app).patch('/api/readers/nope').send({ name: 'Имя' });
+
+    expect(got.status).toBe(404);
+    expect(got.body.code).toBe('READER_NOT_FOUND');
+    expect(patched.status).toBe(404);
+    expect(patched.body.code).toBe('READER_NOT_FOUND');
+  });
+});
+
+describe('spec coverage', () => {
+  it('implements every books and readers route of the spec', async () => {
+    const routes = loadApiSpec().filter(
+      (r) => r.path.startsWith('/api/books') || r.path.startsWith('/api/readers'),
+    );
+    expect(routes.length).toBeGreaterThanOrEqual(10);
+    const app = makeApp();
+
+    for (const route of routes) {
+      const path = route.path.replace(':id', 'nope');
+      const body = route.method === 'PATCH' ? { title: 'x', name: 'x' } : {};
+      const res = await request(app)[route.method.toLowerCase() as 'get'](path).send(body);
+
+      // Встроенный 404 Express приходит без тела: у каждого маршрута спеки свой обработчик
+      const label = `${route.method} ${route.path}`;
+      if (route.path.includes(':id')) {
+        expect(res.status, label).toBe(404);
+        expect(res.body.code, label).toMatch(/^(BOOK|READER)_NOT_FOUND$/);
+      } else if (route.method === 'POST') {
+        expect(res.status, label).toBe(400);
+        expect(res.body.code, label).toBe('VALIDATION_ERROR');
+      } else {
+        expect(res.status, label).toBe(route.success);
+      }
+    }
+  });
+});
