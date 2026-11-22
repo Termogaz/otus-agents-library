@@ -4,8 +4,9 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { createApp } from '../../src/server/app.js';
 import { PgAuthStore } from '../../src/server/auth/auth.js';
 import { hashPassword } from '../../src/server/auth/password.js';
+import { buildApp } from '../../src/server/server.js';
 import { PostgresStorage } from '../../src/server/postgres/postgres-storage.js';
-import { apiPool, asLibrarian, ownerPool, resetData } from './support/db.js';
+import { apiPool, asLibrarian, ownerPool, requireTestUrls, resetData } from './support/db.js';
 
 const owner = ownerPool();
 const api = apiPool();
@@ -162,5 +163,108 @@ describe('login and session', () => {
     expect(after.status).toBe(401);
     const { rows } = await owner.query('select 1 from sessions');
     expect(rows).toHaveLength(0);
+  });
+});
+
+describe('login protection', () => {
+  async function failLogin(app: ReturnType<typeof makeApp>, login: string, password: string) {
+    return request(app).post('/api/auth/login').send({ login, password });
+  }
+
+  it('answers the same for unknown login and wrong password', async () => {
+    await insertLibrarian();
+    const app = makeApp();
+
+    const unknown = await failLogin(app, 'nobody.here', 'a completely wrong password');
+    const wrong = await failLogin(app, 'anna.lib', 'a completely wrong password');
+
+    expect(unknown.status).toBe(401);
+    expect(wrong.status).toBe(401);
+    expect(unknown.body).toEqual(wrong.body);
+    expect(unknown.body.code).toBe('INVALID_CREDENTIALS');
+  });
+
+  it('blocks the sixth failed attempt for a login', async () => {
+    await insertLibrarian();
+    const app = makeApp();
+
+    for (let i = 0; i < 5; i += 1) {
+      const res = await failLogin(app, 'anna.lib', 'a completely wrong password');
+      expect(res.status).toBe(401);
+    }
+    // Даже верный пароль после пяти неудач не принимается
+    const sixth = await failLogin(app, 'anna.lib', PASSWORD);
+
+    expect(sixth.status).toBe(429);
+    expect(sixth.body.code).toBe('TOO_MANY_ATTEMPTS');
+    expect(setCookies(sixth)).toEqual([]);
+  });
+
+  it('does not block another login', async () => {
+    await insertLibrarian();
+    await insertLibrarian('boris.lib');
+    const app = makeApp();
+    for (let i = 0; i < 5; i += 1) await failLogin(app, 'anna.lib', 'a completely wrong password');
+
+    const other = await failLogin(app, 'boris.lib', PASSWORD);
+
+    expect(other.status).toBe(200);
+  });
+
+  it('rejects an expired session', async () => {
+    await insertLibrarian();
+    const app = makeApp();
+    const { rows } = await owner.query<{ id: string }>('select id from users');
+    await owner.query(
+      "insert into sessions (token_hash, user_id, expires_at) values ($1, $2, now() - interval '1 minute')",
+      [createHash('sha256').update('expired-token').digest('hex'), rows[0]?.id],
+    );
+
+    const res = await request(app).get('/api/books').set('Cookie', 'library_session=expired-token');
+
+    expect(res.status).toBe(401);
+    expect(res.body.code).toBe('UNAUTHENTICATED');
+  });
+
+  it('marks the cookie Secure behind an HTTPS proxy', async () => {
+    await insertLibrarian();
+    const app = makeApp();
+    app.set('trust proxy', 1);
+
+    const res = await request(app)
+      .post('/api/auth/login')
+      .set('X-Forwarded-Proto', 'https')
+      .send({ login: 'anna.lib', password: PASSWORD });
+
+    expect(res.status).toBe(200);
+    expect(setCookies(res)[0]).toMatch(/; Secure/);
+  });
+
+  it('does not mark the cookie Secure on plain http', async () => {
+    await insertLibrarian();
+
+    const res = await request(makeApp())
+      .post('/api/auth/login')
+      .send({ login: 'anna.lib', password: PASSWORD });
+
+    expect(res.status).toBe(200);
+    expect(setCookies(res)[0]).not.toMatch(/; Secure/);
+  });
+
+  it('enables login in postgres mode of buildApp', async () => {
+    const { app, close } = buildApp({
+      storage: 'postgres',
+      databaseUrl: requireTestUrls().apiUrl,
+      port: 3000,
+      dataFile: 'unused.json',
+    });
+    try {
+      const res = await request(app).get('/api/books');
+
+      expect(res.status).toBe(401);
+      expect(res.body.code).toBe('UNAUTHENTICATED');
+    } finally {
+      await close();
+    }
   });
 });
