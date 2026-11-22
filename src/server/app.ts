@@ -10,6 +10,8 @@ import {
   isOverdue,
   returnBook,
 } from '../domain/index.js';
+import { ApiError } from './api-error.js';
+import { createAuthRouter, type AuthDeps } from './auth/auth.js';
 import { httpErrorFromDatabase } from './postgres/pg-errors.js';
 import { StorageError, type LibraryRepository } from './repository.js';
 import { SerialStorage, SYSTEM_LIBRARIAN, type RequestContext, type Storage } from './storage.js';
@@ -21,18 +23,9 @@ export type AppDeps = (
   // Часы и генератор id передаются снаружи, чтобы тесты были детерминированными
   now?: () => Date;
   newId?: () => string;
+  // Вход по логину и паролю (режим Postgres). Без него все запросы идут от системного библиотекаря
+  auth?: AuthDeps;
 };
-
-// Ожидаемый отказ API: HTTP-статус и код для клиента
-class ApiError extends Error {
-  constructor(
-    readonly status: number,
-    readonly code: string,
-    readonly details?: unknown,
-  ) {
-    super(code);
-  }
-}
 
 const text = z.string().trim().min(1);
 
@@ -61,10 +54,16 @@ function parse<T>(schema: z.ZodType<T>, value: unknown): T {
   return result.data;
 }
 
-// Контекст запроса. Входа пока нет (появится вместе с авторизацией), поэтому все запросы
-// идут от имени библиотекаря
-function contextOf(_res: express.Response): RequestContext {
-  return SYSTEM_LIBRARIAN;
+// Контекст запроса. Со входом его кладёт authenticate; без входа все запросы идут от имени
+// системного библиотекаря. При включённом входе отсутствие контекста — отказ, а не запасной
+// библиотекарь: пропущенная проверка не должна открывать доступ.
+function contextResolver(authEnabled: boolean) {
+  return (res: express.Response): RequestContext => {
+    if (!authEnabled) return SYSTEM_LIBRARIAN;
+    const ctx = res.locals.ctx as RequestContext | undefined;
+    if (!ctx) throw new ApiError(401, 'UNAUTHENTICATED');
+    return ctx;
+  };
 }
 
 export function createApp({
@@ -72,6 +71,7 @@ export function createApp({
   storage: injected,
   now = () => new Date(),
   newId = randomUUID,
+  auth,
 }: AppDeps) {
   const app = express();
   app.use(express.json());
@@ -80,10 +80,21 @@ export function createApp({
   // возврат читают, проверяют и сохраняют, без очереди последний экземпляр выдался бы дважды),
   // в режиме Postgres — транзакция на запрос
   const storage: Storage = injected ?? new SerialStorage(repo);
+  const contextOf = contextResolver(Boolean(auth));
 
   app.get('/api/health', (_req, res) => {
     res.json({ status: 'ok' });
   });
+
+  if (auth) {
+    // Вход открыт всем; всё, что подключено ниже, проходит через authenticate
+    app.use(createAuthRouter(auth, storage));
+  } else {
+    // Режим без входа: профиль системного библиотекаря, маршрутов входа и выхода нет
+    app.get('/api/auth/me', (_req, res) => {
+      res.json({ login: null, role: 'librarian', readerId: null, readerName: null });
+    });
+  }
 
   app.get('/api/books', async (_req, res) => {
     const books = await storage.run(contextOf(res), async (repo) => {
