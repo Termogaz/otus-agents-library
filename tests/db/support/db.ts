@@ -2,6 +2,8 @@ import type express from 'express';
 import pg from 'pg';
 import request from 'supertest';
 import { hashPassword } from '../../../src/server/auth/password.js';
+import { withRequestContext } from '../../../src/server/postgres/postgres-storage.js';
+import type { RequestContext } from '../../../src/server/storage.js';
 
 const HINT =
   'test:db: задайте TEST_DATABASE_URL и TEST_MIGRATION_DATABASE_URL и запустите npm run db:up (README)';
@@ -53,17 +55,35 @@ export async function resetData(owner: pg.Pool): Promise<void> {
   await owner.query('truncate table books, readers, loans, users, sessions cascade');
 }
 
-// Фикстуры идут через роль приложения с ролью библиотекаря: политики RLS действуют и в тестах
-export async function asLibrarian<T>(
+// Запрос в контексте пользователя: ровно так же, как это делает сервер (GUC транзакции).
+// Политики RLS действуют и в тестах, потому что соединение идёт ролью library_api.
+export function asContext<T>(
+  api: pg.Pool,
+  ctx: RequestContext,
+  fn: (client: pg.PoolClient) => Promise<T>,
+): Promise<T> {
+  return withRequestContext(api, ctx, fn);
+}
+
+// Идентификатор учётки библиотекаря в фикстурах (валидный UUID)
+export const TEST_LIBRARIAN_ID = '00000000-0000-4000-8000-000000000001';
+
+// Фикстуры идут через роль приложения с ролью библиотекаря
+export function asLibrarian<T>(
+  api: pg.Pool,
+  fn: (client: pg.PoolClient) => Promise<T>,
+): Promise<T> {
+  return asContext(api, { userId: TEST_LIBRARIAN_ID, role: 'librarian', readerId: null }, fn);
+}
+
+// Запрос без контекста: GUC не заданы, как при забытом set_config
+export async function asAnonymous<T>(
   api: pg.Pool,
   fn: (client: pg.PoolClient) => Promise<T>,
 ): Promise<T> {
   const client = await api.connect();
   try {
     await client.query('begin');
-    await client.query(
-      "select set_config('app.role', 'librarian', true), set_config('app.user_id', 'test-librarian', true)",
-    );
     const result = await fn(client);
     await client.query('commit');
     return result;
