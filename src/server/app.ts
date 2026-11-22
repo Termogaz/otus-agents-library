@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import express, { type ErrorRequestHandler } from 'express';
 import { z } from 'zod';
 import { availableCopies, checkoutBook, isOverdue, returnBook } from '../domain/index.js';
+import { httpErrorFromDatabase } from './postgres/pg-errors.js';
 import { StorageError, type LibraryRepository } from './repository.js';
 import { SerialStorage, SYSTEM_LIBRARIAN, type RequestContext, type Storage } from './storage.js';
 
@@ -147,6 +148,13 @@ export function createApp({
         return;
       }
     }
+    // Ошибка БД: клиенту только код из спеки, подробности не отдаются
+    const database = httpErrorFromDatabase(error);
+    if (database) {
+      res.status(database.status).json({ code: database.code });
+      return;
+    }
+    // В лог идёт полная ошибка (для БД — SQLSTATE и сообщение), клиенту — только код
     console.error(error);
     // Сбой хранилища — вина сервера, поэтому 500, но с кодом: по нему видно, что чинить файл данных
     const code = error instanceof StorageError ? error.code : 'INTERNAL_ERROR';
