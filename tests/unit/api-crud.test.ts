@@ -181,6 +181,32 @@ describe('deletion (json)', () => {
   });
 });
 
+describe('input limits (json)', () => {
+  it('rejects a NUL character, an over-long text and too many copies', async () => {
+    const nul = await request(app)
+      .post('/api/books')
+      .send({ ...bookInput, title: 'a\u0000b', copies: 1 });
+    const long = await request(app)
+      .post('/api/readers')
+      .send({ name: 'А'.repeat(501), contact: 'a@example.com' });
+    const copies = await request(app)
+      .post('/api/books')
+      .send({ ...bookInput, copies: 3_000_000_000 });
+
+    expect([nul.status, nul.body.code]).toEqual([400, 'VALIDATION_ERROR']);
+    expect([long.status, long.body.code]).toEqual([400, 'VALIDATION_ERROR']);
+    expect([copies.status, copies.body.code]).toEqual([400, 'VALIDATION_ERROR']);
+  });
+
+  it('accepts the largest allowed copies and text length', async () => {
+    const res = await request(app)
+      .post('/api/books')
+      .send({ ...bookInput, title: 'Т'.repeat(500), copies: 10_000 });
+
+    expect(res.status).toBe(201);
+  });
+});
+
 describe('spec coverage (json)', () => {
   it('implements every books and readers route of the spec', async () => {
     const routes = loadApiSpec().filter(

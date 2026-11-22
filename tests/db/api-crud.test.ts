@@ -288,6 +288,38 @@ describe('readers by id', () => {
   });
 });
 
+describe('input limits', () => {
+  // Без проверки на границе Postgres отвечает 22021 и 22003, и клиент получал 500 INTERNAL_ERROR
+  it('rejects a NUL character in book and reader fields with 400 VALIDATION_ERROR', async () => {
+    const app = makeApp();
+
+    const book = await request(app)
+      .post('/api/books')
+      .send({ title: 'a\u0000b', author: 'Автор', isbn: 'isbn-1', copies: 1 });
+    const reader = await request(app)
+      .post('/api/readers')
+      .send({ name: 'Анна', contact: 'a\u0000@example.com' });
+    const byId = await request(app).get('/api/books/%00');
+
+    expect([book.status, book.body.code]).toEqual([400, 'VALIDATION_ERROR']);
+    expect([reader.status, reader.body.code]).toEqual([400, 'VALIDATION_ERROR']);
+    expect([byId.status, byId.body.code]).toEqual([400, 'VALIDATION_ERROR']);
+  });
+
+  it('rejects copies above the integer column range with 400 VALIDATION_ERROR', async () => {
+    await insertBook('b1');
+    const app = makeApp();
+
+    const created = await request(app)
+      .post('/api/books')
+      .send({ title: 'Книга', author: 'Автор', isbn: 'isbn-2', copies: 3_000_000_000 });
+    const patched = await request(app).patch('/api/books/b1').send({ copies: 3_000_000_000 });
+
+    expect([created.status, created.body.code]).toEqual([400, 'VALIDATION_ERROR']);
+    expect([patched.status, patched.body.code]).toEqual([400, 'VALIDATION_ERROR']);
+  });
+});
+
 describe('spec coverage', () => {
   it('implements every books and readers route of the spec', async () => {
     const routes = loadApiSpec().filter(

@@ -3,6 +3,7 @@ import express, { type RequestHandler } from 'express';
 import pg from 'pg';
 import { z } from 'zod';
 import { ApiError } from '../api-error.js';
+import { fieldText } from '../input-limits.js';
 import { withRequestContext } from '../postgres/postgres-storage.js';
 import type { RequestContext, Storage } from '../storage.js';
 import { LoginLimiter } from './login-limiter.js';
@@ -141,7 +142,7 @@ export const userInput = z
     login: loginField,
     password: passwordField,
     role: z.enum(['librarian', 'reader']),
-    readerId: z.string().trim().min(1).optional(),
+    readerId: fieldText.optional(),
   })
   .refine((user) => (user.role === 'reader') === (user.readerId !== undefined), {
     path: ['readerId'],

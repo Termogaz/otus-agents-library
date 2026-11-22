@@ -43,6 +43,14 @@ describe('httpErrorFromDatabase', () => {
     });
   });
 
+  it('maps data exceptions from client values to 400 VALIDATION_ERROR', () => {
+    const expected = { status: 400, code: 'VALIDATION_ERROR' };
+    // 22021: NUL или неверная кодировка, 22P05: непереводимый символ, 22003: число вне диапазона
+    expect(httpErrorFromDatabase(databaseError('22021'))).toEqual(expected);
+    expect(httpErrorFromDatabase(databaseError('22P05'))).toEqual(expected);
+    expect(httpErrorFromDatabase(databaseError('22003'))).toEqual(expected);
+  });
+
   it('maps refused connection to 503 DB_UNAVAILABLE', () => {
     const expected = { status: 503, code: 'DB_UNAVAILABLE' };
     expect(httpErrorFromDatabase(systemError('ECONNREFUSED'))).toEqual(expected);

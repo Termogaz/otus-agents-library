@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { z } from 'zod';
 import { ApiError } from '../api-error.js';
+import { copiesField, fieldText, MAX_TEXT_LENGTH, withoutNul } from '../input-limits.js';
 import type { AiQuota } from '../postgres/ai-quota.js';
 import type { RequestContext } from '../storage.js';
 
@@ -11,10 +12,11 @@ export const bookDraftInput = z.object({ text: z.string().trim().min(1).max(2000
 
 // Ответ модели — недоверенные данные: проверяется той же строгостью, что и ввод книги
 const draftSchema = z.object({
-  title: z.string().trim().min(1),
-  author: z.string().trim().min(1),
-  isbn: z.string(),
-  copies: z.number().int().min(1),
+  title: fieldText,
+  author: fieldText,
+  // ISBN модель может не знать: пустая строка допустима
+  isbn: z.string().max(MAX_TEXT_LENGTH).refine(withoutNul),
+  copies: copiesField,
 });
 export type BookDraft = z.infer<typeof draftSchema>;
 

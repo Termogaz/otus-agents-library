@@ -14,6 +14,7 @@ import { bookDraftHandler, type AiDeps } from './ai/book-draft.js';
 import { ApiError } from './api-error.js';
 import { accessGuard, createAuthRouter, type AuthDeps } from './auth/auth.js';
 import { corsMiddleware } from './cors.js';
+import { copiesField, fieldText } from './input-limits.js';
 import { originCheck } from './origin-check.js';
 import { httpErrorFromDatabase } from './postgres/pg-errors.js';
 import { StorageError, type LibraryRepository } from './repository.js';
@@ -34,13 +35,14 @@ export type AppDeps = (
   ai?: AiDeps;
 };
 
-const text = z.string().trim().min(1);
+// Пределы полей общие с черновиком AI (input-limits.ts)
+const text = fieldText;
 
 const bookInput = z.object({
   title: text,
   author: text,
   isbn: text,
-  copies: z.number().int().min(1),
+  copies: copiesField,
 });
 const readerInput = z.object({ name: text, contact: text });
 // Частичное изменение: хотя бы одно поле; лишние поля схема отбрасывает, id берётся из пути

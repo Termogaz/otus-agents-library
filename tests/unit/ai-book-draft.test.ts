@@ -114,6 +114,22 @@ describe('model answer handling', () => {
   });
 });
 
+describe('draft limits', () => {
+  it.each([
+    ['copies above the limit', { ...DRAFT, copies: 3_000_000_000 }],
+    ['NUL in title', { ...DRAFT, title: 'a\u0000b' }],
+    ['over-long author', { ...DRAFT, author: 'А'.repeat(501) }],
+  ])('rejects a draft the book form would refuse: %s', async (_name, content) => {
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    fetchImpl.mockResolvedValue(answer(JSON.stringify(content)));
+
+    const res = await draft();
+
+    expect(res.status).toBe(502);
+    expect(res.body.code).toBe('AI_BAD_RESPONSE');
+  });
+});
+
 describe('upstream failures', () => {
   it.each([401, 402, 429, 500])('maps upstream %i to AI_UPSTREAM_ERROR', async (status) => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
