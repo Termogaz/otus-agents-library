@@ -157,6 +157,27 @@ export function createApp({
     res.status(201).json(reader);
   });
 
+  app.get('/api/readers/:id', async (req, res) => {
+    const { id } = parse(idParams, req.params);
+    const reader = await storage.run(contextOf(res), (repo) => repo.getReader(id));
+    if (!reader) throw new ApiError(404, 'READER_NOT_FOUND');
+    res.json(reader);
+  });
+
+  app.patch('/api/readers/:id', async (req, res) => {
+    const { id } = parse(idParams, req.params);
+    const patch = parse(readerPatch, req.body);
+    const reader = await storage.run(contextOf(res), async (repo) => {
+      const existing = await repo.getReader(id, { forUpdate: true });
+      if (!existing) throw new ApiError(404, 'READER_NOT_FOUND');
+
+      const updated = { ...existing, ...patch };
+      await repo.saveReader(updated);
+      return updated;
+    });
+    res.json(reader);
+  });
+
   app.delete('/api/readers/:id', async (req, res) => {
     const { id } = parse(idParams, req.params);
     await storage.run(contextOf(res), async (repo) => {
