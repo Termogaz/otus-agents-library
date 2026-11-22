@@ -128,7 +128,7 @@ describe('row level security for a reader', () => {
 describe('row level security without a role', () => {
   it('shows no rows without a role', async () => {
     for (const table of ['books', 'readers', 'loans', 'users']) {
-      const { rows } = await asAnonymous(api, (c) => c.query(`select * from ${table}`));
+      const { rows } = await asAnonymous(api, (c) => c.query(`select id from ${table}`));
       expect(rows, table).toEqual([]);
     }
   });
