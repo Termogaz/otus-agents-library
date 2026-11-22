@@ -29,15 +29,21 @@ test.describe('anonymous visitor', () => {
   });
 });
 
-test('shows who is logged in and logs out', async ({ page }) => {
-  await page.goto('/v2/');
+// Выход гасит сессию на сервере, поэтому тест входит своей учёткой, а не берёт общий storageState
+test.describe('own session', () => {
+  test.use({ storageState: ANONYMOUS });
 
-  await expect(page.getByText(accounts.librarian.login)).toBeVisible();
-  await expect(page.getByText('Библиотекарь', { exact: true })).toBeVisible();
+  test('shows who is logged in and logs out', async ({ page }) => {
+    await page.goto('/login/?next=/v2/');
+    await fillLogin(page, accounts.librarian.password);
 
-  await page.getByRole('button', { name: 'Выйти' }).click();
-  await expect(page).toHaveURL(/\/login\/$/);
+    await expect(page.getByText(accounts.librarian.login)).toBeVisible();
+    await expect(page.getByText('Библиотекарь', { exact: true })).toBeVisible();
 
-  await page.goto('/v2/');
-  await expect(page).toHaveURL(/\/login\/\?next=%2Fv2%2F$/);
+    await page.getByRole('button', { name: 'Выйти' }).click();
+    await expect(page).toHaveURL(/\/login\/$/);
+
+    await page.goto('/v2/');
+    await expect(page).toHaveURL(/\/login\/\?next=%2Fv2%2F$/);
+  });
 });

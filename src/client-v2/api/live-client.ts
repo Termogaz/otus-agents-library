@@ -53,3 +53,27 @@ export function safeNext(raw: string | null): string {
   }
   return raw;
 }
+
+// Адрес страницы входа с возвратом на next (D-12)
+export function loginUrl(next: string): string {
+  return `/login/?next=${encodeURIComponent(next)}`;
+}
+
+type AsyncMethods = Record<string, (...args: never[]) => Promise<unknown>>;
+
+// Оборачивает клиент API: результат и ошибка пробрасываются как есть, а на UNAUTHENTICATED
+// дополнительно вызывается onUnauthenticated (переход на вход, T-08-36)
+export function guardSession<T extends AsyncMethods>(client: T, onUnauthenticated: () => void): T {
+  const guarded: AsyncMethods = {};
+  for (const [name, method] of Object.entries(client)) {
+    guarded[name] = async (...args: never[]) => {
+      try {
+        return await method(...args);
+      } catch (error) {
+        if (error instanceof ApiError && error.code === 'UNAUTHENTICATED') onUnauthenticated();
+        throw error;
+      }
+    };
+  }
+  return guarded as T;
+}
