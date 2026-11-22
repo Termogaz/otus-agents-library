@@ -1,4 +1,4 @@
-import { ApiError } from '../../client/api';
+import { ApiError, errorMessage } from '../../client/api';
 
 // Вход и сессия: клиент живого API (D-12). Cookie сессии httpOnly, браузер шлёт её сам.
 export type Me = {
@@ -76,4 +76,39 @@ export function guardSession<T extends AsyncMethods>(client: T, onUnauthenticate
     };
   }
   return guarded as T;
+}
+
+// Тексты кодов, которых нет в карте старого клиента (src/client заморожен, D-12).
+// Совпадают с колонкой «Текст в UI» docs/api-spec.md; тест live-client.test.ts сверяет их со спекой.
+const LIVE_MESSAGES: Record<string, string> = {
+  INVALID_JSON: 'Запрос отправлен в неверном формате',
+  UNAUTHENTICATED: 'Войдите, чтобы продолжить',
+  INVALID_CREDENTIALS: 'Неверный логин или пароль',
+  FORBIDDEN: 'У вас нет прав на это действие',
+  ORIGIN_NOT_ALLOWED: 'Запрос отклонён: неизвестный источник',
+  NOT_FOUND: 'Страница или адрес не найдены',
+  BOOK_HAS_ACTIVE_LOANS: 'Книгу нельзя удалить: она на руках у читателя',
+  BOOK_HAS_LOAN_HISTORY: 'Книгу нельзя удалить: по ней есть история выдач',
+  READER_HAS_ACTIVE_LOANS: 'Читателя нельзя удалить: у него есть книги на руках',
+  READER_HAS_LOAN_HISTORY: 'Читателя нельзя удалить: у него есть история выдач',
+  COPIES_BELOW_ACTIVE_LOANS: 'Экземпляров не может быть меньше, чем выдано',
+  LOGIN_TAKEN: 'Этот логин уже занят',
+  READER_ALREADY_HAS_ACCOUNT: 'У этого читателя уже есть учётная запись',
+  CONFLICT: 'Данные изменились, обновите страницу и повторите',
+  TOO_MANY_ATTEMPTS: 'Слишком много попыток входа, подождите и повторите',
+  AI_LIMIT_REACHED: 'Дневной лимит подсказок AI исчерпан',
+  STORAGE_ERROR: 'Не удалось прочитать или записать данные',
+  AI_UPSTREAM_ERROR: 'Сервис подсказок недоступен, заполните поля вручную',
+  AI_BAD_RESPONSE: 'AI вернул неподходящий ответ, заполните поля вручную',
+  DB_BUSY: 'Система занята, повторите через несколько секунд',
+  DB_UNAVAILABLE: 'База данных недоступна, повторите позже',
+  AI_DISABLED: 'Подсказки AI отключены',
+  AI_TIMEOUT: 'Сервис подсказок не ответил вовремя',
+};
+
+// Текст для пользователя только по коду: details и сообщения сервера в интерфейс не попадают (T-08-35).
+// Коды старого клиента и сетевой сбой — его тексты, остальное — карта LIVE_MESSAGES.
+export function liveErrorMessage(error: unknown): string {
+  if (error instanceof ApiError) return LIVE_MESSAGES[error.code] ?? errorMessage(error);
+  return errorMessage(error);
 }

@@ -1,6 +1,6 @@
 import { useEffect, useId, useState } from 'react';
 import { LazyMotion, MotionConfig, domAnimation } from 'motion/react';
-import { errorMessage, type api as ApiClient } from '../../client/api';
+import type { api as ApiClient } from '../../client/api';
 import type { BookView, LoanView } from '../../client/api';
 import { ListState, type LoadState } from '@/components/ListState';
 import { StatusMessage, type Outcome } from '@/components/StatusMessage';
@@ -15,7 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import type { Me } from '../api/live-client';
+import { liveErrorMessage, type Me } from '../api/live-client';
 import { formatDate, loanStatus, orderLoans } from '../loan-view';
 
 type Props = {
@@ -42,7 +42,7 @@ export function ReaderHome({ api }: Props) {
       })
       .catch((e: unknown) => {
         setLoad('failed');
-        setOutcome({ id: 1, kind: 'error', place: 'page', text: errorMessage(e) });
+        setOutcome({ id: 1, kind: 'error', place: 'page', text: liveErrorMessage(e) });
       });
   }, [api]);
 

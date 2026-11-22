@@ -26,9 +26,11 @@ type Props = {
   mode: 'server' | 'demo';
   // Текущий вариант: его ссылка в подвале помечается как текущая
   variant: Variant;
+  // Текст отказа для пользователя; по умолчанию — тексты старого клиента
+  describeError?: (e: unknown) => string;
 };
 
-export function App({ api, mode, variant }: Props) {
+export function App({ api, mode, variant, describeError = errorMessage }: Props) {
   const [books, setBooks] = useState<BookView[]>([]);
   const [readers, setReaders] = useState<ReaderView[]>([]);
   const [loans, setLoans] = useState<LoanView[]>([]);
@@ -61,9 +63,9 @@ export function App({ api, mode, variant }: Props) {
       .catch((e: unknown) => {
         setLoad('failed');
         setApiStatus(mode === 'demo' ? 'демо-данные' : 'недоступен');
-        showOutcome('error', 'page', errorMessage(e));
+        showOutcome('error', 'page', describeError(e));
       });
-  }, [refresh, mode, showOutcome]);
+  }, [refresh, mode, showOutcome, describeError]);
 
   // Действие пользователя. Старый итог виден до конца запроса, новый заменяет его целиком (FR-2).
   // Действие и обновление списков в разных try: сбой чтения после успешной записи — не отказ (FR-5)
@@ -76,7 +78,7 @@ export function App({ api, mode, variant }: Props) {
     try {
       result = await action();
     } catch (e) {
-      showOutcome('error', place, errorMessage(e));
+      showOutcome('error', place, describeError(e));
       return false;
     }
     try {
