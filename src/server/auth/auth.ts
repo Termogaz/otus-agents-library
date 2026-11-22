@@ -221,16 +221,26 @@ export function createAuthRouter(
 
   router.post('/api/auth/login', async (req, res) => {
     const { login, password } = parse(loginInput, req.body);
-    // Блокировка проверяется до пароля: перебор не получает ответа о верном пароле
-    if (limiter.isBlocked(login)) throw new ApiError(429, 'TOO_MANY_ATTEMPTS');
-    const user = await store.findUserForLogin(login);
-    // Для неизвестного логина считается тот же scrypt: ответ и время не выдают, что логина нет
-    const ok = await verifyPassword(password, user?.passwordHash ?? DUMMY_HASH);
-    if (!user || !ok) {
-      limiter.recordFailure(login);
-      throw new ApiError(401, 'INVALID_CREDENTIALS');
+    // Адрес клиента с учётом TRUST_PROXY: счётчик ведётся по паре логин+адрес
+    const address = req.ip;
+    // Попытка резервируется синхронно, до медленного scrypt, и сразу считается неудачей:
+    // параллельные запросы не проскакивают мимо лимита, пока идёт проверка пароля. Блокировка
+    // проверяется до пароля: перебор не получает ответа о верном пароле
+    if (!limiter.tryBegin(login, address)) throw new ApiError(429, 'TOO_MANY_ATTEMPTS');
+    let user: LoginUser | undefined;
+    let ok: boolean;
+    try {
+      user = await store.findUserForLogin(login);
+      // Для неизвестного логина считается тот же scrypt: ответ и время не выдают, что логина нет
+      ok = await verifyPassword(password, user?.passwordHash ?? DUMMY_HASH);
+    } catch (error) {
+      // Сбой БД — не попытка подбора: резерв снимается
+      limiter.release(login, address);
+      throw error;
     }
-    limiter.recordSuccess(login);
+    // Неверный пароль: резерв остаётся учтённой неудачей
+    if (!user || !ok) throw new ApiError(401, 'INVALID_CREDENTIALS');
+    limiter.recordSuccess(login, address);
 
     // Новый токен на каждый вход: сессию нельзя навязать заранее (фиксация сессии)
     const token = newSessionToken();
