@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import express, { type ErrorRequestHandler } from 'express';
 import { z } from 'zod';
-import { availableCopies, checkoutBook, isOverdue, returnBook } from '../domain/index.js';
+import { availableCopiesFromCount, checkoutBook, isOverdue, returnBook } from '../domain/index.js';
 import { httpErrorFromDatabase } from './postgres/pg-errors.js';
 import { StorageError, type LibraryRepository } from './repository.js';
 import { SerialStorage, SYSTEM_LIBRARIAN, type RequestContext, type Storage } from './storage.js';
@@ -73,8 +73,11 @@ export function createApp({
 
   app.get('/api/books', async (_req, res) => {
     const books = await storage.run(contextOf(res), async (repo) => {
-      const [books, loans] = await Promise.all([repo.listBooks(), repo.listLoans()]);
-      return books.map((book) => ({ ...book, available: availableCopies(book, loans) }));
+      const [books, counts] = await Promise.all([repo.listBooks(), repo.activeLoanCounts()]);
+      return books.map((book) => ({
+        ...book,
+        available: availableCopiesFromCount(book.copies, counts.get(book.id) ?? 0),
+      }));
     });
     res.json(books);
   });

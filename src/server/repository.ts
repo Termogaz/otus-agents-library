@@ -20,6 +20,9 @@ export interface LibraryRepository {
   listLoans(filter?: LoanFilter): Promise<Loan[]>;
   getLoan(id: string, options?: ReadOptions): Promise<Loan | undefined>;
   saveLoan(loan: Loan): Promise<void>;
+
+  // Число активных (невозвращённых) выдач по id книги; книги без выдач в карте нет
+  activeLoanCounts(): Promise<Map<string, number>>;
 }
 
 export type StorageErrorCode = 'INVALID_STORAGE_FILE' | 'UNSUPPORTED_STORAGE_VERSION';

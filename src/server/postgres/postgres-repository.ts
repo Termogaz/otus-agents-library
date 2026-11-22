@@ -117,6 +117,14 @@ export class PostgresRepository implements LibraryRepository {
     return rows[0] ? toLoan(rows[0]) : undefined;
   }
 
+  async activeLoanCounts(): Promise<Map<string, number>> {
+    // Функция SECURITY DEFINER: считает все выдачи независимо от политик строк
+    const { rows } = await this.client.query<{ book_id: string; active: number }>(
+      'select book_id, active from active_loan_counts()',
+    );
+    return new Map(rows.map((row) => [row.book_id, row.active]));
+  }
+
   async saveLoan(loan: Loan): Promise<void> {
     await this.client.query(
       `insert into loans (${LOAN_COLUMNS}) values ($1, $2, $3, $4, $5, $6)

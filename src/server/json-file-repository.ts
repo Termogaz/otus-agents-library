@@ -88,6 +88,16 @@ export class JsonFileRepository implements LibraryRepository {
     return this.update((s) => ({ ...s, loans: upsert(s.loans, loan) }));
   }
 
+  activeLoanCounts(): Promise<Map<string, number>> {
+    return this.read((s) => {
+      const counts = new Map<string, number>();
+      for (const l of s.loans) {
+        if (l.returnedAt === null) counts.set(l.bookId, (counts.get(l.bookId) ?? 0) + 1);
+      }
+      return counts;
+    });
+  }
+
   private read<T>(pick: (store: Store) => T): Promise<T> {
     return this.enqueue(async () => pick(await this.load()));
   }

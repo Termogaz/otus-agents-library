@@ -49,7 +49,13 @@ export function checkoutBook({
 // и выдач больше, чем экземпляров, свободных 0, а не минус
 export function availableCopies(book: Book, loans: readonly Loan[]): number {
   const issued = loans.filter((l) => l.bookId === book.id && l.returnedAt === null).length;
-  return Math.max(book.copies - issued, 0);
+  return availableCopiesFromCount(book.copies, issued);
+}
+
+// То же правило по числу активных выдач. Нужно каталогу: читатель под RLS не видит чужих
+// выдач, поэтому хранилище отдаёт число, а не список
+export function availableCopiesFromCount(copies: number, active: number): number {
+  return Math.max(copies - active, 0);
 }
 
 export function returnBook({ loan, now }: { loan: Loan; now: Date }): LoanResult {
