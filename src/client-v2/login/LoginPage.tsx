@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label';
 const MESSAGES: Record<string, string> = {
   INVALID_CREDENTIALS: 'Неверный логин или пароль',
   TOO_MANY_ATTEMPTS: 'Слишком много попыток входа, подождите и повторите',
-  VALIDATION_ERROR: 'Проверьте поля: данные заполнены неверно',
+  VALIDATION_ERROR: 'Проверьте заполнение полей',
 };
 
 function failureText(error: unknown): string {
