@@ -259,6 +259,7 @@ describe('login protection', () => {
       dataFile: 'unused.json',
       corsAllowedOrigins: new Set(),
       trustProxy: 0,
+      ai: { model: 'deepseek-flash', dailyLimit: 20 },
     });
     try {
       const res = await request(app).get('/api/books');

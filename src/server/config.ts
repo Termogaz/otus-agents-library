@@ -11,6 +11,8 @@ export type AppConfig = {
   corsAllowedOrigins: ReadonlySet<string>;
   // Число доверенных прокси перед Express (0 — прокси нет); от него зависят req.secure и req.ip
   trustProxy: number;
+  // Настройки AI (D-14). Ключ только из окружения сервера; без него маршрут отвечает 503
+  ai: { apiKey?: string; model: string; dailyLimit: number };
 };
 
 // Список origin через запятую. Каждый элемент обязан быть ровно origin (схема, хост, порт):
@@ -49,6 +51,17 @@ const envSchema = z
     NODE_ENV: z.string().optional(),
     CORS_ALLOWED_ORIGINS: originList,
     TRUST_PROXY: z.coerce.number().int().min(0).default(0),
+    // Пустая строка или пробелы — ключа нет
+    DEEPSEEK_API_KEY: z
+      .string()
+      .optional()
+      .transform((value) => value?.trim() || undefined),
+    // Имя модели меняется без правки кода; пустое значение — модель по умолчанию
+    DEEPSEEK_MODEL: z
+      .string()
+      .optional()
+      .transform((value) => value?.trim() || 'deepseek-flash'),
+    AI_DAILY_LIMIT: z.coerce.number().int().min(1).max(1000).default(20),
   })
   .superRefine((env, ctx) => {
     if (env.STORAGE === 'postgres' && !env.DATABASE_URL) {
@@ -85,6 +98,11 @@ export function loadConfig(env: NodeJS.ProcessEnv): AppConfig {
     dataFile: data.LIBRARY_DATA_FILE,
     corsAllowedOrigins: data.CORS_ALLOWED_ORIGINS,
     trustProxy: data.TRUST_PROXY,
+    ai: {
+      ...(data.DEEPSEEK_API_KEY === undefined ? {} : { apiKey: data.DEEPSEEK_API_KEY }),
+      model: data.DEEPSEEK_MODEL,
+      dailyLimit: data.AI_DAILY_LIMIT,
+    },
     ...(data.NODE_ENV === undefined ? {} : { nodeEnv: data.NODE_ENV }),
   };
 }

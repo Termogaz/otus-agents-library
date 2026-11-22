@@ -33,45 +33,71 @@ export type AiDeps = {
   timeoutMs?: number;
 };
 
+type ModelDeps = Pick<AiDeps, 'apiKey' | 'model' | 'fetchImpl' | 'timeoutMs'>;
+
 // Слово json в системном сообщении обязательно для режима json_object
 const SYSTEM_PROMPT =
   'Ты помощник библиотекаря. Из описания книги извлеки поля и верни только json вида ' +
   '{"title": строка, "author": строка, "isbn": строка, "copies": целое число не меньше 1}. ' +
   'Если isbn неизвестен, верни пустую строку; если число экземпляров не указано, верни 1.';
 
-export async function requestBookDraft(
-  text: string,
-  deps: Pick<AiDeps, 'apiKey' | 'model' | 'fetchImpl' | 'timeoutMs'>,
-): Promise<BookDraft> {
-  const res = await (deps.fetchImpl ?? fetch)(DEEPSEEK_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${deps.apiKey}` },
-    body: JSON.stringify({
-      model: deps.model,
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: text },
-      ],
-      response_format: { type: 'json_object' },
-      thinking: { type: 'disabled' },
-      max_tokens: 300,
-    }),
-    signal: AbortSignal.timeout(deps.timeoutMs ?? 15_000),
-  });
-  if (!res.ok) throw new ApiError(502, 'AI_UPSTREAM_ERROR');
+// В лог идёт только статус апстрима или имя ошибки: без ключа, текста пользователя и ответа
+// модели (D-15)
+function logFailure(detail: string): void {
+  console.error(`AI: ${detail}`);
+}
 
-  const body = completionSchema.safeParse(await res.json().catch(() => undefined));
+// Вызов модели вместе с чтением тела: таймаут действует на оба шага
+async function callModel(text: string, deps: ModelDeps): Promise<unknown> {
+  try {
+    const res = await (deps.fetchImpl ?? fetch)(DEEPSEEK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${deps.apiKey}` },
+      body: JSON.stringify({
+        model: deps.model,
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'user', content: text },
+        ],
+        response_format: { type: 'json_object' },
+        thinking: { type: 'disabled' },
+        max_tokens: 300,
+      }),
+      signal: AbortSignal.timeout(deps.timeoutMs ?? 15_000),
+    });
+    if (!res.ok) {
+      logFailure(`апстрим ответил ${res.status}`);
+      throw new ApiError(502, 'AI_UPSTREAM_ERROR');
+    }
+    return await res.json().catch(() => undefined);
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+    const name = error instanceof Error ? error.name : 'неизвестная ошибка';
+    logFailure(`сбой вызова (${name})`);
+    // AbortSignal.timeout отклоняет вызов с причиной TimeoutError
+    if (name === 'TimeoutError') throw new ApiError(504, 'AI_TIMEOUT');
+    throw new ApiError(502, 'AI_UPSTREAM_ERROR');
+  }
+}
+
+function badResponse(): ApiError {
+  logFailure('ответ модели не прошёл проверку');
+  return new ApiError(502, 'AI_BAD_RESPONSE');
+}
+
+export async function requestBookDraft(text: string, deps: ModelDeps): Promise<BookDraft> {
+  const body = completionSchema.safeParse(await callModel(text, deps));
   const content = body.success ? body.data.choices[0]?.message.content?.trim() : undefined;
-  if (!content) throw new ApiError(502, 'AI_BAD_RESPONSE');
+  if (!content) throw badResponse();
 
   let raw: unknown;
   try {
     raw = JSON.parse(content);
   } catch {
-    throw new ApiError(502, 'AI_BAD_RESPONSE');
+    throw badResponse();
   }
   const draft = draftSchema.safeParse(raw);
-  if (!draft.success) throw new ApiError(502, 'AI_BAD_RESPONSE');
+  if (!draft.success) throw badResponse();
   return draft.data;
 }
 

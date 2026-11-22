@@ -5,6 +5,7 @@ import { PgAuthStore } from './auth/auth.js';
 import { LoginLimiter } from './auth/login-limiter.js';
 import type { AppConfig } from './config.js';
 import { JsonFileRepository } from './json-file-repository.js';
+import { PgAiQuota } from './postgres/ai-quota.js';
 import { PostgresStorage } from './postgres/postgres-storage.js';
 
 // Собирает приложение по конфигу: хранилище выбирается по STORAGE.
@@ -26,6 +27,17 @@ export function buildApp(config: AppConfig): {
       storage: new PostgresStorage(pool),
       auth: { store: new PgAuthStore(pool), limiter: new LoginLimiter() },
       cors,
+      // Без ключа ai не передаётся: маршрут отвечает 503 AI_DISABLED
+      ...(config.ai.apiKey
+        ? {
+            ai: {
+              apiKey: config.ai.apiKey,
+              model: config.ai.model,
+              dailyLimit: config.ai.dailyLimit,
+              quota: new PgAiQuota(pool),
+            },
+          }
+        : {}),
     });
     trustProxies(app, config);
     return { app, close: () => pool.end() };
