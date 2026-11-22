@@ -1,5 +1,10 @@
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import request from 'supertest';
 import { describe, expect, it } from 'vitest';
 import { loadConfig } from '../../src/server/config.js';
+import { buildApp } from '../../src/server/server.js';
 
 describe('loadConfig', () => {
   it('defaults to json storage on port 3000', () => {
@@ -51,5 +56,59 @@ describe('loadConfig', () => {
     expect(() => loadConfig({ STORAGE: 'mongo', DATABASE_URL: secret })).toThrow(
       expect.objectContaining({ message: expect.not.stringContaining('hunter2') }),
     );
+  });
+
+  it('parses CORS_ALLOWED_ORIGINS into a set of origins', () => {
+    const config = loadConfig({
+      CORS_ALLOWED_ORIGINS: ' https://a.example , http://localhost:5173,https://b.example:8443 ',
+    });
+
+    expect(config.corsAllowedOrigins).toEqual(
+      new Set(['https://a.example', 'http://localhost:5173', 'https://b.example:8443']),
+    );
+    expect(loadConfig({}).corsAllowedOrigins.size).toBe(0);
+    expect(loadConfig({ CORS_ALLOWED_ORIGINS: '' }).corsAllowedOrigins.size).toBe(0);
+  });
+
+  it('rejects an allowed origin with a path or a wildcard', () => {
+    expect(() => loadConfig({ CORS_ALLOWED_ORIGINS: '*' })).toThrow(/CORS_ALLOWED_ORIGINS/);
+    expect(() => loadConfig({ CORS_ALLOWED_ORIGINS: 'https://a.example/x' })).toThrow(
+      /CORS_ALLOWED_ORIGINS/,
+    );
+    expect(() => loadConfig({ CORS_ALLOWED_ORIGINS: 'https://a.example/' })).toThrow(
+      /CORS_ALLOWED_ORIGINS/,
+    );
+    expect(() => loadConfig({ CORS_ALLOWED_ORIGINS: 'https://ok.example,*' })).toThrow(
+      /CORS_ALLOWED_ORIGINS/,
+    );
+  });
+
+  it('defaults TRUST_PROXY to 0 and accepts a hop count', () => {
+    expect(loadConfig({}).trustProxy).toBe(0);
+    expect(loadConfig({ TRUST_PROXY: '1' }).trustProxy).toBe(1);
+    expect(loadConfig({ TRUST_PROXY: '2' }).trustProxy).toBe(2);
+    expect(() => loadConfig({ TRUST_PROXY: '-1' })).toThrow(/TRUST_PROXY/);
+    expect(() => loadConfig({ TRUST_PROXY: 'yes' })).toThrow(/TRUST_PROXY/);
+  });
+});
+
+describe('buildApp', () => {
+  it('applies TRUST_PROXY and CORS in buildApp', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'library-config-'));
+    try {
+      const config = loadConfig({
+        TRUST_PROXY: '1',
+        CORS_ALLOWED_ORIGINS: 'https://ok.example',
+        LIBRARY_DATA_FILE: join(dir, 'library.json'),
+      });
+      const { app, close } = buildApp(config);
+
+      expect(app.get('trust proxy')).toBe(1);
+      const res = await request(app).get('/api/health').set('Origin', 'https://ok.example');
+      expect(res.headers['access-control-allow-origin']).toBe('https://ok.example');
+      await close();
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
   });
 });
