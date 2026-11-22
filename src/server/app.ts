@@ -12,7 +12,7 @@ import {
 } from '../domain/index.js';
 import { bookDraftHandler, type AiDeps } from './ai/book-draft.js';
 import { ApiError } from './api-error.js';
-import { createAuthRouter, requireRole, type AuthDeps } from './auth/auth.js';
+import { accessGuard, createAuthRouter, type AuthDeps } from './auth/auth.js';
 import { corsMiddleware } from './cors.js';
 import { originCheck } from './origin-check.js';
 import { httpErrorFromDatabase } from './postgres/pg-errors.js';
@@ -95,13 +95,15 @@ export function createApp({
   // в режиме Postgres — транзакция на запрос
   const storage: Storage = injected ?? new SerialStorage(repo);
   const contextOf = contextResolver(Boolean(auth));
+  // Сессия (при включённом входе) и роль — на каждом маршруте данных отдельно
+  const access = accessGuard(auth?.store);
 
   app.get('/api/health', (_req, res) => {
     res.json({ status: 'ok' });
   });
 
   if (auth) {
-    // Вход открыт всем; всё, что подключено ниже, проходит через authenticate
+    // Вход открыт всем; остальные маршруты входа проверяют сессию сами
     app.use(createAuthRouter(auth, storage));
   } else {
     // Режим без входа: профиль системного библиотекаря, маршрутов входа и выхода нет
@@ -110,7 +112,7 @@ export function createApp({
     });
   }
 
-  app.get('/api/books', requireRole('librarian', 'reader'), async (_req, res) => {
+  app.get('/api/books', ...access('librarian', 'reader'), async (_req, res) => {
     const books = await storage.run(contextOf(res), async (repo) => {
       const [books, counts] = await Promise.all([repo.listBooks(), repo.activeLoanCounts()]);
       return books.map((book) => ({
@@ -121,13 +123,13 @@ export function createApp({
     res.json(books);
   });
 
-  app.post('/api/books', requireRole('librarian'), async (req, res) => {
+  app.post('/api/books', ...access('librarian'), async (req, res) => {
     const book = { id: newId(), ...parse(bookInput, req.body) };
     await storage.run(contextOf(res), (repo) => repo.saveBook(book));
     res.status(201).json(book);
   });
 
-  app.get('/api/books/:id', requireRole('librarian', 'reader'), async (req, res) => {
+  app.get('/api/books/:id', ...access('librarian', 'reader'), async (req, res) => {
     const { id } = parse(idParams, req.params);
     const book = await storage.run(contextOf(res), async (repo) => {
       const found = await repo.getBook(id);
@@ -138,7 +140,7 @@ export function createApp({
     res.json(book);
   });
 
-  app.patch('/api/books/:id', requireRole('librarian'), async (req, res) => {
+  app.patch('/api/books/:id', ...access('librarian'), async (req, res) => {
     const { id } = parse(idParams, req.params);
     const patch = parse(bookPatch, req.body);
     const book = await storage.run(contextOf(res), async (repo) => {
@@ -157,7 +159,7 @@ export function createApp({
     res.json(book);
   });
 
-  app.delete('/api/books/:id', requireRole('librarian'), async (req, res) => {
+  app.delete('/api/books/:id', ...access('librarian'), async (req, res) => {
     const { id } = parse(idParams, req.params);
     await storage.run(contextOf(res), async (repo) => {
       // Книга блокируется первой, как при выдаче
@@ -172,24 +174,24 @@ export function createApp({
     res.status(204).end();
   });
 
-  app.get('/api/readers', requireRole('librarian'), async (_req, res) => {
+  app.get('/api/readers', ...access('librarian'), async (_req, res) => {
     res.json(await storage.run(contextOf(res), (repo) => repo.listReaders()));
   });
 
-  app.post('/api/readers', requireRole('librarian'), async (req, res) => {
+  app.post('/api/readers', ...access('librarian'), async (req, res) => {
     const reader = { id: newId(), ...parse(readerInput, req.body) };
     await storage.run(contextOf(res), (repo) => repo.saveReader(reader));
     res.status(201).json(reader);
   });
 
-  app.get('/api/readers/:id', requireRole('librarian'), async (req, res) => {
+  app.get('/api/readers/:id', ...access('librarian'), async (req, res) => {
     const { id } = parse(idParams, req.params);
     const reader = await storage.run(contextOf(res), (repo) => repo.getReader(id));
     if (!reader) throw new ApiError(404, 'READER_NOT_FOUND');
     res.json(reader);
   });
 
-  app.patch('/api/readers/:id', requireRole('librarian'), async (req, res) => {
+  app.patch('/api/readers/:id', ...access('librarian'), async (req, res) => {
     const { id } = parse(idParams, req.params);
     const patch = parse(readerPatch, req.body);
     const reader = await storage.run(contextOf(res), async (repo) => {
@@ -203,7 +205,7 @@ export function createApp({
     res.json(reader);
   });
 
-  app.delete('/api/readers/:id', requireRole('librarian'), async (req, res) => {
+  app.delete('/api/readers/:id', ...access('librarian'), async (req, res) => {
     const { id } = parse(idParams, req.params);
     await storage.run(contextOf(res), async (repo) => {
       const existing = await repo.getReader(id, { forUpdate: true });
@@ -217,14 +219,14 @@ export function createApp({
     res.status(204).end();
   });
 
-  app.get('/api/loans', requireRole('librarian', 'reader'), async (req, res) => {
+  app.get('/api/loans', ...access('librarian', 'reader'), async (req, res) => {
     const filter = parse(loanQuery, req.query);
     const loans = await storage.run(contextOf(res), (repo) => repo.listLoans(filter));
     const at = now();
     res.json(loans.map((loan) => ({ ...loan, overdue: isOverdue(loan, at) })));
   });
 
-  app.post('/api/loans', requireRole('librarian'), async (req, res) => {
+  app.post('/api/loans', ...access('librarian'), async (req, res) => {
     const { bookId, readerId } = parse(loanInput, req.body);
     const loan = await storage.run(contextOf(res), async (repo) => {
       // Строки блокируются строго по очереди: сначала книга, потом читатель. Один порядок у
@@ -251,7 +253,7 @@ export function createApp({
     res.status(201).json(loan);
   });
 
-  app.post('/api/loans/:id/return', requireRole('librarian'), async (req, res) => {
+  app.post('/api/loans/:id/return', ...access('librarian'), async (req, res) => {
     const { id } = parse(idParams, req.params);
     const loan = await storage.run(contextOf(res), async (repo) => {
       const existing = await repo.getLoan(id, { forUpdate: true });
@@ -269,7 +271,7 @@ export function createApp({
   // Черновик книги от AI: не сохраняется, библиотекарь правит форму и сохраняет сам (D-14)
   app.post(
     '/api/ai/book-draft',
-    requireRole('librarian'),
+    ...access('librarian'),
     ai
       ? bookDraftHandler(ai, contextOf)
       : () => {

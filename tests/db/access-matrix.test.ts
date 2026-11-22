@@ -150,6 +150,15 @@ describe('access matrix from docs/api-spec.md', () => {
     expect(routes.length + rest.length).toBe(spec.length);
   });
 
+  it('answers 404 NOT_FOUND to anonymous for an unknown api path', async () => {
+    for (const method of ['get', 'post'] as const) {
+      const res = await request(app)[method]('/api/no-such-route');
+      expect(res.status, method).toBe(404);
+      expect(res.headers['content-type'], method).toMatch(/application\/json/);
+      expect(res.body, method).toMatchObject({ code: 'NOT_FOUND' });
+    }
+  });
+
   it('answers 404 NOT_FOUND in JSON for an unknown api path', async () => {
     const res = await librarian.get('/api/no-such-route');
     expect(res.status).toBe(404);

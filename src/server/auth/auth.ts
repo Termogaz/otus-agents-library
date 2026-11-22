@@ -207,17 +207,24 @@ export function requireRole(...roles: UserRole[]): RequestHandler {
   };
 }
 
+// Сессия и роль для маршрута: authenticate ставится на каждый маршрут, а не на весь роутер.
+// Иначе анонимный запрос к неизвестному пути под /api получал бы 401 вместо 404 NOT_FOUND.
+// Без store (режим JSON без входа) остаётся только проверка роли.
+export function accessGuard(store: AuthStore | undefined) {
+  const auth: RequestHandler[] = store ? [authenticate(store)] : [];
+  return (...roles: UserRole[]): RequestHandler[] => [...auth, requireRole(...roles)];
+}
+
 const cookieAttributes = (secure: boolean) =>
   ({ httpOnly: true, sameSite: 'lax', secure, path: '/' }) as const;
 
-// Маршруты входа. Порядок важен: вход открыт для всех, всё после router.use(authenticate)
-// требует сессии. Роутер подключается в app.ts сразу после /api/health: запрос к любому
-// маршруту ниже по цепочке сначала проходит через authenticate.
+// Маршруты входа. Вход открыт для всех, остальные маршруты требуют сессии через accessGuard.
 export function createAuthRouter(
   { store, limiter = new LoginLimiter(), now = () => new Date() }: AuthDeps,
   storage: Storage,
 ) {
   const router = express.Router();
+  const access = accessGuard(store);
 
   router.post('/api/auth/login', async (req, res) => {
     const { login, password } = parse(loginInput, req.body);
@@ -260,22 +267,20 @@ export function createAuthRouter(
     res.json(profile);
   });
 
-  router.use(authenticate(store));
-
-  router.post('/api/auth/logout', requireRole('librarian', 'reader'), async (req, res) => {
+  router.post('/api/auth/logout', ...access('librarian', 'reader'), async (req, res) => {
     await store.deleteSession(res.locals.tokenHash as string);
     res.clearCookie(SESSION_COOKIE, cookieAttributes(req.secure));
     res.status(204).end();
   });
 
   // Самостоятельной регистрации нет: учётки заводит только библиотекарь
-  router.post('/api/users', requireRole('librarian'), async (req, res) => {
+  router.post('/api/users', ...access('librarian'), async (req, res) => {
     const ctx = res.locals.ctx as RequestContext;
     const user = await store.createUser(ctx, parse(userInput, req.body));
     res.status(201).json(user);
   });
 
-  router.get('/api/auth/me', requireRole('librarian', 'reader'), async (_req, res) => {
+  router.get('/api/auth/me', ...access('librarian', 'reader'), async (_req, res) => {
     const ctx = res.locals.ctx as RequestContext;
     res.json(
       await profileOf(
