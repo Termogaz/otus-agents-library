@@ -139,3 +139,144 @@ describe('concurrent checkout', () => {
     }
   });
 });
+
+describe('loan scenario on Postgres', () => {
+  const DAY_MS = 24 * 3600 * 1000;
+
+  // Часы можно двигать вперёд: так проверяется просрочка
+  function scenarioApp() {
+    const clock = { now: NOW };
+    let seq = 0;
+    const app = createApp({
+      storage: new PostgresStorage(api),
+      now: () => clock.now,
+      newId: () => `loan${++seq}`,
+    });
+    return { app, clock };
+  }
+
+  async function availableOf(app: ReturnType<typeof createApp>, bookId: string): Promise<number> {
+    const { body } = await request(app).get('/api/books');
+    return (body as { id: string; available: number }[]).find((b) => b.id === bookId)!.available;
+  }
+
+  it('issues a loan due in 14 days', async () => {
+    await insertBook('b1', 2);
+    await insertReader('r1');
+    const { app } = scenarioApp();
+
+    const res = await request(app).post('/api/loans').send({ bookId: 'b1', readerId: 'r1' });
+
+    expect(res.status).toBe(201);
+    expect(res.body).toMatchObject({
+      id: 'loan1',
+      bookId: 'b1',
+      readerId: 'r1',
+      issuedAt: NOW.toISOString(),
+      dueAt: new Date(NOW.getTime() + 14 * DAY_MS).toISOString(),
+      returnedAt: null,
+    });
+    expect(await availableOf(app, 'b1')).toBe(1);
+  });
+
+  it('rejects the fourth loan when reader reached the limit', async () => {
+    for (const id of ['b1', 'b2', 'b3', 'b4']) await insertBook(id, 1);
+    await insertReader('r1');
+    const { app } = scenarioApp();
+
+    for (const bookId of ['b1', 'b2', 'b3']) {
+      const ok = await request(app).post('/api/loans').send({ bookId, readerId: 'r1' });
+      expect(ok.status).toBe(201);
+    }
+    const res = await request(app).post('/api/loans').send({ bookId: 'b4', readerId: 'r1' });
+
+    expect(res.status).toBe(409);
+    expect(res.body.code).toBe('LOAN_LIMIT_REACHED');
+  });
+
+  it('rejects a loan when no free copies left', async () => {
+    await insertBook('b1', 1);
+    await insertReader('r1');
+    await insertReader('r2');
+    const { app } = scenarioApp();
+
+    await request(app).post('/api/loans').send({ bookId: 'b1', readerId: 'r1' });
+    const res = await request(app).post('/api/loans').send({ bookId: 'b1', readerId: 'r2' });
+
+    expect(res.status).toBe(409);
+    expect(res.body.code).toBe('NO_FREE_COPIES');
+  });
+
+  it('returns a loan and frees the copy', async () => {
+    await insertBook('b1', 1);
+    await insertReader('r1');
+    const { app, clock } = scenarioApp();
+    await request(app).post('/api/loans').send({ bookId: 'b1', readerId: 'r1' });
+    expect(await availableOf(app, 'b1')).toBe(0);
+
+    clock.now = new Date(NOW.getTime() + 3 * DAY_MS);
+    const res = await request(app).post('/api/loans/loan1/return').send();
+
+    expect(res.status).toBe(200);
+    expect(res.body.returnedAt).toBe(clock.now.toISOString());
+    expect(await availableOf(app, 'b1')).toBe(1);
+  });
+
+  it('rejects a repeated return', async () => {
+    await insertBook('b1', 1);
+    await insertReader('r1');
+    const { app } = scenarioApp();
+    await request(app).post('/api/loans').send({ bookId: 'b1', readerId: 'r1' });
+    await request(app).post('/api/loans/loan1/return').send();
+
+    const res = await request(app).post('/api/loans/loan1/return').send();
+
+    expect(res.status).toBe(409);
+    expect(res.body.code).toBe('LOAN_ALREADY_RETURNED');
+  });
+
+  it('marks a loan overdue after the due date', async () => {
+    await insertBook('b1', 1);
+    await insertReader('r1');
+    const { app, clock } = scenarioApp();
+    await request(app).post('/api/loans').send({ bookId: 'b1', readerId: 'r1' });
+
+    const before = await request(app).get('/api/loans');
+    expect(before.body[0].overdue).toBe(false);
+
+    clock.now = new Date(NOW.getTime() + 15 * DAY_MS);
+    const after = await request(app).get('/api/loans');
+    expect(after.body[0].overdue).toBe(true);
+  });
+
+  it('answers 404 for unknown book, reader and loan', async () => {
+    await insertBook('b1', 1);
+    await insertReader('r1');
+    const { app } = scenarioApp();
+
+    const noBook = await request(app).post('/api/loans').send({ bookId: 'nope', readerId: 'r1' });
+    const noReader = await request(app).post('/api/loans').send({ bookId: 'b1', readerId: 'nope' });
+    const noLoan = await request(app).post('/api/loans/nope/return').send();
+
+    expect([noBook.status, noBook.body.code]).toEqual([404, 'BOOK_NOT_FOUND']);
+    expect([noReader.status, noReader.body.code]).toEqual([404, 'READER_NOT_FOUND']);
+    expect([noLoan.status, noLoan.body.code]).toEqual([404, 'LOAN_NOT_FOUND']);
+  });
+
+  it('filters loans by reader and by book', async () => {
+    await insertBook('b1', 2);
+    await insertBook('b2', 2);
+    await insertReader('r1');
+    await insertReader('r2');
+    const { app } = scenarioApp();
+    await request(app).post('/api/loans').send({ bookId: 'b1', readerId: 'r1' });
+    await request(app).post('/api/loans').send({ bookId: 'b2', readerId: 'r1' });
+    await request(app).post('/api/loans').send({ bookId: 'b1', readerId: 'r2' });
+
+    const byReader = await request(app).get('/api/loans').query({ readerId: 'r1' });
+    const byBook = await request(app).get('/api/loans').query({ bookId: 'b1' });
+
+    expect(byReader.body.map((l: { id: string }) => l.id)).toEqual(['loan1', 'loan2']);
+    expect(byBook.body.map((l: { id: string }) => l.id)).toEqual(['loan1', 'loan3']);
+  });
+});
