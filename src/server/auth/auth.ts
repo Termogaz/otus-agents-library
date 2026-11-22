@@ -195,6 +195,18 @@ export function authenticate(store: AuthStore): RequestHandler {
   };
 }
 
+// Роль вошедшего должна входить в список, иначе 403 до обращения к параметрам и данным.
+// Без контекста (режим JSON без входа) проверка пропускает: там все запросы идут от системного
+// библиотекаря. При включённом входе контекста без authenticate не бывает, а contextOf отвечает
+// 401, если он всё же пропал.
+export function requireRole(...roles: UserRole[]): RequestHandler {
+  return (_req, res, next) => {
+    const ctx = res.locals.ctx as RequestContext | undefined;
+    if (ctx && !roles.includes(ctx.role)) throw new ApiError(403, 'FORBIDDEN');
+    next();
+  };
+}
+
 const cookieAttributes = (secure: boolean) =>
   ({ httpOnly: true, sameSite: 'lax', secure, path: '/' }) as const;
 
@@ -240,21 +252,20 @@ export function createAuthRouter(
 
   router.use(authenticate(store));
 
-  router.post('/api/auth/logout', async (req, res) => {
+  router.post('/api/auth/logout', requireRole('librarian', 'reader'), async (req, res) => {
     await store.deleteSession(res.locals.tokenHash as string);
     res.clearCookie(SESSION_COOKIE, cookieAttributes(req.secure));
     res.status(204).end();
   });
 
-  router.post('/api/users', async (req, res) => {
+  // Самостоятельной регистрации нет: учётки заводит только библиотекарь
+  router.post('/api/users', requireRole('librarian'), async (req, res) => {
     const ctx = res.locals.ctx as RequestContext;
-    // Самостоятельной регистрации нет: учётки заводит только библиотекарь
-    if (ctx.role !== 'librarian') throw new ApiError(403, 'FORBIDDEN');
     const user = await store.createUser(ctx, parse(userInput, req.body));
     res.status(201).json(user);
   });
 
-  router.get('/api/auth/me', async (_req, res) => {
+  router.get('/api/auth/me', requireRole('librarian', 'reader'), async (_req, res) => {
     const ctx = res.locals.ctx as RequestContext;
     res.json(
       await profileOf(
