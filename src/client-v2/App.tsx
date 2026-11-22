@@ -33,6 +33,17 @@ type Props = {
   draftBook?: (text: string) => Promise<BookDraft>;
 };
 
+// Итог черновика: какие поля AI не нашёл в тексте и их надо заполнить вручную
+function draftSummary(draft: BookDraft): string {
+  const missing = [
+    !draft.title && 'название',
+    !draft.author && 'автор',
+    !draft.isbn && 'ISBN',
+  ].filter((name): name is string => Boolean(name));
+  if (missing.length === 0) return 'Черновик готов. Проверьте поля перед сохранением';
+  return `Черновик готов. Не распознаны: ${missing.join(', ')} — заполните вручную`;
+}
+
 export function App({ api, mode, variant, describeError = errorMessage, draftBook }: Props) {
   const [books, setBooks] = useState<BookView[]>([]);
   const [readers, setReaders] = useState<ReaderView[]>([]);
@@ -126,7 +137,7 @@ export function App({ api, mode, variant, describeError = errorMessage, draftBoo
     if (!draftBook) return null;
     try {
       const result = await draftBook(text);
-      showOutcome('success', 'draft', 'Черновик готов. Проверьте поля перед сохранением');
+      showOutcome('success', 'draft', draftSummary(result));
       return result;
     } catch (e) {
       showOutcome('error', 'draft', describeError(e));

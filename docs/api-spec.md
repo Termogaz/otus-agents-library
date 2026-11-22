@@ -35,27 +35,27 @@
 В колонке «Ошибки» — пары `код_HTTP КОД` через запятую. Общие для всех не-anon маршрутов отказы
 в строки не повторяются — они перечислены в разделе «Общие ошибки».
 
-| Метод  | Путь                    | Роли                    | Успех | Ошибки                                                                                                                  |
-| ------ | ----------------------- | ----------------------- | ----- | ----------------------------------------------------------------------------------------------------------------------- |
-| GET    | `/api/health`           | anon, reader, librarian | 200   |                                                                                                                         |
-| POST   | `/api/auth/login`       | anon                    | 200   | 400 VALIDATION_ERROR, 401 INVALID_CREDENTIALS, 429 TOO_MANY_ATTEMPTS                                                    |
-| POST   | `/api/auth/logout`      | reader, librarian       | 204   |                                                                                                                         |
-| GET    | `/api/auth/me`          | reader, librarian       | 200   | 401 UNAUTHENTICATED                                                                                                     |
-| POST   | `/api/users`            | librarian               | 201   | 400 VALIDATION_ERROR, 404 READER_NOT_FOUND, 409 LOGIN_TAKEN, 409 READER_ALREADY_HAS_ACCOUNT                             |
-| GET    | `/api/books`            | reader, librarian       | 200   |                                                                                                                         |
-| POST   | `/api/books`            | librarian               | 201   | 400 VALIDATION_ERROR                                                                                                    |
-| GET    | `/api/books/:id`        | reader, librarian       | 200   | 404 BOOK_NOT_FOUND                                                                                                      |
-| PATCH  | `/api/books/:id`        | librarian               | 200   | 400 VALIDATION_ERROR, 404 BOOK_NOT_FOUND, 409 COPIES_BELOW_ACTIVE_LOANS                                                 |
-| DELETE | `/api/books/:id`        | librarian               | 204   | 404 BOOK_NOT_FOUND, 409 BOOK_HAS_ACTIVE_LOANS, 409 BOOK_HAS_LOAN_HISTORY                                                |
-| GET    | `/api/readers`          | librarian               | 200   |                                                                                                                         |
-| POST   | `/api/readers`          | librarian               | 201   | 400 VALIDATION_ERROR                                                                                                    |
-| GET    | `/api/readers/:id`      | librarian               | 200   | 404 READER_NOT_FOUND                                                                                                    |
-| PATCH  | `/api/readers/:id`      | librarian               | 200   | 400 VALIDATION_ERROR, 404 READER_NOT_FOUND                                                                              |
-| DELETE | `/api/readers/:id`      | librarian               | 204   | 404 READER_NOT_FOUND, 409 READER_HAS_ACTIVE_LOANS, 409 READER_HAS_LOAN_HISTORY                                          |
-| GET    | `/api/loans`            | reader, librarian       | 200   | 400 VALIDATION_ERROR                                                                                                    |
-| POST   | `/api/loans`            | librarian               | 201   | 400 VALIDATION_ERROR, 404 BOOK_NOT_FOUND, 404 READER_NOT_FOUND, 409 NO_FREE_COPIES, 409 LOAN_LIMIT_REACHED              |
-| POST   | `/api/loans/:id/return` | librarian               | 200   | 404 LOAN_NOT_FOUND, 409 LOAN_ALREADY_RETURNED                                                                           |
-| POST   | `/api/ai/book-draft`    | librarian               | 200   | 400 VALIDATION_ERROR, 429 AI_LIMIT_REACHED, 502 AI_UPSTREAM_ERROR, 502 AI_BAD_RESPONSE, 503 AI_DISABLED, 504 AI_TIMEOUT |
+| Метод  | Путь                    | Роли                    | Успех | Ошибки                                                                                                                                        |
+| ------ | ----------------------- | ----------------------- | ----- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET    | `/api/health`           | anon, reader, librarian | 200   |                                                                                                                                               |
+| POST   | `/api/auth/login`       | anon                    | 200   | 400 VALIDATION_ERROR, 401 INVALID_CREDENTIALS, 429 TOO_MANY_ATTEMPTS                                                                          |
+| POST   | `/api/auth/logout`      | reader, librarian       | 204   |                                                                                                                                               |
+| GET    | `/api/auth/me`          | reader, librarian       | 200   | 401 UNAUTHENTICATED                                                                                                                           |
+| POST   | `/api/users`            | librarian               | 201   | 400 VALIDATION_ERROR, 404 READER_NOT_FOUND, 409 LOGIN_TAKEN, 409 READER_ALREADY_HAS_ACCOUNT                                                   |
+| GET    | `/api/books`            | reader, librarian       | 200   |                                                                                                                                               |
+| POST   | `/api/books`            | librarian               | 201   | 400 VALIDATION_ERROR                                                                                                                          |
+| GET    | `/api/books/:id`        | reader, librarian       | 200   | 404 BOOK_NOT_FOUND                                                                                                                            |
+| PATCH  | `/api/books/:id`        | librarian               | 200   | 400 VALIDATION_ERROR, 404 BOOK_NOT_FOUND, 409 COPIES_BELOW_ACTIVE_LOANS                                                                       |
+| DELETE | `/api/books/:id`        | librarian               | 204   | 404 BOOK_NOT_FOUND, 409 BOOK_HAS_ACTIVE_LOANS, 409 BOOK_HAS_LOAN_HISTORY                                                                      |
+| GET    | `/api/readers`          | librarian               | 200   |                                                                                                                                               |
+| POST   | `/api/readers`          | librarian               | 201   | 400 VALIDATION_ERROR                                                                                                                          |
+| GET    | `/api/readers/:id`      | librarian               | 200   | 404 READER_NOT_FOUND                                                                                                                          |
+| PATCH  | `/api/readers/:id`      | librarian               | 200   | 400 VALIDATION_ERROR, 404 READER_NOT_FOUND                                                                                                    |
+| DELETE | `/api/readers/:id`      | librarian               | 204   | 404 READER_NOT_FOUND, 409 READER_HAS_ACTIVE_LOANS, 409 READER_HAS_LOAN_HISTORY                                                                |
+| GET    | `/api/loans`            | reader, librarian       | 200   | 400 VALIDATION_ERROR                                                                                                                          |
+| POST   | `/api/loans`            | librarian               | 201   | 400 VALIDATION_ERROR, 404 BOOK_NOT_FOUND, 404 READER_NOT_FOUND, 409 NO_FREE_COPIES, 409 LOAN_LIMIT_REACHED                                    |
+| POST   | `/api/loans/:id/return` | librarian               | 200   | 404 LOAN_NOT_FOUND, 409 LOAN_ALREADY_RETURNED                                                                                                 |
+| POST   | `/api/ai/book-draft`    | librarian               | 200   | 400 VALIDATION_ERROR, 429 AI_LIMIT_REACHED, 502 AI_UPSTREAM_ERROR, 502 AI_BAD_RESPONSE, 422 AI_NOTHING_FOUND, 503 AI_DISABLED, 504 AI_TIMEOUT |
 
 Бизнес-сценарий — выдача книги (`POST /api/loans`): правило (есть свободный экземпляр, не
 превышен лимит читателя) живёт в `src/domain`, в Postgres выдача идёт в одной транзакции с
@@ -86,27 +86,27 @@
 **Выдача.** `{ id, bookId, readerId, issuedAt, dueAt, returnedAt, overdue }`; `returnedAt` — `null`,
 пока книга у читателя; `overdue` — вычисляется на момент запроса.
 
-| Маршрут                      | Запрос                                                   | Ответ                                                             |
-| ---------------------------- | -------------------------------------------------------- | ----------------------------------------------------------------- |
-| `GET /api/health`            | —                                                        | `{ status: 'ok' }`                                                |
-| `POST /api/auth/login`       | `{ login, password }`                                    | `{ login, role, readerId, readerName }`, ставит cookie            |
-| `POST /api/auth/logout`      | —                                                        | пустое тело, cookie очищается                                     |
-| `GET /api/auth/me`           | —                                                        | `{ login, role, readerId, readerName }`                           |
-| `POST /api/users`            | `{ login, password, role, readerId? }`                   | `{ id, login, role, readerId }` (без пароля и хеша)               |
-| `GET /api/books`             | —                                                        | массив книг                                                       |
-| `POST /api/books`            | `{ title, author, isbn, copies }`                        | книга                                                             |
-| `GET /api/books/:id`         | —                                                        | книга                                                             |
-| `PATCH /api/books/:id`       | `{ title?, author?, isbn?, copies? }`, хотя бы одно поле | книга                                                             |
-| `DELETE /api/books/:id`      | —                                                        | пустое тело                                                       |
-| `GET /api/readers`           | —                                                        | массив читателей                                                  |
-| `POST /api/readers`          | `{ name, contact }`                                      | читатель                                                          |
-| `GET /api/readers/:id`       | —                                                        | читатель                                                          |
-| `PATCH /api/readers/:id`     | `{ name?, contact? }`, хотя бы одно поле                 | читатель                                                          |
-| `DELETE /api/readers/:id`    | —                                                        | пустое тело                                                       |
-| `GET /api/loans`             | query `bookId?`, `readerId?`                             | массив выдач                                                      |
-| `POST /api/loans`            | `{ bookId, readerId }`                                   | выдача                                                            |
-| `POST /api/loans/:id/return` | —                                                        | выдача с заполненным `returnedAt`                                 |
-| `POST /api/ai/book-draft`    | `{ text }`, 1–2000 символов                              | `{ title, author, isbn, copies }` — черновик, в БД не сохраняется |
+| Маршрут                      | Запрос                                                   | Ответ                                                                                                           |
+| ---------------------------- | -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `GET /api/health`            | —                                                        | `{ status: 'ok' }`                                                                                              |
+| `POST /api/auth/login`       | `{ login, password }`                                    | `{ login, role, readerId, readerName }`, ставит cookie                                                          |
+| `POST /api/auth/logout`      | —                                                        | пустое тело, cookie очищается                                                                                   |
+| `GET /api/auth/me`           | —                                                        | `{ login, role, readerId, readerName }`                                                                         |
+| `POST /api/users`            | `{ login, password, role, readerId? }`                   | `{ id, login, role, readerId }` (без пароля и хеша)                                                             |
+| `GET /api/books`             | —                                                        | массив книг                                                                                                     |
+| `POST /api/books`            | `{ title, author, isbn, copies }`                        | книга                                                                                                           |
+| `GET /api/books/:id`         | —                                                        | книга                                                                                                           |
+| `PATCH /api/books/:id`       | `{ title?, author?, isbn?, copies? }`, хотя бы одно поле | книга                                                                                                           |
+| `DELETE /api/books/:id`      | —                                                        | пустое тело                                                                                                     |
+| `GET /api/readers`           | —                                                        | массив читателей                                                                                                |
+| `POST /api/readers`          | `{ name, contact }`                                      | читатель                                                                                                        |
+| `GET /api/readers/:id`       | —                                                        | читатель                                                                                                        |
+| `PATCH /api/readers/:id`     | `{ name?, contact? }`, хотя бы одно поле                 | читатель                                                                                                        |
+| `DELETE /api/readers/:id`    | —                                                        | пустое тело                                                                                                     |
+| `GET /api/loans`             | query `bookId?`, `readerId?`                             | массив выдач                                                                                                    |
+| `POST /api/loans`            | `{ bookId, readerId }`                                   | выдача                                                                                                          |
+| `POST /api/loans/:id/return` | —                                                        | выдача с заполненным `returnedAt`                                                                               |
+| `POST /api/ai/book-draft`    | `{ text }`, 1–2000 символов                              | `{ title, author, isbn, copies }` — черновик, в БД не сохраняется; поле, которого нет в тексте, — пустая строка |
 
 Правила полей:
 
@@ -129,41 +129,42 @@
 
 ## Коды ошибок
 
-| Код                          | HTTP | Когда                                                               | Текст в UI                                           |
-| ---------------------------- | ---- | ------------------------------------------------------------------- | ---------------------------------------------------- |
-| `VALIDATION_ERROR`           | 400  | тело, query или параметры не прошли проверку zod                    | Проверьте заполнение полей                           |
-| `INVALID_JSON`               | 400  | тело запроса не является JSON                                       | Запрос отправлен в неверном формате                  |
-| `UNAUTHENTICATED`            | 401  | нет сессии или она истекла                                          | Войдите, чтобы продолжить                            |
-| `INVALID_CREDENTIALS`        | 401  | неверный логин или пароль (ответ один и тот же для обоих)           | Неверный логин или пароль                            |
-| `FORBIDDEN`                  | 403  | роль вошедшего не позволяет это действие                            | У вас нет прав на это действие                       |
-| `ORIGIN_NOT_ALLOWED`         | 403  | запись с `Origin`, которого нет в списке разрешённых                | Запрос отклонён: неизвестный источник                |
-| `BOOK_NOT_FOUND`             | 404  | книги с таким id нет                                                | Книга не найдена                                     |
-| `READER_NOT_FOUND`           | 404  | читателя с таким id нет                                             | Читатель не найден                                   |
-| `LOAN_NOT_FOUND`             | 404  | выдачи с таким id нет                                               | Выдача не найдена                                    |
-| `NOT_FOUND`                  | 404  | неизвестный путь                                                    | Страница или адрес не найдены                        |
-| `NO_FREE_COPIES`             | 409  | свободных экземпляров книги нет                                     | Нет свободных экземпляров                            |
-| `LOAN_LIMIT_REACHED`         | 409  | у читателя уже максимум книг на руках                               | Читатель уже взял максимум книг                      |
-| `LOAN_ALREADY_RETURNED`      | 409  | выдача уже закрыта                                                  | Книга уже возвращена                                 |
-| `BOOK_HAS_ACTIVE_LOANS`      | 409  | удаление книги, которая сейчас у читателей                          | Книгу нельзя удалить: она на руках у читателя        |
-| `BOOK_HAS_LOAN_HISTORY`      | 409  | удаление книги с закрытыми выдачами                                 | Книгу нельзя удалить: по ней есть история выдач      |
-| `READER_HAS_ACTIVE_LOANS`    | 409  | удаление читателя с книгами на руках                                | Читателя нельзя удалить: у него есть книги на руках  |
-| `READER_HAS_LOAN_HISTORY`    | 409  | удаление читателя с закрытыми выдачами                              | Читателя нельзя удалить: у него есть история выдач   |
-| `COPIES_BELOW_ACTIVE_LOANS`  | 409  | новое число экземпляров меньше числа активных выдач                 | Экземпляров не может быть меньше, чем выдано         |
-| `LOGIN_TAKEN`                | 409  | логин уже занят                                                     | Этот логин уже занят                                 |
-| `READER_ALREADY_HAS_ACCOUNT` | 409  | у читателя уже есть учётная запись                                  | У этого читателя уже есть учётная запись             |
-| `CONFLICT`                   | 409  | конфликт записи, не покрытый кодами выше (нарушение ограничения БД) | Данные изменились, обновите страницу и повторите     |
-| `PAYLOAD_TOO_LARGE`          | 413  | тело запроса больше 100 КБ                                          | Слишком большой запрос, сократите текст              |
-| `UNSUPPORTED_MEDIA_TYPE`     | 415  | кодировка символов или сжатие тела не поддерживается                | Запрос отправлен в неподдерживаемой кодировке        |
-| `TOO_MANY_ATTEMPTS`          | 429  | слишком много неудачных входов с адреса клиента (см. «Сессия»)      | Слишком много попыток входа, подождите и повторите   |
-| `AI_LIMIT_REACHED`           | 429  | исчерпан дневной лимит запросов к AI                                | Дневной лимит подсказок AI исчерпан                  |
-| `INTERNAL_ERROR`             | 500  | непредвиденный сбой сервера                                         | Внутренняя ошибка сервера                            |
-| `STORAGE_ERROR`              | 500  | сбой файла данных (только `STORAGE=json`)                           | Не удалось прочитать или записать данные             |
-| `AI_UPSTREAM_ERROR`          | 502  | сервис AI ответил ошибкой                                           | Сервис подсказок недоступен, заполните поля вручную  |
-| `AI_BAD_RESPONSE`            | 502  | ответ AI не соответствует схеме                                     | AI вернул неподходящий ответ, заполните поля вручную |
-| `DB_BUSY`                    | 503  | строка заблокирована или запрос дольше таймаута                     | Система занята, повторите через несколько секунд     |
-| `DB_UNAVAILABLE`             | 503  | база данных недоступна                                              | База данных недоступна, повторите позже              |
-| `AI_DISABLED`                | 503  | AI-фича выключена (нет ключа)                                       | Подсказки AI отключены                               |
-| `AI_TIMEOUT`                 | 504  | сервис AI не ответил за отведённое время                            | Сервис подсказок не ответил вовремя                  |
+| Код                          | HTTP | Когда                                                               | Текст в UI                                                             |
+| ---------------------------- | ---- | ------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `VALIDATION_ERROR`           | 400  | тело, query или параметры не прошли проверку zod                    | Проверьте заполнение полей                                             |
+| `INVALID_JSON`               | 400  | тело запроса не является JSON                                       | Запрос отправлен в неверном формате                                    |
+| `UNAUTHENTICATED`            | 401  | нет сессии или она истекла                                          | Войдите, чтобы продолжить                                              |
+| `INVALID_CREDENTIALS`        | 401  | неверный логин или пароль (ответ один и тот же для обоих)           | Неверный логин или пароль                                              |
+| `FORBIDDEN`                  | 403  | роль вошедшего не позволяет это действие                            | У вас нет прав на это действие                                         |
+| `ORIGIN_NOT_ALLOWED`         | 403  | запись с `Origin`, которого нет в списке разрешённых                | Запрос отклонён: неизвестный источник                                  |
+| `BOOK_NOT_FOUND`             | 404  | книги с таким id нет                                                | Книга не найдена                                                       |
+| `READER_NOT_FOUND`           | 404  | читателя с таким id нет                                             | Читатель не найден                                                     |
+| `LOAN_NOT_FOUND`             | 404  | выдачи с таким id нет                                               | Выдача не найдена                                                      |
+| `NOT_FOUND`                  | 404  | неизвестный путь                                                    | Страница или адрес не найдены                                          |
+| `NO_FREE_COPIES`             | 409  | свободных экземпляров книги нет                                     | Нет свободных экземпляров                                              |
+| `LOAN_LIMIT_REACHED`         | 409  | у читателя уже максимум книг на руках                               | Читатель уже взял максимум книг                                        |
+| `LOAN_ALREADY_RETURNED`      | 409  | выдача уже закрыта                                                  | Книга уже возвращена                                                   |
+| `BOOK_HAS_ACTIVE_LOANS`      | 409  | удаление книги, которая сейчас у читателей                          | Книгу нельзя удалить: она на руках у читателя                          |
+| `BOOK_HAS_LOAN_HISTORY`      | 409  | удаление книги с закрытыми выдачами                                 | Книгу нельзя удалить: по ней есть история выдач                        |
+| `READER_HAS_ACTIVE_LOANS`    | 409  | удаление читателя с книгами на руках                                | Читателя нельзя удалить: у него есть книги на руках                    |
+| `READER_HAS_LOAN_HISTORY`    | 409  | удаление читателя с закрытыми выдачами                              | Читателя нельзя удалить: у него есть история выдач                     |
+| `COPIES_BELOW_ACTIVE_LOANS`  | 409  | новое число экземпляров меньше числа активных выдач                 | Экземпляров не может быть меньше, чем выдано                           |
+| `LOGIN_TAKEN`                | 409  | логин уже занят                                                     | Этот логин уже занят                                                   |
+| `READER_ALREADY_HAS_ACCOUNT` | 409  | у читателя уже есть учётная запись                                  | У этого читателя уже есть учётная запись                               |
+| `CONFLICT`                   | 409  | конфликт записи, не покрытый кодами выше (нарушение ограничения БД) | Данные изменились, обновите страницу и повторите                       |
+| `PAYLOAD_TOO_LARGE`          | 413  | тело запроса больше 100 КБ                                          | Слишком большой запрос, сократите текст                                |
+| `UNSUPPORTED_MEDIA_TYPE`     | 415  | кодировка символов или сжатие тела не поддерживается                | Запрос отправлен в неподдерживаемой кодировке                          |
+| `TOO_MANY_ATTEMPTS`          | 429  | слишком много неудачных входов с адреса клиента (см. «Сессия»)      | Слишком много попыток входа, подождите и повторите                     |
+| `AI_LIMIT_REACHED`           | 429  | исчерпан дневной лимит запросов к AI                                | Дневной лимит подсказок AI исчерпан                                    |
+| `INTERNAL_ERROR`             | 500  | непредвиденный сбой сервера                                         | Внутренняя ошибка сервера                                              |
+| `STORAGE_ERROR`              | 500  | сбой файла данных (только `STORAGE=json`)                           | Не удалось прочитать или записать данные                               |
+| `AI_UPSTREAM_ERROR`          | 502  | сервис AI ответил ошибкой                                           | Сервис подсказок недоступен, заполните поля вручную                    |
+| `AI_BAD_RESPONSE`            | 502  | ответ AI не соответствует схеме                                     | AI вернул неподходящий ответ, заполните поля вручную                   |
+| `AI_NOTHING_FOUND`           | 422  | в тексте не найдено ни названия, ни автора, ни ISBN                 | AI не нашёл в тексте названия, автора или ISBN, заполните поля вручную |
+| `DB_BUSY`                    | 503  | строка заблокирована или запрос дольше таймаута                     | Система занята, повторите через несколько секунд                       |
+| `DB_UNAVAILABLE`             | 503  | база данных недоступна                                              | База данных недоступна, повторите позже                                |
+| `AI_DISABLED`                | 503  | AI-фича выключена (нет ключа)                                       | Подсказки AI отключены                                                 |
+| `AI_TIMEOUT`                 | 504  | сервис AI не ответил за отведённое время                            | Сервис подсказок не ответил вовремя                                    |
 
 ## CORS и Origin
 

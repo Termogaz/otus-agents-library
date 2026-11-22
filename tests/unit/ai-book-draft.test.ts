@@ -101,11 +101,56 @@ describe('model answer handling', () => {
 
   it.each([
     ['copies 0', { ...DRAFT, copies: 0 }],
-    ['no title', { author: 'Булгаков', isbn: '', copies: 1 }],
     ['fractional copies', { ...DRAFT, copies: 1.5 }],
   ])('rejects a draft that fails the schema: %s', async (_name, content) => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
     fetchImpl.mockResolvedValue(answer(JSON.stringify(content)));
+
+    const res = await draft();
+
+    expect(res.status).toBe(502);
+    expect(res.body.code).toBe('AI_BAD_RESPONSE');
+  });
+});
+
+describe('partial drafts', () => {
+  it.each([
+    ['empty title', { ...DRAFT, title: '' }, { ...DRAFT, title: '' }],
+    ['null author', { ...DRAFT, author: null }, { ...DRAFT, author: '' }],
+    [
+      'missing title and author',
+      { isbn: '978-5-17', copies: 2 },
+      { title: '', author: '', isbn: '978-5-17', copies: 2 },
+    ],
+    [
+      'null isbn and copies',
+      { title: 'Дюна', author: '', isbn: null, copies: null },
+      { title: 'Дюна', author: '', isbn: '', copies: 1 },
+    ],
+  ])('returns what was found and leaves the rest empty: %s', async (_name, content, expected) => {
+    fetchImpl.mockResolvedValue(answer(JSON.stringify(content)));
+
+    const res = await draft('книга без автора');
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual(expected);
+  });
+
+  it('answers AI_NOTHING_FOUND when the model found no book fields', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    fetchImpl.mockResolvedValue(
+      answer(JSON.stringify({ title: '', author: null, isbn: '', copies: 1 })),
+    );
+
+    const res = await draft('просто текст без книги');
+
+    expect(res.status).toBe(422);
+    expect(res.body.code).toBe('AI_NOTHING_FOUND');
+  });
+
+  it('still rejects an answer that is not a json object', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    fetchImpl.mockResolvedValue(answer(JSON.stringify([DRAFT, DRAFT])));
 
     const res = await draft();
 
@@ -175,7 +220,8 @@ describe('secrets and limits', () => {
       () => Promise.resolve(new Response(`bad key ${API_KEY}`, { status: 401 })),
       () => Promise.reject(new TypeError(`fetch failed for ${API_KEY}`)),
       () => Promise.resolve(answer(`не json ${API_KEY}`)),
-      () => Promise.resolve(answer(JSON.stringify({ title: API_KEY }))),
+      // Ответ не проходит схему (copies 0): ключ не попадает и в текст ошибки
+      () => Promise.resolve(answer(JSON.stringify({ title: API_KEY, copies: 0 }))),
     ];
 
     for (const failure of failures) {

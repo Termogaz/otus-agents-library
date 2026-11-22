@@ -64,3 +64,33 @@ test('explains the daily limit', async ({ page }) => {
 
   await expect(books.getByRole('alert')).toHaveText('Дневной лимит подсказок AI исчерпан');
 });
+
+test('fills what was found and names the fields left empty', async ({ page }) => {
+  await page.route('**/api/ai/book-draft', (route) =>
+    route.fulfill({
+      status: 200,
+      json: { title: 'Дюна', author: '', isbn: '', copies: 1 },
+    }),
+  );
+
+  const books = await askDraft(page, 'Дюна, одна штука');
+
+  const form = books.getByRole('form', { name: 'Добавить книгу' });
+  await expect(form.getByLabel('Название')).toHaveValue('Дюна');
+  await expect(form.getByLabel('Автор')).toHaveValue('');
+  await expect(books.getByRole('status')).toHaveText(
+    'Черновик готов. Не распознаны: автор, ISBN — заполните вручную',
+  );
+});
+
+test('explains that nothing was found in the text', async ({ page }) => {
+  await page.route('**/api/ai/book-draft', (route) =>
+    route.fulfill({ status: 422, json: { code: 'AI_NOTHING_FOUND' } }),
+  );
+
+  const books = await askDraft(page, 'просто текст');
+
+  await expect(books.getByRole('alert')).toHaveText(
+    'AI не нашёл в тексте названия, автора или ISBN, заполните поля вручную',
+  );
+});
