@@ -3,9 +3,12 @@ import express, { type ErrorRequestHandler } from 'express';
 import { z } from 'zod';
 import { availableCopies, checkoutBook, isOverdue, returnBook } from '../domain/index.js';
 import { StorageError, type LibraryRepository } from './repository.js';
+import { SerialStorage, SYSTEM_LIBRARIAN, type RequestContext, type Storage } from './storage.js';
 
-export type AppDeps = {
-  repo: LibraryRepository;
+// Ровно одно из двух: repo (режим JSON, запросы по очереди) или storage (транзакция на запрос)
+export type AppDeps = (
+  { repo: LibraryRepository; storage?: undefined } | { storage: Storage; repo?: undefined }
+) & {
   // Часы и генератор id передаются снаружи, чтобы тесты были детерминированными
   now?: () => Date;
   newId?: () => string;
@@ -43,53 +46,64 @@ function parse<T>(schema: z.ZodType<T>, value: unknown): T {
   return result.data;
 }
 
-export function createApp({ repo, now = () => new Date(), newId = randomUUID }: AppDeps) {
+// Контекст запроса. Входа пока нет (появится вместе с авторизацией), поэтому все запросы
+// идут от имени библиотекаря
+function contextOf(_res: express.Response): RequestContext {
+  return SYSTEM_LIBRARIAN;
+}
+
+export function createApp({
+  repo,
+  storage: injected,
+  now = () => new Date(),
+  newId = randomUUID,
+}: AppDeps) {
   const app = express();
   app.use(express.json());
 
-  // Выдача и возврат читают выдачи, проверяют правило и сохраняют. Без очереди два
-  // одновременных запроса прочитали бы одно и то же и выдали последний экземпляр дважды
-  let tail: Promise<unknown> = Promise.resolve();
-  function serial<T>(task: () => Promise<T>): Promise<T> {
-    const result = tail.then(task);
-    tail = result.catch(() => undefined);
-    return result;
-  }
+  // Каждый маршрут работает внутри storage.run: в режиме JSON это общая очередь (выдача и
+  // возврат читают, проверяют и сохраняют, без очереди последний экземпляр выдался бы дважды),
+  // в режиме Postgres — транзакция на запрос
+  const storage: Storage = injected ?? new SerialStorage(repo);
 
   app.get('/api/health', (_req, res) => {
     res.json({ status: 'ok' });
   });
 
   app.get('/api/books', async (_req, res) => {
-    const [books, loans] = await Promise.all([repo.listBooks(), repo.listLoans()]);
-    res.json(books.map((book) => ({ ...book, available: availableCopies(book, loans) })));
+    const books = await storage.run(contextOf(res), async (repo) => {
+      const [books, loans] = await Promise.all([repo.listBooks(), repo.listLoans()]);
+      return books.map((book) => ({ ...book, available: availableCopies(book, loans) }));
+    });
+    res.json(books);
   });
 
   app.post('/api/books', async (req, res) => {
     const book = { id: newId(), ...parse(bookInput, req.body) };
-    await repo.saveBook(book);
+    await storage.run(contextOf(res), (repo) => repo.saveBook(book));
     res.status(201).json(book);
   });
 
   app.get('/api/readers', async (_req, res) => {
-    res.json(await repo.listReaders());
+    res.json(await storage.run(contextOf(res), (repo) => repo.listReaders()));
   });
 
   app.post('/api/readers', async (req, res) => {
     const reader = { id: newId(), ...parse(readerInput, req.body) };
-    await repo.saveReader(reader);
+    await storage.run(contextOf(res), (repo) => repo.saveReader(reader));
     res.status(201).json(reader);
   });
 
   app.get('/api/loans', async (req, res) => {
-    const loans = await repo.listLoans(parse(loanQuery, req.query));
+    const filter = parse(loanQuery, req.query);
+    const loans = await storage.run(contextOf(res), (repo) => repo.listLoans(filter));
     const at = now();
     res.json(loans.map((loan) => ({ ...loan, overdue: isOverdue(loan, at) })));
   });
 
   app.post('/api/loans', async (req, res) => {
     const { bookId, readerId } = parse(loanInput, req.body);
-    const loan = await serial(async () => {
+    const loan = await storage.run(contextOf(res), async (repo) => {
       const [book, reader] = await Promise.all([repo.getBook(bookId), repo.getReader(readerId)]);
       if (!book) throw new ApiError(404, 'BOOK_NOT_FOUND');
       if (!reader) throw new ApiError(404, 'READER_NOT_FOUND');
@@ -108,7 +122,7 @@ export function createApp({ repo, now = () => new Date(), newId = randomUUID }: 
 
   app.post('/api/loans/:id/return', async (req, res) => {
     const { id } = parse(idParams, req.params);
-    const loan = await serial(async () => {
+    const loan = await storage.run(contextOf(res), async (repo) => {
       const existing = await repo.getLoan(id);
       if (!existing) throw new ApiError(404, 'LOAN_NOT_FOUND');
 
