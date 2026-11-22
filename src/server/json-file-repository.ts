@@ -3,7 +3,12 @@ import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import { z } from 'zod';
 import type { Book, Loan, Reader } from '../domain/index.js';
-import { StorageError, type LibraryRepository, type LoanFilter } from './repository.js';
+import {
+  StorageError,
+  type LibraryRepository,
+  type LoanFilter,
+  type ReadOptions,
+} from './repository.js';
 
 // Версия формата файла: при изменении структуры — повысить и добавить миграцию
 const STORAGE_VERSION = 1;
@@ -48,7 +53,9 @@ export class JsonFileRepository implements LibraryRepository {
   listBooks(): Promise<Book[]> {
     return this.read((s) => s.books);
   }
-  getBook(id: string): Promise<Book | undefined> {
+  // Параметр options принят ради интерфейса и игнорируется: в режиме JSON порядок
+  // чтения и записи обеспечивает SerialStorage, блокировать строки нечем
+  getBook(id: string, _options?: ReadOptions): Promise<Book | undefined> {
     return this.read((s) => s.books.find((b) => b.id === id));
   }
   saveBook(book: Book): Promise<void> {
@@ -58,7 +65,7 @@ export class JsonFileRepository implements LibraryRepository {
   listReaders(): Promise<Reader[]> {
     return this.read((s) => s.readers);
   }
-  getReader(id: string): Promise<Reader | undefined> {
+  getReader(id: string, _options?: ReadOptions): Promise<Reader | undefined> {
     return this.read((s) => s.readers.find((r) => r.id === id));
   }
   saveReader(reader: Reader): Promise<void> {
@@ -74,7 +81,7 @@ export class JsonFileRepository implements LibraryRepository {
       ),
     );
   }
-  getLoan(id: string): Promise<Loan | undefined> {
+  getLoan(id: string, _options?: ReadOptions): Promise<Loan | undefined> {
     return this.read((s) => s.loans.find((l) => l.id === id));
   }
   saveLoan(loan: Loan): Promise<void> {

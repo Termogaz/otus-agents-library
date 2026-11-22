@@ -1,6 +1,6 @@
 import type pg from 'pg';
 import type { Book, Loan, Reader } from '../../domain/index.js';
-import type { LibraryRepository, LoanFilter } from '../repository.js';
+import type { LibraryRepository, LoanFilter, ReadOptions } from '../repository.js';
 
 type BookRow = { id: string; title: string; author: string; isbn: string; copies: number };
 type ReaderRow = { id: string; name: string; contact: string };
@@ -40,6 +40,11 @@ function toLoan(row: LoanRow): Loan {
 
 const LOAN_COLUMNS = 'id, book_id, reader_id, issued_at, due_at, returned_at';
 
+// Блокировка строки до конца транзакции: параллельный запрос ждёт, а потом видит новое состояние
+function lock(options: ReadOptions | undefined): string {
+  return options?.forUpdate ? ' for update' : '';
+}
+
 // Репозиторий поверх клиента одной транзакции. Все значения идут параметрами $1..$n,
 // в текст SQL они не подставляются.
 export class PostgresRepository implements LibraryRepository {
@@ -52,9 +57,9 @@ export class PostgresRepository implements LibraryRepository {
     return rows.map(toBook);
   }
 
-  async getBook(id: string): Promise<Book | undefined> {
+  async getBook(id: string, options?: ReadOptions): Promise<Book | undefined> {
     const { rows } = await this.client.query<BookRow>(
-      'select id, title, author, isbn, copies from books where id = $1',
+      `select id, title, author, isbn, copies from books where id = $1${lock(options)}`,
       [id],
     );
     return rows[0] ? toBook(rows[0]) : undefined;
@@ -77,9 +82,9 @@ export class PostgresRepository implements LibraryRepository {
     return rows.map(toReader);
   }
 
-  async getReader(id: string): Promise<Reader | undefined> {
+  async getReader(id: string, options?: ReadOptions): Promise<Reader | undefined> {
     const { rows } = await this.client.query<ReaderRow>(
-      'select id, name, contact from readers where id = $1',
+      `select id, name, contact from readers where id = $1${lock(options)}`,
       [id],
     );
     return rows[0] ? toReader(rows[0]) : undefined;
@@ -104,9 +109,9 @@ export class PostgresRepository implements LibraryRepository {
     return rows.map(toLoan);
   }
 
-  async getLoan(id: string): Promise<Loan | undefined> {
+  async getLoan(id: string, options?: ReadOptions): Promise<Loan | undefined> {
     const { rows } = await this.client.query<LoanRow>(
-      `select ${LOAN_COLUMNS} from loans where id = $1`,
+      `select ${LOAN_COLUMNS} from loans where id = $1${lock(options)}`,
       [id],
     );
     return rows[0] ? toLoan(rows[0]) : undefined;

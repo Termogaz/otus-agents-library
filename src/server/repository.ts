@@ -2,19 +2,23 @@ import type { Book, Loan, Reader } from '../domain/index.js';
 
 export type LoanFilter = { bookId?: string; readerId?: string };
 
+// forUpdate: прочитать строку с блокировкой до конца транзакции (Postgres: select … for update).
+// Нужен там, где решение зависит от прочитанного и потом сохраняется: выдача, возврат.
+export type ReadOptions = { forUpdate?: boolean };
+
 // Доступ к данным библиотеки. Методы асинхронные, чтобы JSON-файл можно было заменить на SQLite.
 // save* создаёт запись или заменяет существующую с тем же id.
 export interface LibraryRepository {
   listBooks(): Promise<Book[]>;
-  getBook(id: string): Promise<Book | undefined>;
+  getBook(id: string, options?: ReadOptions): Promise<Book | undefined>;
   saveBook(book: Book): Promise<void>;
 
   listReaders(): Promise<Reader[]>;
-  getReader(id: string): Promise<Reader | undefined>;
+  getReader(id: string, options?: ReadOptions): Promise<Reader | undefined>;
   saveReader(reader: Reader): Promise<void>;
 
   listLoans(filter?: LoanFilter): Promise<Loan[]>;
-  getLoan(id: string): Promise<Loan | undefined>;
+  getLoan(id: string, options?: ReadOptions): Promise<Loan | undefined>;
   saveLoan(loan: Loan): Promise<void>;
 }
 

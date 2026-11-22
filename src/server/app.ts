@@ -105,13 +105,21 @@ export function createApp({
   app.post('/api/loans', async (req, res) => {
     const { bookId, readerId } = parse(loanInput, req.body);
     const loan = await storage.run(contextOf(res), async (repo) => {
-      const [book, reader] = await Promise.all([repo.getBook(bookId), repo.getReader(readerId)]);
+      // Строки блокируются строго по очереди: сначала книга, потом читатель. Один порядок у
+      // всех запросов исключает взаимоблокировку; блокировка книги не даёт выдать последний
+      // экземпляр дважды, блокировка читателя — обойти лимит двумя выдачами сразу
+      const book = await repo.getBook(bookId, { forUpdate: true });
       if (!book) throw new ApiError(404, 'BOOK_NOT_FOUND');
+      const reader = await repo.getReader(readerId, { forUpdate: true });
       if (!reader) throw new ApiError(404, 'READER_NOT_FOUND');
 
-      // Все выдачи, а не выдачи книги + выдачи читателя: в объединении общая выдача
-      // посчиталась бы дважды
-      const loans = await repo.listLoans();
+      // Нужны выдачи книги и выдачи читателя; общая выдача попадает в оба списка,
+      // поэтому объединяем по id, иначе она посчиталась бы дважды
+      const [bookLoans, readerLoans] = [
+        await repo.listLoans({ bookId }),
+        await repo.listLoans({ readerId }),
+      ];
+      const loans = [...new Map([...bookLoans, ...readerLoans].map((l) => [l.id, l])).values()];
       const result = checkoutBook({ loanId: newId(), book, reader, loans, now: now() });
       if (!result.ok) throw new ApiError(409, result.code);
 
@@ -124,7 +132,7 @@ export function createApp({
   app.post('/api/loans/:id/return', async (req, res) => {
     const { id } = parse(idParams, req.params);
     const loan = await storage.run(contextOf(res), async (repo) => {
-      const existing = await repo.getLoan(id);
+      const existing = await repo.getLoan(id, { forUpdate: true });
       if (!existing) throw new ApiError(404, 'LOAN_NOT_FOUND');
 
       const result = returnBook({ loan: existing, now: now() });
