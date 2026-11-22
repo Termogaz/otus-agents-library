@@ -285,18 +285,21 @@ npm run test:e2e         # e2e на тестовой базе library_test, са
 
 Переменные файла окружения (только имена и назначение, значения не хранятся в репозитории):
 
-| Переменная                                         | Назначение                                                                         |
-| -------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| `POSTGRES_PASSWORD`                                | пароль суперпользователя Postgres (создание ролей и баз)                           |
-| `LIBRARY_OWNER_PASSWORD`                           | пароль роли `library_owner`: владелец таблиц, миграции, импорт                     |
-| `LIBRARY_API_PASSWORD`                             | пароль роли `library_api`: от неё работает API, у роли нет обхода RLS              |
-| `DATABASE_URL`, `MIGRATION_DATABASE_URL`           | строки подключения dev-базы для API и для миграций                                 |
-| `TEST_DATABASE_URL`, `TEST_MIGRATION_DATABASE_URL` | то же для `library_test`; имя базы должно оканчиваться на `_test`                  |
-| `STORAGE`                                          | `postgres` или `json`; в production без `postgres` сервер не стартует              |
-| `DEEPSEEK_API_KEY`, `DEEPSEEK_MODEL`               | ключ и имя модели AI-подсказки; без ключа маршрут отвечает 503 `AI_DISABLED`       |
-| `AI_DAILY_LIMIT`                                   | число обращений к AI на пользователя в сутки (1-1000, по умолчанию 20)             |
-| `CORS_ALLOWED_ORIGINS`                             | разрешённые origin через запятую, вида схема://хост[:порт]                         |
-| `TRUST_PROXY`                                      | число доверенных прокси перед API; на VPS за nginx и Caddy нужно `1`, локально `0` |
+| Переменная                                         | Назначение                                                                                |
+| -------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `POSTGRES_PASSWORD`                                | пароль суперпользователя Postgres (создание ролей и баз)                                  |
+| `LIBRARY_OWNER_PASSWORD`                           | пароль роли `library_owner`: владелец таблиц, миграции, импорт                            |
+| `LIBRARY_API_PASSWORD`                             | пароль роли `library_api`: от неё работает API, у роли нет обхода RLS                     |
+| `DATABASE_URL`, `MIGRATION_DATABASE_URL`           | строки подключения dev-базы для API и для миграций                                        |
+| `TEST_DATABASE_URL`, `TEST_MIGRATION_DATABASE_URL` | то же для `library_test`; имя базы должно оканчиваться на `_test`                         |
+| `STORAGE`                                          | `postgres` или `json`; в production без `postgres` сервер не стартует                     |
+| `DEEPSEEK_API_KEY`, `DEEPSEEK_MODEL`               | ключ и имя модели AI-подсказки; без ключа маршрут отвечает 503 `AI_DISABLED`              |
+| `AI_DAILY_LIMIT`                                   | число обращений к AI на пользователя в сутки (1-1000, по умолчанию 20)                    |
+| `CORS_ALLOWED_ORIGINS`                             | разрешённые origin через запятую, вида схема://хост[:порт]                                |
+| `TRUST_PROXY`                                      | число доверенных прокси перед API; на VPS за nginx и Caddy нужно `1`, локально `0`        |
+| `DB_STATEMENT_TIMEOUT_MS`                          | предел одного запроса к базе, мс (по умолчанию 10000); дольше — 503 `DB_BUSY`             |
+| `DB_LOCK_TIMEOUT_MS`                               | предел ожидания блокировки строки, мс (по умолчанию 5000); дольше — 503 `DB_BUSY`         |
+| `DB_CONNECTION_TIMEOUT_MS`                         | предел ожидания соединения из пула, мс (по умолчанию 5000); дольше — 503 `DB_UNAVAILABLE` |
 
 ### Выкладка
 

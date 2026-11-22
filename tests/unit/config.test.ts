@@ -92,6 +92,35 @@ describe('loadConfig', () => {
   });
 });
 
+describe('database timeouts', () => {
+  it('reads database timeouts with defaults', () => {
+    expect(loadConfig({}).db).toEqual({
+      statementTimeoutMs: 10_000,
+      lockTimeoutMs: 5_000,
+      connectionTimeoutMs: 5_000,
+    });
+    const custom = loadConfig({
+      DB_STATEMENT_TIMEOUT_MS: '20000',
+      DB_LOCK_TIMEOUT_MS: '1500',
+      DB_CONNECTION_TIMEOUT_MS: '3000',
+    });
+    expect(custom.db).toEqual({
+      statementTimeoutMs: 20_000,
+      lockTimeoutMs: 1_500,
+      connectionTimeoutMs: 3_000,
+    });
+  });
+
+  it('rejects a zero, negative or non-numeric timeout', () => {
+    // Ноль в Postgres выключает таймаут: запрос снова мог бы ждать бесконечно
+    expect(() => loadConfig({ DB_STATEMENT_TIMEOUT_MS: '0' })).toThrow(/DB_STATEMENT_TIMEOUT_MS/);
+    expect(() => loadConfig({ DB_LOCK_TIMEOUT_MS: '-5' })).toThrow(/DB_LOCK_TIMEOUT_MS/);
+    expect(() => loadConfig({ DB_CONNECTION_TIMEOUT_MS: 'soon' })).toThrow(
+      /DB_CONNECTION_TIMEOUT_MS/,
+    );
+  });
+});
+
 describe('ai settings', () => {
   it('reads ai settings with defaults', () => {
     const config = loadConfig({});

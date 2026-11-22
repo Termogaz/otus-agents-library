@@ -1,11 +1,11 @@
 import type express from 'express';
-import pg from 'pg';
 import { createApp } from './app.js';
 import { PgAuthStore } from './auth/auth.js';
 import { LoginLimiter } from './auth/login-limiter.js';
 import type { AppConfig } from './config.js';
 import { JsonFileRepository } from './json-file-repository.js';
 import { PgAiQuota } from './postgres/ai-quota.js';
+import { createPool, DEFAULT_DB_TIMEOUTS } from './postgres/pool.js';
 import { PostgresStorage } from './postgres/postgres-storage.js';
 
 // Собирает приложение по конфигу: хранилище выбирается по STORAGE.
@@ -17,11 +17,8 @@ export function buildApp(config: AppConfig): {
   const cors = { allowedOrigins: config.corsAllowedOrigins };
 
   if (config.storage === 'postgres') {
-    const pool = new pg.Pool({ connectionString: config.databaseUrl });
-    // Без обработчика ошибка на простаивающем соединении роняет процесс
-    pool.on('error', (error) => {
-      console.error('Ошибка соединения пула Postgres:', error.message);
-    });
+    // Таймауты запроса, блокировки и соединения: без них запрос мог бы ждать бесконечно
+    const pool = createPool(config.databaseUrl, config.db ?? DEFAULT_DB_TIMEOUTS);
     // В режиме Postgres вход обязателен; в режиме JSON входа нет
     const app = createApp({
       storage: new PostgresStorage(pool),

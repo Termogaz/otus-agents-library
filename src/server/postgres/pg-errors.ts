@@ -2,7 +2,8 @@ import pg from 'pg';
 
 export type HttpError = { status: number; code: string };
 
-const BUSY_CODES = new Set(['40001', '40P01', '55P03']);
+// 57014 — отмена запроса по statement_timeout (другой отмены сервер не делает)
+const BUSY_CODES = new Set(['40001', '40P01', '55P03', '57014']);
 const CONNECTION_CODES = new Set(['ECONNREFUSED', 'ENOTFOUND', 'ECONNRESET']);
 
 // Сообщения pg-pool, когда соединение получить не удалось
@@ -16,7 +17,7 @@ export function httpErrorFromDatabase(error: unknown): HttpError | undefined {
     if (error.code === '42501') return { status: 403, code: 'FORBIDDEN' };
     // 23505: уникальность, 23503: внешний ключ
     if (error.code === '23505' || error.code === '23503') return { status: 409, code: 'CONFLICT' };
-    // Сериализация, взаимная блокировка, таймаут блокировки: запрос можно повторить
+    // Сериализация, взаимная блокировка, таймаут блокировки или запроса: запрос можно повторить
     if (error.code && BUSY_CODES.has(error.code)) return { status: 503, code: 'DB_BUSY' };
     return undefined;
   }

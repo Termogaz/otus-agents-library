@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { DEFAULT_DB_TIMEOUTS, type DbTimeouts } from './postgres/pool.js';
 
 export type AppConfig = {
   storage: 'json' | 'postgres';
@@ -13,7 +14,13 @@ export type AppConfig = {
   trustProxy: number;
   // Настройки AI (D-14). Ключ только из окружения сервера; без него маршрут отвечает 503
   ai: { apiKey?: string; model: string; dailyLimit: number };
+  // Таймауты пула Postgres (WR-02); не задано — DEFAULT_DB_TIMEOUTS
+  db?: DbTimeouts;
 };
+
+// Таймаут в миллисекундах: ноль в Postgres выключает таймаут, поэтому он не принимается
+const timeoutMs = (fallback: number) =>
+  z.coerce.number().int().min(1).max(600_000).default(fallback);
 
 // Список origin через запятую. Каждый элемент обязан быть ровно origin (схема, хост, порт):
 // путь, слэш в конце и звёздочка отклоняются. Значения в сообщение не попадают.
@@ -62,6 +69,9 @@ const envSchema = z
       .optional()
       .transform((value) => value?.trim() || 'deepseek-flash'),
     AI_DAILY_LIMIT: z.coerce.number().int().min(1).max(1000).default(20),
+    DB_STATEMENT_TIMEOUT_MS: timeoutMs(DEFAULT_DB_TIMEOUTS.statementTimeoutMs),
+    DB_LOCK_TIMEOUT_MS: timeoutMs(DEFAULT_DB_TIMEOUTS.lockTimeoutMs),
+    DB_CONNECTION_TIMEOUT_MS: timeoutMs(DEFAULT_DB_TIMEOUTS.connectionTimeoutMs),
   })
   .superRefine((env, ctx) => {
     if (env.STORAGE === 'postgres' && !env.DATABASE_URL) {
@@ -102,6 +112,11 @@ export function loadConfig(env: NodeJS.ProcessEnv): AppConfig {
       ...(data.DEEPSEEK_API_KEY === undefined ? {} : { apiKey: data.DEEPSEEK_API_KEY }),
       model: data.DEEPSEEK_MODEL,
       dailyLimit: data.AI_DAILY_LIMIT,
+    },
+    db: {
+      statementTimeoutMs: data.DB_STATEMENT_TIMEOUT_MS,
+      lockTimeoutMs: data.DB_LOCK_TIMEOUT_MS,
+      connectionTimeoutMs: data.DB_CONNECTION_TIMEOUT_MS,
     },
     ...(data.NODE_ENV === undefined ? {} : { nodeEnv: data.NODE_ENV }),
   };

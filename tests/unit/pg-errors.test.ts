@@ -36,6 +36,13 @@ describe('httpErrorFromDatabase', () => {
     expect(httpErrorFromDatabase(databaseError('55P03'))).toEqual(expected);
   });
 
+  it('maps statement timeout to 503 DB_BUSY', () => {
+    expect(httpErrorFromDatabase(databaseError('57014'))).toEqual({
+      status: 503,
+      code: 'DB_BUSY',
+    });
+  });
+
   it('maps refused connection to 503 DB_UNAVAILABLE', () => {
     const expected = { status: 503, code: 'DB_UNAVAILABLE' };
     expect(httpErrorFromDatabase(systemError('ECONNREFUSED'))).toEqual(expected);
