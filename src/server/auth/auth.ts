@@ -1,11 +1,12 @@
 import { createHash, randomBytes } from 'node:crypto';
 import express, { type RequestHandler } from 'express';
-import type pg from 'pg';
+import pg from 'pg';
 import { z } from 'zod';
 import { ApiError } from '../api-error.js';
+import { withRequestContext } from '../postgres/postgres-storage.js';
 import type { RequestContext, Storage } from '../storage.js';
 import { LoginLimiter } from './login-limiter.js';
-import { DUMMY_HASH, verifyPassword } from './password.js';
+import { DUMMY_HASH, hashPassword, verifyPassword } from './password.js';
 
 export const SESSION_COOKIE = 'library_session';
 const SESSION_DAYS = 7;
@@ -36,7 +37,11 @@ export interface AuthStore {
   createSession(tokenHash: string, userId: string, expiresAt: Date): Promise<void>;
   deleteSession(tokenHash: string): Promise<void>;
   resolveSession(tokenHash: string): Promise<SessionUser | undefined>;
+  createUser(ctx: RequestContext, input: UserInput): Promise<CreatedUser>;
 }
+
+// Созданная учётка: хеш пароля сюда не попадает
+export type CreatedUser = { id: string; login: string; role: UserRole; readerId: string | null };
 
 export type AuthDeps = {
   store: AuthStore;
@@ -52,6 +57,7 @@ type LoginRow = {
   reader_id: string | null;
 };
 type SessionRow = { user_id: string; login: string; role: UserRole; reader_id: string | null };
+type UserRow = { id: string; login: string; role: UserRole; reader_id: string | null };
 
 export class PgAuthStore implements AuthStore {
   constructor(private readonly pool: pg.Pool) {}
@@ -88,6 +94,35 @@ export class PgAuthStore implements AuthStore {
     if (!row) return undefined;
     return { userId: row.user_id, login: row.login, role: row.role, readerId: row.reader_id };
   }
+
+  async createUser(ctx: RequestContext, input: UserInput): Promise<CreatedUser> {
+    // Хеш считается до транзакции: соединение не держится, пока идёт медленный scrypt
+    const passwordHash = await hashPassword(input.password);
+    return withRequestContext(this.pool, ctx, async (client) => {
+      if (input.readerId) {
+        const reader = await client.query('select 1 from readers where id = $1', [input.readerId]);
+        if (reader.rowCount === 0) throw new ApiError(404, 'READER_NOT_FOUND');
+      }
+      try {
+        const { rows } = await client.query<UserRow>(
+          'insert into users (login, password_hash, role, reader_id) values ($1, $2, $3, $4) returning id, login, role, reader_id',
+          [input.login, passwordHash, input.role, input.readerId ?? null],
+        );
+        const row = rows[0];
+        if (!row) throw new Error('insert into users не вернул строку');
+        return { id: row.id, login: row.login, role: row.role, readerId: row.reader_id };
+      } catch (error) {
+        // Какое именно ограничение уникальности нарушено, видно по его имени
+        if (error instanceof pg.DatabaseError && error.code === '23505') {
+          if (error.constraint === 'users_login_unique') throw new ApiError(409, 'LOGIN_TAKEN');
+          if (error.constraint === 'users_reader_unique') {
+            throw new ApiError(409, 'READER_ALREADY_HAS_ACCOUNT');
+          }
+        }
+        throw error;
+      }
+    });
+  }
 }
 
 // Логин: после trim и toLowerCase 3-64 символа из [a-z0-9._-]
@@ -99,6 +134,21 @@ const loginField = z
 const passwordField = z.string().min(12).max(128);
 
 export const loginInput = z.object({ login: loginField, password: passwordField });
+
+// Читатель привязан к карточке читателя, библиотекарь — нет
+export const userInput = z
+  .object({
+    login: loginField,
+    password: passwordField,
+    role: z.enum(['librarian', 'reader']),
+    readerId: z.string().trim().min(1).optional(),
+  })
+  .refine((user) => (user.role === 'reader') === (user.readerId !== undefined), {
+    path: ['readerId'],
+    message: 'readerId нужен ровно для роли reader',
+  });
+
+export type UserInput = z.infer<typeof userInput>;
 
 function parse<T>(schema: z.ZodType<T>, value: unknown): T {
   const result = schema.safeParse(value);
@@ -194,6 +244,14 @@ export function createAuthRouter(
     await store.deleteSession(res.locals.tokenHash as string);
     res.clearCookie(SESSION_COOKIE, cookieAttributes(req.secure));
     res.status(204).end();
+  });
+
+  router.post('/api/users', async (req, res) => {
+    const ctx = res.locals.ctx as RequestContext;
+    // Самостоятельной регистрации нет: учётки заводит только библиотекарь
+    if (ctx.role !== 'librarian') throw new ApiError(403, 'FORBIDDEN');
+    const user = await store.createUser(ctx, parse(userInput, req.body));
+    res.status(201).json(user);
   });
 
   router.get('/api/auth/me', async (_req, res) => {
