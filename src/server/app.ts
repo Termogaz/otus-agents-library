@@ -1,7 +1,13 @@
 import { randomUUID } from 'node:crypto';
 import express, { type ErrorRequestHandler } from 'express';
 import { z } from 'zod';
-import { availableCopiesFromCount, checkoutBook, isOverdue, returnBook } from '../domain/index.js';
+import {
+  availableCopiesFromCount,
+  checkCopiesChange,
+  checkoutBook,
+  isOverdue,
+  returnBook,
+} from '../domain/index.js';
 import { httpErrorFromDatabase } from './postgres/pg-errors.js';
 import { StorageError, type LibraryRepository } from './repository.js';
 import { SerialStorage, SYSTEM_LIBRARIAN, type RequestContext, type Storage } from './storage.js';
@@ -35,6 +41,12 @@ const bookInput = z.object({
   copies: z.number().int().min(1),
 });
 const readerInput = z.object({ name: text, contact: text });
+// Частичное изменение: хотя бы одно поле; лишние поля схема отбрасывает, id берётся из пути
+const atLeastOne = (value: object) => Object.keys(value).length > 0;
+const bookPatch = bookInput.partial().refine(atLeastOne, { message: 'нужно хотя бы одно поле' });
+const readerPatch = readerInput
+  .partial()
+  .refine(atLeastOne, { message: 'нужно хотя бы одно поле' });
 const loanInput = z.object({ bookId: text, readerId: text });
 const loanQuery = z.object({ bookId: text.optional(), readerId: text.optional() });
 const idParams = z.object({ id: text });
@@ -86,6 +98,36 @@ export function createApp({
     const book = { id: newId(), ...parse(bookInput, req.body) };
     await storage.run(contextOf(res), (repo) => repo.saveBook(book));
     res.status(201).json(book);
+  });
+
+  app.get('/api/books/:id', async (req, res) => {
+    const { id } = parse(idParams, req.params);
+    const book = await storage.run(contextOf(res), async (repo) => {
+      const found = await repo.getBook(id);
+      if (!found) throw new ApiError(404, 'BOOK_NOT_FOUND');
+      const counts = await repo.activeLoanCounts();
+      return { ...found, available: availableCopiesFromCount(found.copies, counts.get(id) ?? 0) };
+    });
+    res.json(book);
+  });
+
+  app.patch('/api/books/:id', async (req, res) => {
+    const { id } = parse(idParams, req.params);
+    const patch = parse(bookPatch, req.body);
+    const book = await storage.run(contextOf(res), async (repo) => {
+      // Книга блокируется первой, как при выдаче: один порядок блокировок у всех запросов
+      const existing = await repo.getBook(id, { forUpdate: true });
+      if (!existing) throw new ApiError(404, 'BOOK_NOT_FOUND');
+      const active = (await repo.activeLoanCounts()).get(id) ?? 0;
+
+      const updated = { ...existing, ...patch };
+      const result = checkCopiesChange({ copies: updated.copies, activeLoans: active });
+      if (!result.ok) throw new ApiError(409, result.code);
+
+      await repo.saveBook(updated);
+      return { ...updated, available: availableCopiesFromCount(updated.copies, active) };
+    });
+    res.json(book);
   });
 
   app.get('/api/readers', async (_req, res) => {
