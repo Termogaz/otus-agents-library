@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
 import { z } from 'zod';
 import { ApiError } from '../api-error.js';
-import { copiesField, fieldText, MAX_TEXT_LENGTH, withoutNul } from '../input-limits.js';
+import { copiesField, MAX_TEXT_LENGTH, withoutNul } from '../input-limits.js';
 import type { AiQuota } from '../postgres/ai-quota.js';
 import type { RequestContext } from '../storage.js';
 
@@ -10,13 +10,21 @@ const DEEPSEEK_URL = 'https://api.deepseek.com/chat/completions';
 // Вход маршрута: свободный текст до 2000 символов
 export const bookDraftInput = z.object({ text: z.string().trim().min(1).max(2000) });
 
-// Ответ модели — недоверенные данные: проверяется той же строгостью, что и ввод книги
+// Поле, которого в тексте нет, модель отдаёт пустой строкой, null или не отдаёт вовсе:
+// всё это — пустое поле черновика, библиотекарь заполнит его сам
+const draftText = z.preprocess(
+  (value) => value ?? '',
+  z.string().trim().max(MAX_TEXT_LENGTH).refine(withoutNul),
+);
+
+// Ответ модели — недоверенные данные: проверяется теми же пределами, что и ввод книги,
+// но название и автор могут быть пустыми (частичный черновик)
 const draftSchema = z.object({
-  title: fieldText,
-  author: fieldText,
-  // ISBN модель может не знать: пустая строка допустима
-  isbn: z.string().max(MAX_TEXT_LENGTH).refine(withoutNul),
-  copies: copiesField,
+  title: draftText,
+  author: draftText,
+  isbn: draftText,
+  // Число экземпляров не указано — 1
+  copies: z.preprocess((value) => value ?? 1, copiesField),
 });
 export type BookDraft = z.infer<typeof draftSchema>;
 
@@ -41,7 +49,8 @@ type ModelDeps = Pick<AiDeps, 'apiKey' | 'model' | 'fetchImpl' | 'timeoutMs'>;
 const SYSTEM_PROMPT =
   'Ты помощник библиотекаря. Из описания книги извлеки поля и верни только json вида ' +
   '{"title": строка, "author": строка, "isbn": строка, "copies": целое число не меньше 1}. ' +
-  'Если isbn неизвестен, верни пустую строку; если число экземпляров не указано, верни 1.';
+  'Поле, которого нет в описании, верни пустой строкой, ничего не придумывай; ' +
+  'если число экземпляров не указано, верни 1.';
 
 // В лог идёт только статус апстрима или имя ошибки: без ключа, текста пользователя и ответа
 // модели (D-15)
@@ -100,6 +109,9 @@ export async function requestBookDraft(text: string, deps: ModelDeps): Promise<B
   }
   const draft = draftSchema.safeParse(raw);
   if (!draft.success) throw badResponse();
+  // Ни одного поля книги в тексте: заполнять нечего, это не сбой модели
+  const { title, author, isbn } = draft.data;
+  if (!title && !author && !isbn) throw new ApiError(422, 'AI_NOTHING_FOUND');
   return draft.data;
 }
 
