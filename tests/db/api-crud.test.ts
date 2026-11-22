@@ -139,3 +139,90 @@ describe('books by id', () => {
     expect(res.body.code).toBe('VALIDATION_ERROR');
   });
 });
+
+describe('deletion', () => {
+  it('deletes a book without loans', async () => {
+    await insertBook('b1');
+    const app = makeApp();
+
+    const res = await request(app).delete('/api/books/b1');
+
+    expect(res.status).toBe(204);
+    expect((await request(app).get('/api/books/b1')).status).toBe(404);
+    expect(await countRows('books', 'b1')).toBe(0);
+  });
+
+  it('refuses to delete a book with an active loan', async () => {
+    await insertBook('b1');
+    await insertReader('r1');
+    await insertLoan('l1', 'b1', 'r1');
+
+    const res = await request(makeApp()).delete('/api/books/b1');
+
+    expect(res.status).toBe(409);
+    expect(res.body.code).toBe('BOOK_HAS_ACTIVE_LOANS');
+    expect(await countRows('books', 'b1')).toBe(1);
+  });
+
+  it('refuses to delete a book with loan history', async () => {
+    await insertBook('b1');
+    await insertReader('r1');
+    await insertLoan('l1', 'b1', 'r1', true);
+
+    const res = await request(makeApp()).delete('/api/books/b1');
+
+    expect(res.status).toBe(409);
+    expect(res.body.code).toBe('BOOK_HAS_LOAN_HISTORY');
+    // История выдач на месте
+    expect(await countRows('books', 'b1')).toBe(1);
+    expect(await countRows('loans', 'l1')).toBe(1);
+  });
+
+  it('deletes a reader without loans', async () => {
+    await insertReader('r1');
+    const app = makeApp();
+
+    const res = await request(app).delete('/api/readers/r1');
+
+    expect(res.status).toBe(204);
+    expect((await request(app).get('/api/readers/r1')).status).toBe(404);
+    expect(await countRows('readers', 'r1')).toBe(0);
+  });
+
+  it('refuses to delete a reader with an active loan', async () => {
+    await insertBook('b1');
+    await insertReader('r1');
+    await insertLoan('l1', 'b1', 'r1');
+
+    const res = await request(makeApp()).delete('/api/readers/r1');
+
+    expect(res.status).toBe(409);
+    expect(res.body.code).toBe('READER_HAS_ACTIVE_LOANS');
+    expect(await countRows('readers', 'r1')).toBe(1);
+  });
+
+  it('refuses to delete a reader with loan history', async () => {
+    await insertBook('b1');
+    await insertReader('r1');
+    await insertLoan('l1', 'b1', 'r1', true);
+
+    const res = await request(makeApp()).delete('/api/readers/r1');
+
+    expect(res.status).toBe(409);
+    expect(res.body.code).toBe('READER_HAS_LOAN_HISTORY');
+    expect(await countRows('readers', 'r1')).toBe(1);
+    expect(await countRows('loans', 'l1')).toBe(1);
+  });
+
+  it('answers 404 when deleting an unknown book or reader', async () => {
+    const app = makeApp();
+
+    const book = await request(app).delete('/api/books/nope');
+    const reader = await request(app).delete('/api/readers/nope');
+
+    expect(book.status).toBe(404);
+    expect(book.body.code).toBe('BOOK_NOT_FOUND');
+    expect(reader.status).toBe(404);
+    expect(reader.body.code).toBe('READER_NOT_FOUND');
+  });
+});
