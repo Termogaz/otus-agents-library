@@ -92,6 +92,37 @@ describe('loadConfig', () => {
   });
 });
 
+describe('ai settings', () => {
+  it('reads ai settings with defaults', () => {
+    const config = loadConfig({});
+
+    expect(config.ai).toEqual({ model: 'deepseek-flash', dailyLimit: 20 });
+    const custom = loadConfig({
+      DEEPSEEK_API_KEY: 'sk-test',
+      DEEPSEEK_MODEL: 'deepseek-other',
+      AI_DAILY_LIMIT: '5',
+    });
+    expect(custom.ai).toEqual({ apiKey: 'sk-test', model: 'deepseek-other', dailyLimit: 5 });
+  });
+
+  it('treats an empty api key as absent', () => {
+    expect(loadConfig({ DEEPSEEK_API_KEY: '' }).ai.apiKey).toBeUndefined();
+    expect(loadConfig({ DEEPSEEK_API_KEY: '   ' }).ai.apiKey).toBeUndefined();
+  });
+
+  it('rejects a daily limit outside 1-1000', () => {
+    expect(() => loadConfig({ AI_DAILY_LIMIT: '0' })).toThrow(/AI_DAILY_LIMIT/);
+    expect(() => loadConfig({ AI_DAILY_LIMIT: '1001' })).toThrow(/AI_DAILY_LIMIT/);
+    expect(() => loadConfig({ AI_DAILY_LIMIT: 'many' })).toThrow(/AI_DAILY_LIMIT/);
+  });
+
+  it('does not print the api key in config errors', () => {
+    expect(() => loadConfig({ DEEPSEEK_API_KEY: 'sk-hunter2', AI_DAILY_LIMIT: '0' })).toThrow(
+      expect.objectContaining({ message: expect.not.stringContaining('hunter2') }),
+    );
+  });
+});
+
 describe('buildApp', () => {
   it('applies TRUST_PROXY and CORS in buildApp', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'library-config-'));
