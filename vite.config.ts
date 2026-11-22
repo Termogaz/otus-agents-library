@@ -16,7 +16,9 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     proxy: {
-      '/api': 'http://localhost:3000',
+      // Host остаётся адресом страницы (localhost:5173): без этого сокращённая запись Vite
+      // подменяет его на адрес API, и проверка Origin на записи принимает свой хост за чужой
+      '/api': { target: 'http://localhost:3000', changeOrigin: false },
     },
   },
   build: {
