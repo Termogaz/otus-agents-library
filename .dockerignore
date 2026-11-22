@@ -9,6 +9,7 @@ dist
 .local
 tests
 test-results
+playwright/.auth
 playwright-report
 coverage
 data/*
