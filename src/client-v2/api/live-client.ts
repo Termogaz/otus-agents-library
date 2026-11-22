@@ -45,8 +45,26 @@ export async function me(): Promise<Me> {
   return (await res.json()) as Me;
 }
 
+// 401 UNAUTHENTICATED — сессии уже нет (истекла или погашена): для пользователя это выход
 export async function logout(): Promise<void> {
-  await call('POST', '/api/auth/logout');
+  try {
+    await call('POST', '/api/auth/logout');
+  } catch (error) {
+    if (error instanceof ApiError && error.code === 'UNAUTHENTICATED') return;
+    throw error;
+  }
+}
+
+// «Выйти» всегда ведёт на /login/ и не оставляет отклонённый промис. Если выход не удался
+// (сеть, база), страница входа сама проверит сессию и вернёт на /v2/, пока вход действует.
+export async function leaveSession(navigate: (url: string) => void): Promise<void> {
+  try {
+    await logout();
+  } catch {
+    // Отказ не показывается здесь: решение принимает страница входа по me()
+  } finally {
+    navigate('/login/');
+  }
 }
 
 // Только путь своего сайта: начинается ровно с одного `/` (не `//`, не `/\`). Иначе — /v2/.

@@ -268,8 +268,14 @@ export function createAuthRouter(
     res.json(profile);
   });
 
-  router.post('/api/auth/logout', ...access('librarian', 'reader'), async (req, res) => {
-    await store.deleteSession(res.locals.tokenHash as string);
+  // Выход без authenticate: истёкшая или неизвестная сессия — тоже выход. Иначе после истечения
+  // сессии «Выйти» получало 401, cookie оставалась в браузере, и выйти было нельзя.
+  // Без cookie выходить не из чего: 401, как у остальных маршрутов для anon (матрица спеки).
+  router.post('/api/auth/logout', async (req, res) => {
+    const token = readCookie(req.headers.cookie, SESSION_COOKIE);
+    if (!token) throw new ApiError(401, 'UNAUTHENTICATED');
+    // Удаление по хешу: если сессия ещё есть — гаснет, если нет — запрос ничего не меняет
+    await store.deleteSession(hashToken(token));
     res.clearCookie(SESSION_COOKIE, cookieAttributes(req.secure));
     res.status(204).end();
   });

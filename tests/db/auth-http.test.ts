@@ -166,6 +166,43 @@ describe('login and session', () => {
   });
 });
 
+describe('logout with a stale session', () => {
+  // Иначе после истечения сессии кнопка «Выйти» получала 401, cookie оставалась, и выйти было нельзя
+  it('clears the cookie and answers 204 when the session has expired', async () => {
+    await insertLibrarian();
+    const app = makeApp();
+    const token = await loginAs(app, 'anna.lib');
+    await owner.query("update sessions set expires_at = now() - interval '1 minute'");
+
+    const logout = await request(app)
+      .post('/api/auth/logout')
+      .set('Cookie', `library_session=${token}`);
+
+    expect(logout.status).toBe(204);
+    expect(setCookies(logout).some((line) => line.startsWith('library_session=;'))).toBe(true);
+    const { rows } = await owner.query('select 1 from sessions');
+    expect(rows).toHaveLength(0);
+  });
+
+  it('clears the cookie and answers 204 for an unknown session token', async () => {
+    const app = makeApp();
+
+    const logout = await request(app)
+      .post('/api/auth/logout')
+      .set('Cookie', 'library_session=unknown-token');
+
+    expect(logout.status).toBe(204);
+    expect(setCookies(logout).some((line) => line.startsWith('library_session=;'))).toBe(true);
+  });
+
+  it('still answers 401 UNAUTHENTICATED to logout without a cookie', async () => {
+    const logout = await request(makeApp()).post('/api/auth/logout');
+
+    expect(logout.status).toBe(401);
+    expect(logout.body.code).toBe('UNAUTHENTICATED');
+  });
+});
+
 describe('login protection', () => {
   async function failLogin(app: ReturnType<typeof makeApp>, login: string, password: string) {
     return request(app).post('/api/auth/login').send({ login, password });

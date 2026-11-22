@@ -4,9 +4,9 @@ import { ApiError, api } from '../../client/api';
 import {
   draftBook,
   guardSession,
+  leaveSession,
   liveErrorMessage,
   loginUrl,
-  logout,
   me,
   type Me,
 } from '../api/live-client';
@@ -20,10 +20,8 @@ if (!root) throw new Error('#root not found');
 
 const toLogin = () => window.location.assign(loginUrl('/v2/'));
 
-async function leave(): Promise<void> {
-  await logout();
-  window.location.assign('/login/');
-}
+// «Выйти» ведёт на /login/ и при истёкшей сессии, и при сбое запроса (WR-07)
+const leave = (): Promise<void> => leaveSession((url) => window.location.assign(url));
 
 // Страница /v2/: настоящий API старого клиента и тот же App, что в прототипе.
 // Сессия проверяется до первой отрисовки: без входа страница ведёт на /login/ (D-12).
