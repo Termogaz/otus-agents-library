@@ -229,7 +229,7 @@ D-06 в `06-CONTEXT.md` и `DESIGN.md`. Контраст пересчитан п
   для трёх страниц — ссылки между вариантами работают без `VITE_APP_ORIGIN`. Порт `web` опубликован только на
   `127.0.0.1` хоста: Docker обходит ufw, снаружи открыт только HTTPS через Caddy.
 - **Запись без входа.** Публичное демо принимает изменения от любого посетителя (ASVS V4 вне учебного объёма). Данные
-  только демо (`Демо-…`, `@example.test`); сброс — `docker compose down -v` и запуск: пустой том снова получает seed.
+  только демо (`Демо-…`, `@example.test`); сброс — `docker compose down -v` и запуск: пустой том снова получает seed. С ДЗ-5 запись возможна только после входа, а `docker compose down -v` удаляет и базу Postgres — на VPS не выполнять.
 
 ### Что не подтверждено
 
@@ -263,6 +263,115 @@ D-06 в `06-CONTEXT.md` и `DESIGN.md`. Контраст пересчитан п
 
 Снимки сделаны тестом [`tests/e2e/hw5-screenshots.spec.ts`](tests/e2e/hw5-screenshots.spec.ts) на тестовой базе:
 в кадрах только записи «Демо-…» и фикстурные учётки тестовой базы.
+
+### Запуск локально
+
+Нужен Docker (Postgres 17 в контейнере) и файл окружения с паролями; сам файл в git не входит, образец имён — ниже.
+
+```bash
+npm ci
+npm run db:up            # postgres на 127.0.0.1:5432, роли и базы library, library_test создаёт init-скрипт
+npm run db:migrate       # миграции 001-004 в dev-базу
+npm run db:create-user -- --login LOGIN --role librarian   # пароль читается со stdin; LOGIN замените своим
+npm run dev              # API на :3000, UI на http://localhost:5173 (вход: /login/)
+npm run test:db          # тесты базы, нужен npm run db:up
+npm run test:e2e         # e2e на тестовой базе library_test, сам поднимает npm run dev
+```
+
+Не запускайте `test:db` и `test:e2e` одновременно: у них одна база `library_test`. Перенос данных из прежнего
+`data/library.json` в Postgres — `npm run db:import` (повторный запуск безопасен, существующие `id` пропускаются).
+Чтобы привязать учётку читателя, добавьте `--role reader --reader-id ID`; `id` читателя в интерфейсе не показан,
+его находят запросом `docker compose exec -T postgres psql -U postgres -d library -c "select id, name from readers"`.
+
+Переменные файла окружения (только имена и назначение, значения не хранятся в репозитории):
+
+| Переменная                                         | Назначение                                                                         |
+| -------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `POSTGRES_PASSWORD`                                | пароль суперпользователя Postgres (создание ролей и баз)                           |
+| `LIBRARY_OWNER_PASSWORD`                           | пароль роли `library_owner`: владелец таблиц, миграции, импорт                     |
+| `LIBRARY_API_PASSWORD`                             | пароль роли `library_api`: от неё работает API, у роли нет обхода RLS              |
+| `DATABASE_URL`, `MIGRATION_DATABASE_URL`           | строки подключения dev-базы для API и для миграций                                 |
+| `TEST_DATABASE_URL`, `TEST_MIGRATION_DATABASE_URL` | то же для `library_test`; имя базы должно оканчиваться на `_test`                  |
+| `STORAGE`                                          | `postgres` или `json`; в production без `postgres` сервер не стартует              |
+| `DEEPSEEK_API_KEY`, `DEEPSEEK_MODEL`               | ключ и имя модели AI-подсказки; без ключа маршрут отвечает 503 `AI_DISABLED`       |
+| `AI_DAILY_LIMIT`                                   | число обращений к AI на пользователя в сутки (1-1000, по умолчанию 20)             |
+| `CORS_ALLOWED_ORIGINS`                             | разрешённые origin через запятую, вида схема://хост[:порт]                         |
+| `TRUST_PROXY`                                      | число доверенных прокси перед API; на VPS за nginx и Caddy нужно `1`, локально `0` |
+
+### Выкладка
+
+Стек `docker compose` поднимает `postgres`, `api` (роль `library_api`, `STORAGE=postgres`, `TRUST_PROXY=1`) и `web`
+(nginx). Порт Postgres в `docker-compose.yml` не публикуется, dev-порт открывает только
+`docker-compose.dev.yml` на `127.0.0.1`. Разовые команды идут через сервис `tools` с профилем `tools`: пароль
+владельца таблиц есть только в одноразовом контейнере, в долгоживущем `api` его нет (`docker compose exec -T api printenv MIGRATION_DATABASE_URL`
+завершается ошибкой). Том с `library.json` смонтирован в `tools` только на чтение.
+
+```bash
+# 1. Резервная копия JSON до любых изменений
+docker compose cp api:/app/data/library.json ./library-backup.json
+# 2. Сборка и запуск
+docker compose up -d --build --wait
+# 3. Миграции (печатает применённые 001-004)
+docker compose --profile tools run --rm tools dist/api/server/cli/migrate.js
+# 4. Импорт прежних данных (вариант A: весь library.json с тома)
+docker compose --profile tools run --rm tools dist/api/server/cli/import.js --file /app/data/library.json
+# 5. Учётка библиотекаря: пароль вводится без эха и не попадает в историю; LOGIN замените своим
+read -rs PW; printf '%s' "$PW" | docker compose --profile tools run --rm -T tools dist/api/server/cli/create-user.js --login LOGIN --role librarian; unset PW
+```
+
+Не вводите угловые скобки вокруг подстановок: в оболочке `<` читается как перенаправление ввода.
+**Никогда не запускайте `docker compose down -v` на VPS:** том Postgres и база удалятся вместе с данными.
+Остановить без потери данных — `docker compose stop`.
+
+Что сделано на VPS (https://otus-ai.silentharbor.ru/): автор выполнил шаги выше, импорт — вариант A (Open Question 5):
+перенесён весь `library.json` с тома, вместе с демо-записями «Демо-…» проверяющих из ДЗ-4 (импорт идемпотентен,
+лишнее потом убирается только ручным SQL); созданы учётка библиотекаря и учётка читателя с привязкой к читателю.
+Чек-лист D-13 на публичном адресе (`E2E_BASE_URL=https://otus-ai.silentharbor.ru E2E_REAL_FONT=1`,
+`playwright.docker.config.ts`, `release-checklist.spec.ts`, запуск автором на Windows): **7 passed (13.1 с)**, из них два
+входа setup и пять тестов чек-листа. Резервная копия JSON сохранена на сервере до миграции.
+
+### AI-фича
+
+Кнопка «Заполнить из текста» на `/v2/` (только библиотекарь): свободный текст о книге уходит на `POST /api/ai/book-draft`,
+сервер просит модель вернуть JSON `{ title, author, isbn, copies }` (structured output: `response_format` `json_object`
+и проверка ответа zod), форма книги заполняется черновиком, а сохраняет книгу сам библиотекарь кнопкой «Добавить».
+
+- Лимиты: суточная квота на пользователя `AI_DAILY_LIMIT` (таблица `ai_usage` под RLS, счётчик увеличивается атомарно
+  до вызова модели и при сбое не возвращается), `max_tokens` 300, таймаут 15 с, текст до 2000 символов.
+- Отказы: 400 `VALIDATION_ERROR`, 429 `AI_LIMIT_REACHED`, 502 `AI_UPSTREAM_ERROR` и `AI_BAD_RESPONSE`, 503 `AI_DISABLED`
+  (нет ключа), 504 `AI_TIMEOUT`; тексты для интерфейса — в [`docs/api-spec.md`](docs/api-spec.md).
+- Ключ только в `DEEPSEEK_API_KEY` на сервере: в ответах, логах и клиенте его нет, тест `never exposes the api key`.
+- **DeepSeek вместо OpenRouter и YandexGPT из задания (D-14).** Задание называет OpenRouter или YandexGPT; выбран
+  DeepSeek напрямую: свой ключ и учётная запись автора, один вызов HTTP без промежуточного сервиса и без новой
+  зависимости (встроенный `fetch`). Имя модели по умолчанию `deepseek-flash`, замена без правки кода через
+  `DEEPSEEK_MODEL`: прежнее имя `deepseek-chat` по документации DeepSeek снято 2026-07-24 (решение автора, Open Question 1).
+- Снимок [`hw5-ai-draft.png`](docs/screenshots/hw5-ai-draft.png) сделан с **подменённым ответом модели**
+  (`page.route` в [`hw5-screenshots.spec.ts`](tests/e2e/hw5-screenshots.spec.ts)), это не живой вызов DeepSeek. Тесты AI в сеть не
+  ходят: только `fetchImpl` и `page.route`.
+
+### Принятый риск (модуль 5)
+
+- **MCP к базе в режиме `unrestricted`.** Postgres MCP Pro запущен с `--access-mode=unrestricted`, так как пробы RLS
+  требуют `set role` и запись; подключение ролью `library_owner` к локальному dev-контейнеру. Правила разрешений
+  для `mcp__postgres__*` в `.claude/settings.json` не добавлялись: Claude Code спрашивает подтверждение на каждый
+  вызов (Open Question 6). Строка подключения лежит в пользовательской переменной автора, не в репозитории.
+- **Текст описания книги уходит во внешний сервис** (DeepSeek, T-08-41). В описание не нужно вставлять персональные
+  данные читателей; в лог сервера текст не пишется.
+- **PG17.** Задание версию не называет; взят `postgres:17-alpine`, другие версии не проверялись.
+- **Демо-записи проверяющих на VPS.** Импорт варианта A перенёс записи ДЗ-4 «Демо-…» в боевую базу.
+
+### Что не подтверждено
+
+- **Живой вызов DeepSeek через интерфейс.** Автор ключ задал на сервере, но результат проверки «Заполнить из текста» на
+  публичном адресе агенту не сообщён; в README ни скрина, ни утверждения о нём нет.
+- **Нет команды смены пароля.** Обходной путь: под суперпользователем `postgres` удалить пользователя (сессии и `ai_usage`
+  удаляются каскадом) и выполнить `create-user` заново.
+- **`id` читателя в интерфейсе не показан.** Для привязки учётки читателя нужен SQL-запрос (команда выше).
+- **Неизвестный путь `/api/...` без входа отвечает 401, а не 404:** для учебного проекта принято, замечание для ревью кода.
+- **`npm run check` на Windows красный ровно на одном тесте** `format-and-lint hook script > formats edited file in place with exit code 0`
+  (hook вызывает `node_modules/.bin/prettier`, на Windows `ENOENT`); проблема предсуществующая, вне фазы 8, решение автора — в
+  [`docs/memory.md`](docs/memory.md), запись 2026-11-13. Зелёный `check` в WSL-копии не проверялся.
+- Настоящие телефоны и браузеры, кроме Chromium, как и в модуле 4, не проверялись.
 
 ## Что не воспроизводится из git
 
