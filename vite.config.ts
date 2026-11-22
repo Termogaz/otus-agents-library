@@ -16,17 +16,20 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     proxy: {
-      '/api': 'http://localhost:3000',
+      // Host остаётся адресом страницы (localhost:5173): без этого сокращённая запись Vite
+      // подменяет его на адрес API, и проверка Origin на записи принимает свой хост за чужой
+      '/api': { target: 'http://localhost:3000', changeOrigin: false },
     },
   },
   build: {
     outDir: 'dist/client',
-    // Три страницы из одного проекта: старый фронт, вариант 2 и прототип
+    // Четыре страницы из одного проекта: старый фронт, вариант 2, прототип и вход
     rolldownOptions: {
       input: {
         main: 'index.html',
         v2: 'v2/index.html',
         prototype: 'prototype/index.html',
+        login: 'login/index.html',
       },
     },
   },

@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 
 // Итог действия: один на страницу, место задаёт `place` (ux-patterns.md, правила итога)
 export type OutcomeKind = 'error' | 'success' | 'saved';
-export type OutcomePlace = 'page' | 'books' | 'readers' | 'checkout' | 'return';
+export type OutcomePlace = 'page' | 'books' | 'draft' | 'readers' | 'checkout' | 'return';
 // id уникален у каждого итога: по нему новый итог входит заново, даже с тем же текстом
 export type Outcome = { id: number; kind: OutcomeKind; place: OutcomePlace; text: string };
 

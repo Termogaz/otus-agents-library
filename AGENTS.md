@@ -10,17 +10,20 @@ React + Vite на клиенте, хранилище — JSON-файл за ин
 
 ## Команды
 
-| Задача                        | Команда                                                             |
-| ----------------------------- | ------------------------------------------------------------------- |
-| Установка зависимостей        | `npm ci`                                                            |
-| Запуск (API :3000 + UI :5173) | `npm run dev`                                                       |
-| Все unit-тесты                | `npm test`                                                          |
-| Один файл / один тест         | `npx vitest run tests/unit/<file>.test.ts -t "<имя теста>"`         |
-| E2E                           | `npm run test:e2e` (сам поднимает `npm run dev`)                    |
-| Линтер                        | `npm run lint`                                                      |
-| Форматирование                | `npm run format` (проверка без записи: `npm run format:check`)      |
-| Типы                          | `npm run typecheck`                                                 |
-| Полная проверка               | `npm run check` — обязательна перед тем, как назвать задачу готовой |
+| Задача                         | Команда                                                             |
+| ------------------------------ | ------------------------------------------------------------------- |
+| Установка зависимостей         | `npm ci`                                                            |
+| Запуск (API :3000 + UI :5173)  | `npm run dev`                                                       |
+| Все unit-тесты                 | `npm test`                                                          |
+| Один файл / один тест          | `npx vitest run tests/unit/<file>.test.ts -t "<имя теста>"`         |
+| E2E                            | `npm run test:e2e` (сам поднимает `npm run dev`)                    |
+| Линтер                         | `npm run lint`                                                      |
+| Форматирование                 | `npm run format` (проверка без записи: `npm run format:check`)      |
+| Типы                           | `npm run typecheck`                                                 |
+| Поднять Postgres (dev и тесты) | `npm run db:up`                                                     |
+| Миграции dev-базы              | `npm run db:migrate`                                                |
+| Тесты БД                       | `npm run test:db` (нужен `npm run db:up`)                           |
+| Полная проверка                | `npm run check` — обязательна перед тем, как назвать задачу готовой |
 
 ## Конвенции
 
@@ -69,6 +72,7 @@ tests/unit/   Vitest; tests/e2e/ — Playwright
   «Generated with Claude Code» в Pull Request.
 - Бизнес-правила — через TDD: сначала падающий тест, затем минимальный код, затем рефакторинг.
 - Задача готова, только когда `npm run check` зелёный, а для изменений UI — и `npm run test:e2e`.
+  `check` включает `npm run test:db`, нужен запущенный Docker (`npm run db:up`).
 - Крупную задачу делить на шаги, проверяемые по отдельности; прогресс отмечают команды GSD в `.planning/ROADMAP.md` и `.planning/STATE.md`, в `docs/plan.md` его не дублировать.
 - В конце сессии или шага — запись в `docs/memory.md`: сделано / решение / дальше / ловушки.
 - Если инструкция противоречит другой или задачу нельзя выполнить по правилам — остановиться
@@ -106,5 +110,8 @@ tests/unit/   Vitest; tests/e2e/ — Playwright
 - GSD Core требует Node ≥ 24 (через nvm). Сессия Claude Code, запущенная до установки
   nvm, видит системный Node 22 — для `/gsd-*` нужна новая сессия. Файлы GSD не в git:
   восстановить — `npx @opengsd/gsd-core@1.18.0 --claude --local`.
+- `test:db` и `test:e2e` используют одну базу `library_test`: не запускать одновременно.
+- Init-скрипт ролей Postgres выполняется только на пустом томе: роли не появились — пересоздать
+  dev-том (`docker compose -f docker-compose.yml -f docker-compose.dev.yml down -v`), на VPS так не делать.
 - Проект лежит в файловой системе WSL (`~/projects/library`), не на `/mnt/c`: там npm и
   hooks работают в разы быстрее.

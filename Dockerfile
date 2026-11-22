@@ -16,6 +16,8 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 COPY --from=build /app/dist/api ./dist/api
 COPY data/seed.json /app/seed/seed.json
+# Миграции рядом с dist: CLI migrate.js читает db/migrations от рабочего каталога /app
+COPY db/migrations ./db/migrations
 RUN mkdir -p /app/data && chown node:node /app/data
 USER node
 # Семя копируется только в пустой том: существующий library.json не перезаписывается

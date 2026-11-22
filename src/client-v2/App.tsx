@@ -13,6 +13,7 @@ import { VariantFooter, type Variant } from '@/components/VariantFooter';
 import { BooksSection } from '@/features/BooksSection';
 import { LoansSection } from '@/features/LoansSection';
 import { ReadersSection } from '@/features/ReadersSection';
+import type { BookDraft } from './api/live-client';
 import { formatDate, readDueAt } from './loan-view';
 
 // Запись прошла, но списки не перечитались: это не отказ, страницу нужно обновить
@@ -26,9 +27,13 @@ type Props = {
   mode: 'server' | 'demo';
   // Текущий вариант: его ссылка в подвале помечается как текущая
   variant: Variant;
+  // Текст отказа для пользователя; по умолчанию — тексты старого клиента
+  describeError?: (e: unknown) => string;
+  // Черновик книги от AI; передаётся только странице /v2/ библиотекаря, иначе блока нет
+  draftBook?: (text: string) => Promise<BookDraft>;
 };
 
-export function App({ api, mode, variant }: Props) {
+export function App({ api, mode, variant, describeError = errorMessage, draftBook }: Props) {
   const [books, setBooks] = useState<BookView[]>([]);
   const [readers, setReaders] = useState<ReaderView[]>([]);
   const [loans, setLoans] = useState<LoanView[]>([]);
@@ -61,9 +66,9 @@ export function App({ api, mode, variant }: Props) {
       .catch((e: unknown) => {
         setLoad('failed');
         setApiStatus(mode === 'demo' ? 'демо-данные' : 'недоступен');
-        showOutcome('error', 'page', errorMessage(e));
+        showOutcome('error', 'page', describeError(e));
       });
-  }, [refresh, mode, showOutcome]);
+  }, [refresh, mode, showOutcome, describeError]);
 
   // Действие пользователя. Старый итог виден до конца запроса, новый заменяет его целиком (FR-2).
   // Действие и обновление списков в разных try: сбой чтения после успешной записи — не отказ (FR-5)
@@ -76,7 +81,7 @@ export function App({ api, mode, variant }: Props) {
     try {
       result = await action();
     } catch (e) {
-      showOutcome('error', place, errorMessage(e));
+      showOutcome('error', place, describeError(e));
       return false;
     }
     try {
@@ -116,6 +121,19 @@ export function App({ api, mode, variant }: Props) {
     );
   }
 
+  // Черновик не пишет в хранилище и списки не перечитывает: итог — подсказка проверить поля
+  async function draft(text: string): Promise<BookDraft | null> {
+    if (!draftBook) return null;
+    try {
+      const result = await draftBook(text);
+      showOutcome('success', 'draft', 'Черновик готов. Проверьте поля перед сохранением');
+      return result;
+    } catch (e) {
+      showOutcome('error', 'draft', describeError(e));
+      return null;
+    }
+  }
+
   // MotionConfig и LazyMotion в корне: анимации только на /v2/ и /prototype/ (D-05, D-07)
   return (
     <MotionConfig reducedMotion="user">
@@ -140,6 +158,7 @@ export function App({ api, mode, variant }: Props) {
               books={books}
               load={load}
               outcome={outcome}
+              {...(draftBook ? { onDraft: draft } : {})}
               onAdd={(book) =>
                 run(
                   'books',

@@ -1,12 +1,28 @@
-# Два контейнера: api (Node, порт наружу не публикуется) и web (nginx, порт 8080 только на localhost).
-# Данные лежат на именованном томе, а не в bind-mount: на Windows с правами файлов это ненадёжно.
+# Постоянно работают три контейнера: postgres, api (Node, порт наружу не публикуется) и
+# web (nginx, порт 8080 только на localhost). Четвёртый, tools, одноразовый: миграции, импорт, учётки.
+# Данные лежат на именованных томах, а не в bind-mount: на Windows с правами файлов это ненадёжно.
 services:
+  # API работает на Postgres ролью library_api (без обхода RLS, D-01). Пароля владельца таблиц
+  # здесь нет: он есть только у одноразового сервиса tools (D-17).
   api:
     build:
       context: .
       target: api
+    environment:
+      STORAGE: postgres
+      DATABASE_URL: postgres://library_api:${LIBRARY_API_PASSWORD:?задайте LIBRARY_API_PASSWORD}@postgres:5432/library
+      # Caddy → nginx → api: один доверенный прокси перед Express, иначе cookie сессии без Secure
+      TRUST_PROXY: '1'
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      DEEPSEEK_MODEL: ${DEEPSEEK_MODEL:-deepseek-flash}
+      AI_DAILY_LIMIT: ${AI_DAILY_LIMIT:-20}
+    # Том JSON остаётся: источник импорта и резервная копия (D-11)
     volumes:
       - library-data:/app/data
+    depends_on:
+      postgres:
+        condition: service_healthy
     healthcheck:
       test: ['CMD', 'wget', '-qO-', 'http://localhost:3000/api/health']
       interval: 10s
@@ -24,5 +40,43 @@ services:
       api:
         condition: service_healthy
 
+  # PostgreSQL 17. Порт наружу не публикуется: на localhost его открывает только
+  # docker-compose.dev.yml, который подключают явно (на VPS не подключать).
+  # Роли и базы создаёт init-скрипт один раз на пустом томе; права на таблицы выдают миграции.
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?задайте POSTGRES_PASSWORD}
+      LIBRARY_OWNER_PASSWORD: ${LIBRARY_OWNER_PASSWORD:?задайте LIBRARY_OWNER_PASSWORD}
+      LIBRARY_API_PASSWORD: ${LIBRARY_API_PASSWORD:?задайте LIBRARY_API_PASSWORD}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./docker/postgres/init-roles.sh:/docker-entrypoint-initdb.d/10-init-roles.sh:ro
+    # Через TCP: временный сервер init слушает только сокет, поэтому контейнер
+    # становится здоровым лишь после того, как init-скрипт отработал.
+    healthcheck:
+      test: ['CMD', 'pg_isready', '-h', '127.0.0.1', '-U', 'postgres', '-d', 'postgres']
+      interval: 5s
+      retries: 10
+
+  # Одноразовые команды: docker compose --profile tools run --rm tools dist/api/server/cli/<команда>.js
+  # Обычный `up` сервис не запускает (профиль tools). Пароль владельца таблиц живёт только в этом
+  # контейнере, не в долгоживущем api. Том JSON смонтирован только на чтение: импорт его не меняет.
+  tools:
+    build:
+      context: .
+      target: api
+    profiles: [tools]
+    entrypoint: ['node']
+    environment:
+      DATABASE_URL: postgres://library_api:${LIBRARY_API_PASSWORD:?задайте LIBRARY_API_PASSWORD}@postgres:5432/library
+      MIGRATION_DATABASE_URL: postgres://library_owner:${LIBRARY_OWNER_PASSWORD:?задайте LIBRARY_OWNER_PASSWORD}@postgres:5432/library
+    volumes:
+      - library-data:/app/data:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+
 volumes:
   library-data:
+  postgres-data:
