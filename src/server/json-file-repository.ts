@@ -61,6 +61,9 @@ export class JsonFileRepository implements LibraryRepository {
   saveBook(book: Book): Promise<void> {
     return this.update((s) => ({ ...s, books: upsert(s.books, book) }));
   }
+  deleteBook(id: string): Promise<void> {
+    return this.update((s) => ({ ...s, books: s.books.filter((b) => b.id !== id) }));
+  }
 
   listReaders(): Promise<Reader[]> {
     return this.read((s) => s.readers);
@@ -70,6 +73,9 @@ export class JsonFileRepository implements LibraryRepository {
   }
   saveReader(reader: Reader): Promise<void> {
     return this.update((s) => ({ ...s, readers: upsert(s.readers, reader) }));
+  }
+  deleteReader(id: string): Promise<void> {
+    return this.update((s) => ({ ...s, readers: s.readers.filter((r) => r.id !== id) }));
   }
 
   listLoans(filter: LoanFilter = {}): Promise<Loan[]> {

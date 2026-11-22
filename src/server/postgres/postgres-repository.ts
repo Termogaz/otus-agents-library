@@ -75,6 +75,11 @@ export class PostgresRepository implements LibraryRepository {
     );
   }
 
+  async deleteBook(id: string): Promise<void> {
+    // Внешний ключ loans.book_id — restrict: выдачи каскадом не удаляются
+    await this.client.query('delete from books where id = $1', [id]);
+  }
+
   async listReaders(): Promise<Reader[]> {
     const { rows } = await this.client.query<ReaderRow>(
       'select id, name, contact from readers order by id',
@@ -96,6 +101,10 @@ export class PostgresRepository implements LibraryRepository {
        on conflict (id) do update set name = excluded.name, contact = excluded.contact`,
       [reader.id, reader.name, reader.contact],
     );
+  }
+
+  async deleteReader(id: string): Promise<void> {
+    await this.client.query('delete from readers where id = $1', [id]);
   }
 
   async listLoans(filter: LoanFilter = {}): Promise<Loan[]> {

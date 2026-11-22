@@ -12,10 +12,13 @@ export interface LibraryRepository {
   listBooks(): Promise<Book[]>;
   getBook(id: string, options?: ReadOptions): Promise<Book | undefined>;
   saveBook(book: Book): Promise<void>;
+  // Удаляет книгу; правило «с выдачами нельзя» проверяет домен, не репозиторий
+  deleteBook(id: string): Promise<void>;
 
   listReaders(): Promise<Reader[]>;
   getReader(id: string, options?: ReadOptions): Promise<Reader | undefined>;
   saveReader(reader: Reader): Promise<void>;
+  deleteReader(id: string): Promise<void>;
 
   listLoans(filter?: LoanFilter): Promise<Loan[]>;
   getLoan(id: string, options?: ReadOptions): Promise<Loan | undefined>;

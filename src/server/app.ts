@@ -3,7 +3,9 @@ import express, { type ErrorRequestHandler } from 'express';
 import { z } from 'zod';
 import {
   availableCopiesFromCount,
+  checkBookDeletion,
   checkCopiesChange,
+  checkReaderDeletion,
   checkoutBook,
   isOverdue,
   returnBook,
@@ -130,6 +132,21 @@ export function createApp({
     res.json(book);
   });
 
+  app.delete('/api/books/:id', async (req, res) => {
+    const { id } = parse(idParams, req.params);
+    await storage.run(contextOf(res), async (repo) => {
+      // Книга блокируется первой, как при выдаче
+      const existing = await repo.getBook(id, { forUpdate: true });
+      if (!existing) throw new ApiError(404, 'BOOK_NOT_FOUND');
+
+      const result = checkBookDeletion(await repo.listLoans({ bookId: id }));
+      if (!result.ok) throw new ApiError(409, result.code);
+
+      await repo.deleteBook(id);
+    });
+    res.status(204).end();
+  });
+
   app.get('/api/readers', async (_req, res) => {
     res.json(await storage.run(contextOf(res), (repo) => repo.listReaders()));
   });
@@ -138,6 +155,20 @@ export function createApp({
     const reader = { id: newId(), ...parse(readerInput, req.body) };
     await storage.run(contextOf(res), (repo) => repo.saveReader(reader));
     res.status(201).json(reader);
+  });
+
+  app.delete('/api/readers/:id', async (req, res) => {
+    const { id } = parse(idParams, req.params);
+    await storage.run(contextOf(res), async (repo) => {
+      const existing = await repo.getReader(id, { forUpdate: true });
+      if (!existing) throw new ApiError(404, 'READER_NOT_FOUND');
+
+      const result = checkReaderDeletion(await repo.listLoans({ readerId: id }));
+      if (!result.ok) throw new ApiError(409, result.code);
+
+      await repo.deleteReader(id);
+    });
+    res.status(204).end();
   });
 
   app.get('/api/loans', async (req, res) => {
