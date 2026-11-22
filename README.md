@@ -338,10 +338,11 @@ read -rs PW; printf '%s' "$PW" | docker compose --profile tools run --rm -T tool
 Кнопка «Заполнить из текста» на `/v2/` (только библиотекарь): свободный текст о книге уходит на `POST /api/ai/book-draft`,
 сервер просит модель вернуть JSON `{ title, author, isbn, copies }` (structured output: `response_format` `json_object`
 и проверка ответа zod), форма книги заполняется черновиком, а сохраняет книгу сам библиотекарь кнопкой «Добавить».
+Поле, которого нет в тексте, остаётся пустым, а итог черновика называет нераспознанные поля.
 
 - Лимиты: суточная квота на пользователя `AI_DAILY_LIMIT` (таблица `ai_usage` под RLS, счётчик увеличивается атомарно
   до вызова модели и при сбое не возвращается), `max_tokens` 300, таймаут 15 с, текст до 2000 символов.
-- Отказы: 400 `VALIDATION_ERROR`, 429 `AI_LIMIT_REACHED`, 502 `AI_UPSTREAM_ERROR` и `AI_BAD_RESPONSE`, 503 `AI_DISABLED`
+- Отказы: 400 `VALIDATION_ERROR`, 429 `AI_LIMIT_REACHED`, 422 `AI_NOTHING_FOUND` (в тексте не найдено ни одного поля книги), 502 `AI_UPSTREAM_ERROR` и `AI_BAD_RESPONSE`, 503 `AI_DISABLED`
   (нет ключа), 504 `AI_TIMEOUT`; тексты для интерфейса — в [`docs/api-spec.md`](docs/api-spec.md).
 - Ключ только в `DEEPSEEK_API_KEY` на сервере: в ответах, логах и клиенте его нет, тест `never exposes the api key`.
 - **DeepSeek вместо OpenRouter и YandexGPT из задания (D-14).** Задание называет OpenRouter или YandexGPT; выбран
