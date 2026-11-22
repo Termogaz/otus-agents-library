@@ -32,6 +32,14 @@ export async function login(loginName: string, password: string): Promise<Me> {
   return (await res.json()) as Me;
 }
 
+// Черновик карточки книги от AI (D-14): не сохраняется, библиотекарь правит форму сам
+export type BookDraft = { title: string; author: string; isbn: string; copies: number };
+
+export async function draftBook(text: string): Promise<BookDraft> {
+  const res = await call('POST', '/api/ai/book-draft', { text });
+  return (await res.json()) as BookDraft;
+}
+
 export async function me(): Promise<Me> {
   const res = await call('GET', '/api/auth/me');
   return (await res.json()) as Me;

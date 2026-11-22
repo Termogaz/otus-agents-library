@@ -1,7 +1,15 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { ApiError, api } from '../../client/api';
-import { guardSession, liveErrorMessage, loginUrl, logout, me, type Me } from '../api/live-client';
+import {
+  draftBook,
+  guardSession,
+  liveErrorMessage,
+  loginUrl,
+  logout,
+  me,
+  type Me,
+} from '../api/live-client';
 import { SessionBar } from '../components/SessionBar';
 import { App } from '../App';
 import { ReaderHome } from '../features/ReaderHome';
@@ -32,6 +40,8 @@ async function start(container: HTMLElement): Promise<void> {
   }
 
   const guarded = guardSession(api, toLogin);
+  // Черновик книги от AI: только библиотекарю; истёкшая сессия ведёт на вход, как у остальных вызовов
+  const guardedDraft = guardSession({ draftBook }, toLogin).draftBook;
   const bar =
     current !== null && current.login !== null ? (
       <SessionBar me={current} onLogout={leave} />
@@ -43,7 +53,13 @@ async function start(container: HTMLElement): Promise<void> {
       {current?.role === 'reader' ? (
         <ReaderHome api={guarded} me={current} />
       ) : (
-        <App api={guarded} mode="server" variant="v2" describeError={liveErrorMessage} />
+        <App
+          api={guarded}
+          mode="server"
+          variant="v2"
+          describeError={liveErrorMessage}
+          draftBook={guardedDraft}
+        />
       )}
       {/* Строка сессии после содержимого: порядок фокуса совпадает с порядком на экране */}
       {bar}

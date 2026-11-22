@@ -13,6 +13,7 @@ import { VariantFooter, type Variant } from '@/components/VariantFooter';
 import { BooksSection } from '@/features/BooksSection';
 import { LoansSection } from '@/features/LoansSection';
 import { ReadersSection } from '@/features/ReadersSection';
+import type { BookDraft } from './api/live-client';
 import { formatDate, readDueAt } from './loan-view';
 
 // Запись прошла, но списки не перечитались: это не отказ, страницу нужно обновить
@@ -28,9 +29,11 @@ type Props = {
   variant: Variant;
   // Текст отказа для пользователя; по умолчанию — тексты старого клиента
   describeError?: (e: unknown) => string;
+  // Черновик книги от AI; передаётся только странице /v2/ библиотекаря, иначе блока нет
+  draftBook?: (text: string) => Promise<BookDraft>;
 };
 
-export function App({ api, mode, variant, describeError = errorMessage }: Props) {
+export function App({ api, mode, variant, describeError = errorMessage, draftBook }: Props) {
   const [books, setBooks] = useState<BookView[]>([]);
   const [readers, setReaders] = useState<ReaderView[]>([]);
   const [loans, setLoans] = useState<LoanView[]>([]);
@@ -118,6 +121,19 @@ export function App({ api, mode, variant, describeError = errorMessage }: Props)
     );
   }
 
+  // Черновик не пишет в хранилище и списки не перечитывает: итог — подсказка проверить поля
+  async function draft(text: string): Promise<BookDraft | null> {
+    if (!draftBook) return null;
+    try {
+      const result = await draftBook(text);
+      showOutcome('success', 'draft', 'Черновик готов. Проверьте поля перед сохранением');
+      return result;
+    } catch (e) {
+      showOutcome('error', 'draft', describeError(e));
+      return null;
+    }
+  }
+
   // MotionConfig и LazyMotion в корне: анимации только на /v2/ и /prototype/ (D-05, D-07)
   return (
     <MotionConfig reducedMotion="user">
@@ -142,6 +158,7 @@ export function App({ api, mode, variant, describeError = errorMessage }: Props)
               books={books}
               load={load}
               outcome={outcome}
+              {...(draftBook ? { onDraft: draft } : {})}
               onAdd={(book) =>
                 run(
                   'books',
