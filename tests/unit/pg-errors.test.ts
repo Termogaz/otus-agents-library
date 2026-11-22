@@ -61,7 +61,7 @@ describe('API database errors', () => {
     const errors = [databaseError('42501'), databaseError('XX000', 'secret detail')];
     const repo = {
       listBooks: () => Promise.reject(errors.shift()),
-      listLoans: () => Promise.resolve([]),
+      activeLoanCounts: () => Promise.resolve(new Map<string, number>()),
     } as unknown as LibraryRepository;
     const app = createApp({ repo });
 
