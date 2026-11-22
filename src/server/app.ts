@@ -10,6 +10,7 @@ import {
   isOverdue,
   returnBook,
 } from '../domain/index.js';
+import { bookDraftHandler, type AiDeps } from './ai/book-draft.js';
 import { ApiError } from './api-error.js';
 import { createAuthRouter, requireRole, type AuthDeps } from './auth/auth.js';
 import { corsMiddleware } from './cors.js';
@@ -29,6 +30,8 @@ export type AppDeps = (
   auth?: AuthDeps;
   // Разрешённые источники для CORS и проверки Origin на записи; по умолчанию пусто
   cors?: { allowedOrigins: ReadonlySet<string> };
+  // Черновик книги от AI (D-14). Без него маршрут отвечает 503 AI_DISABLED
+  ai?: AiDeps;
 };
 
 const text = z.string().trim().min(1);
@@ -77,6 +80,7 @@ export function createApp({
   newId = randomUUID,
   auth,
   cors,
+  ai,
 }: AppDeps) {
   const app = express();
   // CORS и проверка Origin — первыми, до express.json и authenticate: preflight не должен
@@ -262,10 +266,16 @@ export function createApp({
     res.json(loan);
   });
 
-  // Черновик книги от AI: вызов модели подключает 08-12; без AI-зависимости ответ 503 (D-14)
-  app.post('/api/ai/book-draft', requireRole('librarian'), () => {
-    throw new ApiError(503, 'AI_DISABLED');
-  });
+  // Черновик книги от AI: не сохраняется, библиотекарь правит форму и сохраняет сам (D-14)
+  app.post(
+    '/api/ai/book-draft',
+    requireRole('librarian'),
+    ai
+      ? bookDraftHandler(ai, contextOf)
+      : () => {
+          throw new ApiError(503, 'AI_DISABLED');
+        },
+  );
 
   // Неизвестный путь под /api — JSON с кодом, а не HTML-страница ошибки Express
   app.use('/api', () => {

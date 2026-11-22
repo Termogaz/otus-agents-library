@@ -1,4 +1,3 @@
-import request from 'supertest';
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApp } from '../../src/server/app.js';
 import { PgAuthStore } from '../../src/server/auth/auth.js';
