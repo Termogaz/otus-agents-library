@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { availableCopies, checkoutBook, isOverdue, returnBook } from '../../src/domain/loans.js';
+import {
+  availableCopies,
+  availableCopiesFromCount,
+  checkoutBook,
+  isOverdue,
+  returnBook,
+} from '../../src/domain/loans.js';
 import type { Book, Loan, Reader } from '../../src/domain/types.js';
 
 const now = new Date('2026-10-17T10:00:00Z');
@@ -199,5 +205,19 @@ describe('availableCopies', () => {
     const active = [loan({ id: 'l1' }), loan({ id: 'l2' })];
 
     expect(availableCopies({ ...book, copies: 1 }, active)).toBe(0);
+  });
+});
+
+describe('availableCopiesFromCount', () => {
+  it('counts free copies from the number of active loans', () => {
+    expect(availableCopiesFromCount(3, 1)).toBe(2);
+  });
+
+  it('never reports negative free copies', () => {
+    expect(availableCopiesFromCount(1, 2)).toBe(0);
+  });
+
+  it('reports all copies free when nothing is on loan', () => {
+    expect(availableCopiesFromCount(2, 0)).toBe(2);
   });
 });
