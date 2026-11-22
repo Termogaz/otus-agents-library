@@ -1,7 +1,20 @@
 import { defineConfig, devices } from '@playwright/test';
+import { loadLocalEnv } from './src/server/env-file.js';
+
+// Тестовые URL лежат в файле окружения автора; заданные в оболочке или CI не перезаписываются
+loadLocalEnv();
+
+const testDatabaseUrl = process.env['TEST_DATABASE_URL'];
+if (!testDatabaseUrl && !process.env['E2E_BASE_URL']) {
+  throw new Error(
+    'e2e: задайте TEST_DATABASE_URL (тестовая база library_test) и запустите npm run db:up, см. README',
+  );
+}
 
 export default defineConfig({
   testDir: 'tests/e2e',
+  // Миграции, очистка и учётки library_test перед прогоном
+  globalSetup: './tests/e2e/global-setup.ts',
   fullyParallel: false,
   retries: 0,
   reporter: [['list'], ['html', { open: 'never' }]],
@@ -21,14 +34,23 @@ export default defineConfig({
           },
         }),
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    // Вход библиотекаря и читателя, сессии сохраняются в playwright/.auth
+    { name: 'setup', testMatch: /auth\.setup\.ts/ },
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'], storageState: 'playwright/.auth/librarian.json' },
+      dependencies: ['setup'],
+      testIgnore: /auth\.setup\.ts/,
+    },
+  ],
   webServer: {
     command: 'npm run dev',
     url: 'http://localhost:5173',
-    reuseExistingServer: true,
+    // Занятый порт 5173 означал бы чужой dev-сервер на другой базе
+    reuseExistingServer: false,
     timeout: 60_000,
-    // Файл окружения автора задаёт STORAGE=postgres для dev. Существующие e2e до перехода на
-    // тестовую базу остаются на JSON и не пишут в dev-базу (loadLocalEnv заданное не перезаписывает)
-    env: { STORAGE: 'json' },
+    // Сервер e2e ходит в тестовую базу, а не в dev-базу из файла окружения автора
+    env: { STORAGE: 'postgres', DATABASE_URL: testDatabaseUrl ?? '' },
   },
 });
