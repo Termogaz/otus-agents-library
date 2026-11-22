@@ -133,3 +133,191 @@ Permissions в `.claude/settings.json`: `deny` — `.env*`, правка `packag
 | проектные hooks `.claude/hooks/*.ts` и их тесты                              | `.claude/settings.local.json`: hooks GSD, statusline   |
 | `.planning/` (кроме служебного `state.json`)                                 | данные claude-mem `~/.claude-mem/`, auto memory        |
 | `docs/memory.md`, `docs/context-usage.md`, `docs/screenshots/`               | чек-пойнты `.local/checkpoints/`                       |
+
+## Схема данных
+
+Схема backend на PostgreSQL (ДЗ-5, пункт 1). Сущности взяты из [PRD](handoff/prd.md): книги,
+читатели, выдачи; к ним добавлены учётные записи, сессии и счётчик обращений к AI. Миграции
+в `db/migrations/` пишутся по этому разделу, тест `schema-doc` сверяет их с ним. Маршруты и роли —
+в [`api-spec.md`](api-spec.md).
+
+```mermaid
+erDiagram
+    BOOKS ||--o{ LOANS : "выдаётся"
+    READERS ||--o{ LOANS : "берёт"
+    READERS |o--o| USERS : "учётка читателя"
+    USERS ||--o{ SESSIONS : "входит"
+    USERS ||--o{ AI_USAGE : "тратит лимит"
+    BOOKS {
+        text id PK
+        text title
+        text author
+        text isbn
+        integer copies
+    }
+    READERS {
+        text id PK
+        text name
+        text contact
+    }
+    LOANS {
+        text id PK
+        text book_id FK
+        text reader_id FK
+        timestamptz issued_at
+        timestamptz due_at
+        timestamptz returned_at
+    }
+    USERS {
+        uuid id PK
+        text login UK
+        text password_hash
+        text role
+        text reader_id FK
+        timestamptz created_at
+    }
+    SESSIONS {
+        text token_hash PK
+        uuid user_id FK
+        timestamptz expires_at
+        timestamptz created_at
+    }
+    AI_USAGE {
+        uuid user_id PK
+        date day PK
+        integer count
+    }
+```
+
+### Таблицы
+
+Идентификаторы книг, читателей и выдач — `text`: импорт переносит `id` из `data/library.json`
+как есть. Идентификаторы учёток — `uuid`: в JSON-хранилище учёток нет.
+
+**books**
+
+| Колонка | Тип     | Ограничение      |
+| ------- | ------- | ---------------- |
+| id      | text    | primary key      |
+| title   | text    | not null         |
+| author  | text    | not null         |
+| isbn    | text    | not null         |
+| copies  | integer | not null, `>= 0` |
+
+**readers**
+
+| Колонка | Тип  | Ограничение |
+| ------- | ---- | ----------- |
+| id      | text | primary key |
+| name    | text | not null    |
+| contact | text | not null    |
+
+**loans**
+
+| Колонка     | Тип         | Ограничение                                             |
+| ----------- | ----------- | ------------------------------------------------------- |
+| id          | text        | primary key                                             |
+| book_id     | text        | not null, внешний ключ на books, `on delete restrict`   |
+| reader_id   | text        | not null, внешний ключ на readers, `on delete restrict` |
+| issued_at   | timestamptz | not null                                                |
+| due_at      | timestamptz | not null, `check (due_at > issued_at)`                  |
+| returned_at | timestamptz | null — книга ещё у читателя                             |
+
+**users**
+
+| Колонка       | Тип         | Ограничение                                                |
+| ------------- | ----------- | ---------------------------------------------------------- |
+| id            | uuid        | primary key, `default gen_random_uuid()`                   |
+| login         | text        | unique, not null; формат логина проверяет zod на входе     |
+| password_hash | text        | not null                                                   |
+| role          | text        | not null, `check (role in ('librarian', 'reader'))`        |
+| reader_id     | text        | unique, null, внешний ключ на readers, `on delete cascade` |
+| created_at    | timestamptz | not null, `default now()`                                  |
+
+Для users действует проверка: `reader_id` задан тогда и только тогда, когда `role = 'reader'`.
+Удаление читателя убирает и его учётку; удаление читателя с историей выдач и так запрещено
+кодом `409` (см. «Удаление»).
+
+**sessions**
+
+| Колонка    | Тип         | Ограничение                                              |
+| ---------- | ----------- | -------------------------------------------------------- |
+| token_hash | text        | primary key — sha256 токена в hex, сам токен не хранится |
+| user_id    | uuid        | not null, внешний ключ на users, `on delete cascade`     |
+| expires_at | timestamptz | not null                                                 |
+| created_at | timestamptz | not null, `default now()`                                |
+
+**ai_usage**
+
+| Колонка | Тип     | Ограничение                                |
+| ------- | ------- | ------------------------------------------ |
+| user_id | uuid    | внешний ключ на users, `on delete cascade` |
+| day     | date    | день учёта                                 |
+| count   | integer | not null                                   |
+
+Первичный ключ — `(user_id, day)`.
+
+**schema_migrations** — служебная таблица раннера миграций: `version integer` (primary key),
+`name text`, `checksum text`, `applied_at timestamptz`.
+
+**Индексы:** `loans (book_id) where returned_at is null` — подсчёт активных выдач книги;
+`loans (reader_id)` — выдачи читателя и лимит; `sessions (expires_at)` — очистка истёкших сессий.
+
+### Удаление
+
+Внешние ключи — `ON DELETE RESTRICT`. До удаления API проверяет правило в домене: активная выдача
+— `409 BOOK_HAS_ACTIVE_LOANS` или `409 READER_HAS_ACTIVE_LOANS`; закрытые выдачи —
+`409 BOOK_HAS_LOAN_HISTORY` или `409 READER_HAS_LOAN_HISTORY`: история выдач не теряется.
+Решение по закрытым выдачам принято при планировании и обратимо миграцией.
+
+### Роли БД
+
+| Роль            | Назначение                                                                                                         |
+| --------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `library_owner` | владелец таблиц, выполняет миграции и импорт; входит в роль `library_api`, чтобы пробы через MCP делали `SET ROLE` |
+| `library_api`   | роль приложения: `NOSUPERUSER`, `NOBYPASSRLS`, не владелец; только DML-права на нужные таблицы                     |
+
+- На `sessions` у `library_api` прав нет. Доступ к сессиям — только через функции
+  `SECURITY DEFINER`: `auth_find_user_for_login`, `auth_create_session`, `auth_delete_session`,
+  `auth_resolve_session`; у каждой `set search_path = public, pg_temp`.
+- На `users.password_hash` у `library_api` нет права `SELECT` (колоночные привилегии): хеш
+  читает только функция входа.
+- Функция `SECURITY DEFINER` `active_loan_counts()` возвращает `(book_id, active)` — число
+  активных выдач по книгам. Читатель видит доступность экземпляров, не видя чужих выдач.
+
+### Контекст запроса и RLS
+
+На каждый запрос открывается транзакция и выполняется
+`set_config('app.user_id' | 'app.role' | 'app.reader_id', значение, true)` — значения живут
+до конца транзакции. Функции-помощники `app_role()`, `app_reader_id()`, `app_user_id()` читают
+их через `nullif(current_setting(..., true), '')`: после транзакции `current_setting`
+возвращает пустую строку, а не `NULL`.
+
+На таблицах books, readers, loans, users, ai_usage включены `ENABLE ROW LEVEL SECURITY` и
+`FORCE ROW LEVEL SECURITY` — политики действуют и на владельца. Политики по умолчанию отказывают.
+
+| Таблица  | Аноним | Читатель                                            | Библиотекарь       |
+| -------- | ------ | --------------------------------------------------- | ------------------ |
+| books    | нет    | чтение                                              | всё                |
+| readers  | нет    | только своя строка                                  | всё                |
+| loans    | нет    | чтение только своих (`reader_id = app_reader_id()`) | всё                |
+| users    | нет    | чтение только своей строки                          | всё                |
+| ai_usage | нет    | нет                                                 | только свои строки |
+
+«Аноним» — запрос без `app.role`: ни одна политика его не пропускает.
+
+### Блокировки при выдаче
+
+Выдача идёт в одной транзакции: `select ... for update` строки книги, затем строки читателя
+(порядок фиксирован — защита от взаимоблокировки), подсчёт активных выдач, правило домена,
+`insert`. Возврат берёт `for update` строки выдачи: второй параллельный возврат видит
+`returned_at` и получает `LOAN_ALREADY_RETURNED`. Удаление книги или читателя и смена `copies`
+берут те же блокировки в том же порядке. Очередь `serial` в `app.ts` остаётся только
+для режима JSON.
+
+### Миграции
+
+Файлы: `db/migrations/001-schema.sql`, `002-auth.sql`, `003-rls.sql`, `004-ai-usage.sql`.
+Свой раннер: таблица `schema_migrations`, advisory lock на время прогона, одна транзакция на файл,
+контрольная сумма считается после нормализации CRLF в LF (иначе один и тот же файл на Windows и
+в Linux даёт разные суммы).
