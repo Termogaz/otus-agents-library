@@ -27,5 +27,8 @@ export default defineConfig({
     url: 'http://localhost:5173',
     reuseExistingServer: true,
     timeout: 60_000,
+    // Файл окружения автора задаёт STORAGE=postgres для dev. Существующие e2e до перехода на
+    // тестовую базу остаются на JSON и не пишут в dev-базу (loadLocalEnv заданное не перезаписывает)
+    env: { STORAGE: 'json' },
   },
 });
