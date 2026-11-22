@@ -103,6 +103,8 @@ const LIVE_MESSAGES: Record<string, string> = {
   LOGIN_TAKEN: 'Этот логин уже занят',
   READER_ALREADY_HAS_ACCOUNT: 'У этого читателя уже есть учётная запись',
   CONFLICT: 'Данные изменились, обновите страницу и повторите',
+  PAYLOAD_TOO_LARGE: 'Слишком большой запрос, сократите текст',
+  UNSUPPORTED_MEDIA_TYPE: 'Запрос отправлен в неподдерживаемой кодировке',
   TOO_MANY_ATTEMPTS: 'Слишком много попыток входа, подождите и повторите',
   AI_LIMIT_REACHED: 'Дневной лимит подсказок AI исчерпан',
   STORAGE_ERROR: 'Не удалось прочитать или записать данные',

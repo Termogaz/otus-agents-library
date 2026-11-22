@@ -63,6 +63,20 @@ function parse<T>(schema: z.ZodType<T>, value: unknown): T {
   return result.data;
 }
 
+// Ошибка express.json() (body-parser): у неё строковый type и status 4xx. Слишком большое тело —
+// 413, неподдерживаемая кодировка символов или сжатия — 415, прочее (битый JSON) — 400.
+function bodyParserError(error: unknown): { status: number; code: string } | undefined {
+  if (typeof error !== 'object' || error === null || !('type' in error)) return undefined;
+  if (typeof error.type !== 'string') return undefined;
+  const status = 'status' in error ? error.status : undefined;
+  if (error.type !== 'entity.parse.failed') {
+    if (typeof status !== 'number' || status < 400 || status >= 500) return undefined;
+  }
+  if (status === 413) return { status: 413, code: 'PAYLOAD_TOO_LARGE' };
+  if (status === 415) return { status: 415, code: 'UNSUPPORTED_MEDIA_TYPE' };
+  return { status: 400, code: 'INVALID_JSON' };
+}
+
 // Контекст запроса. Со входом его кладёт authenticate; без входа все запросы идут от имени
 // системного библиотекаря. При включённом входе отсутствие контекста — отказ, а не запасной
 // библиотекарь: пропущенная проверка не должна открывать доступ.
@@ -291,12 +305,12 @@ export function createApp({
       res.status(error.status).json({ code: error.code, details: error.details });
       return;
     }
-    // Тело запроса — не JSON: ошибку бросает express.json()
-    if (typeof error === 'object' && error !== null && 'type' in error) {
-      if (error.type === 'entity.parse.failed') {
-        res.status(400).json({ code: 'INVALID_JSON' });
-        return;
-      }
+    // Ошибки разбора тела бросает express.json() до маршрута: это ошибка клиента, а не сервера,
+    // поэтому 4xx с кодом из спеки и без записи в лог (иначе аноним забивал бы лог)
+    const body = bodyParserError(error);
+    if (body) {
+      res.status(body.status).json({ code: body.code });
+      return;
     }
     // Ошибка БД: клиенту только код из спеки, подробности не отдаются
     const database = httpErrorFromDatabase(error);
