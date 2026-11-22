@@ -4,6 +4,7 @@ import type pg from 'pg';
 import { z } from 'zod';
 import { ApiError } from '../api-error.js';
 import type { RequestContext, Storage } from '../storage.js';
+import { LoginLimiter } from './login-limiter.js';
 import { DUMMY_HASH, verifyPassword } from './password.js';
 
 export const SESSION_COOKIE = 'library_session';
@@ -39,6 +40,8 @@ export interface AuthStore {
 
 export type AuthDeps = {
   store: AuthStore;
+  // Лимит неудачных входов; по умолчанию новый, со стандартными 5 попытками за 15 минут
+  limiter?: LoginLimiter;
   now?: () => Date;
 };
 
@@ -148,15 +151,24 @@ const cookieAttributes = (secure: boolean) =>
 // Маршруты входа. Порядок важен: вход открыт для всех, всё после router.use(authenticate)
 // требует сессии. Роутер подключается в app.ts сразу после /api/health: запрос к любому
 // маршруту ниже по цепочке сначала проходит через authenticate.
-export function createAuthRouter({ store, now = () => new Date() }: AuthDeps, storage: Storage) {
+export function createAuthRouter(
+  { store, limiter = new LoginLimiter(), now = () => new Date() }: AuthDeps,
+  storage: Storage,
+) {
   const router = express.Router();
 
   router.post('/api/auth/login', async (req, res) => {
     const { login, password } = parse(loginInput, req.body);
+    // Блокировка проверяется до пароля: перебор не получает ответа о верном пароле
+    if (limiter.isBlocked(login)) throw new ApiError(429, 'TOO_MANY_ATTEMPTS');
     const user = await store.findUserForLogin(login);
     // Для неизвестного логина считается тот же scrypt: ответ и время не выдают, что логина нет
     const ok = await verifyPassword(password, user?.passwordHash ?? DUMMY_HASH);
-    if (!user || !ok) throw new ApiError(401, 'INVALID_CREDENTIALS');
+    if (!user || !ok) {
+      limiter.recordFailure(login);
+      throw new ApiError(401, 'INVALID_CREDENTIALS');
+    }
+    limiter.recordSuccess(login);
 
     // Новый токен на каждый вход: сессию нельзя навязать заранее (фиксация сессии)
     const token = newSessionToken();

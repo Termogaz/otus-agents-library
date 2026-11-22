@@ -1,6 +1,8 @@
 import type express from 'express';
 import pg from 'pg';
 import { createApp } from './app.js';
+import { PgAuthStore } from './auth/auth.js';
+import { LoginLimiter } from './auth/login-limiter.js';
 import type { AppConfig } from './config.js';
 import { JsonFileRepository } from './json-file-repository.js';
 import { PostgresStorage } from './postgres/postgres-storage.js';
@@ -18,7 +20,11 @@ export function buildApp(config: AppConfig): {
       console.error('Ошибка соединения пула Postgres:', error.message);
     });
     return {
-      app: createApp({ storage: new PostgresStorage(pool) }),
+      // В режиме Postgres вход обязателен; в режиме JSON входа нет
+      app: createApp({
+        storage: new PostgresStorage(pool),
+        auth: { store: new PgAuthStore(pool), limiter: new LoginLimiter() },
+      }),
       close: () => pool.end(),
     };
   }
