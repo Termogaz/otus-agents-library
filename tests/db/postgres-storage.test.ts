@@ -24,14 +24,12 @@ describe('PostgresStorage', () => {
     let seq = 0;
     const app = createApp({ storage: new PostgresStorage(api), newId: () => `book${++seq}` });
 
-    const created = await request(app)
-      .post('/api/books')
-      .send({
-        title: 'Мастер и Маргарита',
-        author: 'М. Булгаков',
-        isbn: '978-5-17-090631-9',
-        copies: 3,
-      });
+    const created = await request(app).post('/api/books').send({
+      title: 'Мастер и Маргарита',
+      author: 'М. Булгаков',
+      isbn: '978-5-17-090631-9',
+      copies: 3,
+    });
     expect(created.status).toBe(201);
 
     const { rows } = await owner.query('select title, copies from books');
