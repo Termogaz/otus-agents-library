@@ -370,7 +370,6 @@ read -rs PW; printf '%s' "$PW" | docker compose --profile tools run --rm -T tool
 - **Нет команды смены пароля.** Обходной путь: под суперпользователем `postgres` удалить пользователя (сессии и `ai_usage`
   удаляются каскадом) и выполнить `create-user` заново.
 - **`id` читателя в интерфейсе не показан.** Для привязки учётки читателя нужен SQL-запрос (команда выше).
-- **Неизвестный путь `/api/...` без входа отвечает 401, а не 404:** для учебного проекта принято, замечание для ревью кода.
 - **`npm run check` на Windows красный ровно на одном тесте** `format-and-lint hook script > formats edited file in place with exit code 0`
   (hook вызывает `node_modules/.bin/prettier`, на Windows `ENOENT`); проблема предсуществующая, вне фазы 8, решение автора — в
   [`docs/memory.md`](docs/memory.md), запись 2026-11-13. Зелёный `check` в WSL-копии не проверялся.
