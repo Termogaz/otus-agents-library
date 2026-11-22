@@ -24,5 +24,25 @@ services:
       api:
         condition: service_healthy
 
+  # PostgreSQL 17. Порт наружу не публикуется: на localhost его открывает только
+  # docker-compose.dev.yml, который подключают явно (на VPS не подключать).
+  # Роли и базы создаёт init-скрипт один раз на пустом томе; права на таблицы выдают миграции.
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?задайте POSTGRES_PASSWORD}
+      LIBRARY_OWNER_PASSWORD: ${LIBRARY_OWNER_PASSWORD:?задайте LIBRARY_OWNER_PASSWORD}
+      LIBRARY_API_PASSWORD: ${LIBRARY_API_PASSWORD:?задайте LIBRARY_API_PASSWORD}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./docker/postgres/init-roles.sh:/docker-entrypoint-initdb.d/10-init-roles.sh:ro
+    # Через TCP: временный сервер init слушает только сокет, поэтому контейнер
+    # становится здоровым лишь после того, как init-скрипт отработал.
+    healthcheck:
+      test: ['CMD', 'pg_isready', '-h', '127.0.0.1', '-U', 'postgres', '-d', 'postgres']
+      interval: 5s
+      retries: 10
+
 volumes:
   library-data:
+  postgres-data:

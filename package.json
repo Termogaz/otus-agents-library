@@ -18,6 +18,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
+    "db:up": "docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --wait postgres",
+    "db:down": "docker compose -f docker-compose.yml -f docker-compose.dev.yml stop postgres",
     "check": "npm run typecheck && npm run lint && npm run format:check && npm test"
   },
   "dependencies": {
