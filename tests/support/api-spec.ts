@@ -13,7 +13,7 @@ export type SpecRoute = {
   errors: { status: number; code: string }[];
 };
 
-export type SpecErrorCode = { code: string; status: number };
+export type SpecErrorCode = { code: string; status: number; uiText: string };
 
 const METHODS: readonly string[] = ['GET', 'POST', 'PATCH', 'DELETE'];
 const ROLES: readonly string[] = ['anon', 'reader', 'librarian'];
@@ -95,6 +95,10 @@ export function loadErrorCodes(file = 'docs/api-spec.md'): SpecErrorCode[] {
   return readTable(file, 'Код').map((row) => {
     const code = cell(row, 0, 'Код');
     if (!/^[A-Z][A-Z_]*$/.test(code)) throw new Error(`строка ${row.line}: неверный код «${code}»`);
-    return { code, status: parseStatus(cell(row, 1, 'HTTP'), row, 'HTTP') };
+    return {
+      code,
+      status: parseStatus(cell(row, 1, 'HTTP'), row, 'HTTP'),
+      uiText: cell(row, 3, 'Текст в UI'),
+    };
   });
 }
